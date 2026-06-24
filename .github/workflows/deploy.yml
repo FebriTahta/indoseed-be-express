@@ -1,0 +1,44 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy application to VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "Masuk ke folder project..."
+            cd /var/www/indoseed-be-express
+
+            echo "Pull source terbaru..."
+            git pull origin main
+
+            echo "Install dependency..."
+            npm ci
+
+            echo "Generate Prisma..."
+            npx prisma generate
+
+            echo "Menjalankan migration..."
+            npx prisma migrate deploy
+
+            echo "Build Typescript..."
+            npm run build
+
+            echo "Reload PM2..."
+            pm2 reload indoseed-api
+
+            echo "Deploy selesai"
