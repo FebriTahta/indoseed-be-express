@@ -1,6 +1,10 @@
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL as string);
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient({
+  adapter,
+});
+
+export default prisma;
