@@ -21,7 +21,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('API IS READY');
+  res.send('API SERVER IS RUNNING');
 });
 
 export default app;
