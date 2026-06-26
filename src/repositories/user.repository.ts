@@ -33,4 +33,33 @@ export const userRepository = {
       data: { isEmailVerified },
     });
   },
+
+  findAllUsersWithRoles: async () => {
+    return prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        isEmailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        defaultRole: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        roles: {
+          select: {
+            role: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
+          }
+        }
+      }
+    });
+  },
 };
