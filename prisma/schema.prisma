@@ -62,3 +62,106 @@ model EmailOtp {
 
   @@map("email_otps")
 }
+
+model Greenhouse {
+  id              String   @id @default(uuid())
+  kodeLahan       String   @unique
+  namaLahan       String
+  jenisLahan      String   @default("Greenhouse")
+  komoditasUtama  String
+  komoditasColor  String   @default("emerald")
+  komoditasIcon   String   @default("ri-leaf-line")
+  lokasi          String
+  luas            Float
+  status          String   @default("Aktif")
+  detailLokasi    String?  @db.Text
+  koordinat       String?
+  petaniMitra     String?
+  commodityId     String?
+  partnerId       String?
+  tglDibuat       DateTime @default(now())
+  dibuatOleh      String?  @default("Admin")
+  keterangan      String?  @db.Text
+  image           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  commodity       Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  partner         Partner?   @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+
+  @@map("greenhouses")
+}
+
+model Commodity {
+  id              String   @id @default(uuid())
+  kodeKomoditas   String   @unique
+  namaKomoditas   String
+  kategori        String
+  deskripsi       String?  @db.Text
+  status          String   @default("Aktif")
+  image           String?  @db.Text
+  tglDibuat       DateTime @default(now())
+  dibuatOleh      String?  @default("Admin")
+  tglDiubah       DateTime @default(now()) @updatedAt
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  varieties       Variety[]
+  greenhouses     Greenhouse[]
+
+  @@map("commodities")
+}
+
+model Variety {
+  id             String    @id @default(uuid())
+  kodeVarietas   String    @unique
+  namaVarietas   String
+  commodityId    String
+  asalPemulia    String?
+  tahunRilis     Int?
+  deskripsi      String?   @db.Text
+  umurTanam      String?
+  tinggiTanaman  String?
+  bentukBiji     String?
+  warnaGabah     String?
+  potensiHasil   String?
+  anjuranDataran String?
+  status         String    @default("Aktif")
+  image          String?   @db.Text
+  tglDibuat      DateTime  @default(now())
+  dibuatOleh     String?   @default("Admin")
+  tglDiubah      DateTime  @default(now()) @updatedAt
+  diubahOleh     String?   @default("Admin")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  commodity      Commodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+
+  @@map("varieties")
+}
+model Partner {
+  id              String   @id @default(uuid())
+  kodePetani      String   @unique
+  namaPetani      String
+  kelompokTani    String
+  komoditasUtama  String
+  noKtp           String?
+  noTelepon       String?
+  alamat          String?  @db.Text
+  luasLahan       Float    @default(0.0) // Luas Lahan (Ha)
+  pengalaman      Int      @default(0)   // Pengalaman Bertani (tahun)
+  tglBergabung    DateTime @default(now())
+  status          String   @default("Aktif")
+  image           String?  @db.Text
+  tglDibuat       DateTime @default(now())
+  dibuatOleh      String?  @default("Admin")
+  tglDiubah       DateTime @default(now()) @updatedAt
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  greenhouses     Greenhouse[]
+
+  @@map("partners")
+}

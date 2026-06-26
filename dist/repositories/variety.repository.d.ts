@@ -1,0 +1,236 @@
+export interface VarietyFilter {
+    search?: string;
+    commodityId?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+}
+export declare const varietyRepository: {
+    create: (data: any) => Promise<{
+        commodity: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            tglDibuat: Date;
+            dibuatOleh: string | null;
+            image: string | null;
+            kodeKomoditas: string;
+            namaKomoditas: string;
+            kategori: string;
+            deskripsi: string | null;
+            tglDiubah: Date;
+            diubahOleh: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        tglDibuat: Date;
+        dibuatOleh: string | null;
+        image: string | null;
+        commodityId: string;
+        deskripsi: string | null;
+        tglDiubah: Date;
+        diubahOleh: string | null;
+        kodeVarietas: string;
+        namaVarietas: string;
+        asalPemulia: string | null;
+        tahunRilis: number | null;
+        umurTanam: string | null;
+        tinggiTanaman: string | null;
+        bentukBiji: string | null;
+        warnaGabah: string | null;
+        potensiHasil: string | null;
+        anjuranDataran: string | null;
+    }>;
+    findById: (id: string) => Promise<({
+        commodity: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            tglDibuat: Date;
+            dibuatOleh: string | null;
+            image: string | null;
+            kodeKomoditas: string;
+            namaKomoditas: string;
+            kategori: string;
+            deskripsi: string | null;
+            tglDiubah: Date;
+            diubahOleh: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        tglDibuat: Date;
+        dibuatOleh: string | null;
+        image: string | null;
+        commodityId: string;
+        deskripsi: string | null;
+        tglDiubah: Date;
+        diubahOleh: string | null;
+        kodeVarietas: string;
+        namaVarietas: string;
+        asalPemulia: string | null;
+        tahunRilis: number | null;
+        umurTanam: string | null;
+        tinggiTanaman: string | null;
+        bentukBiji: string | null;
+        warnaGabah: string | null;
+        potensiHasil: string | null;
+        anjuranDataran: string | null;
+    }) | null>;
+    findByKodeVarietas: (kodeVarietas: string) => Promise<({
+        commodity: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            tglDibuat: Date;
+            dibuatOleh: string | null;
+            image: string | null;
+            kodeKomoditas: string;
+            namaKomoditas: string;
+            kategori: string;
+            deskripsi: string | null;
+            tglDiubah: Date;
+            diubahOleh: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        tglDibuat: Date;
+        dibuatOleh: string | null;
+        image: string | null;
+        commodityId: string;
+        deskripsi: string | null;
+        tglDiubah: Date;
+        diubahOleh: string | null;
+        kodeVarietas: string;
+        namaVarietas: string;
+        asalPemulia: string | null;
+        tahunRilis: number | null;
+        umurTanam: string | null;
+        tinggiTanaman: string | null;
+        bentukBiji: string | null;
+        warnaGabah: string | null;
+        potensiHasil: string | null;
+        anjuranDataran: string | null;
+    }) | null>;
+    update: (id: string, data: any) => Promise<{
+        commodity: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            tglDibuat: Date;
+            dibuatOleh: string | null;
+            image: string | null;
+            kodeKomoditas: string;
+            namaKomoditas: string;
+            kategori: string;
+            deskripsi: string | null;
+            tglDiubah: Date;
+            diubahOleh: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        tglDibuat: Date;
+        dibuatOleh: string | null;
+        image: string | null;
+        commodityId: string;
+        deskripsi: string | null;
+        tglDiubah: Date;
+        diubahOleh: string | null;
+        kodeVarietas: string;
+        namaVarietas: string;
+        asalPemulia: string | null;
+        tahunRilis: number | null;
+        umurTanam: string | null;
+        tinggiTanaman: string | null;
+        bentukBiji: string | null;
+        warnaGabah: string | null;
+        potensiHasil: string | null;
+        anjuranDataran: string | null;
+    }>;
+    delete: (id: string) => Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        tglDibuat: Date;
+        dibuatOleh: string | null;
+        image: string | null;
+        commodityId: string;
+        deskripsi: string | null;
+        tglDiubah: Date;
+        diubahOleh: string | null;
+        kodeVarietas: string;
+        namaVarietas: string;
+        asalPemulia: string | null;
+        tahunRilis: number | null;
+        umurTanam: string | null;
+        tinggiTanaman: string | null;
+        bentukBiji: string | null;
+        warnaGabah: string | null;
+        potensiHasil: string | null;
+        anjuranDataran: string | null;
+    }>;
+    findAll: (filters: VarietyFilter) => Promise<{
+        items: ({
+            commodity: {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                status: string;
+                tglDibuat: Date;
+                dibuatOleh: string | null;
+                image: string | null;
+                kodeKomoditas: string;
+                namaKomoditas: string;
+                kategori: string;
+                deskripsi: string | null;
+                tglDiubah: Date;
+                diubahOleh: string | null;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            tglDibuat: Date;
+            dibuatOleh: string | null;
+            image: string | null;
+            commodityId: string;
+            deskripsi: string | null;
+            tglDiubah: Date;
+            diubahOleh: string | null;
+            kodeVarietas: string;
+            namaVarietas: string;
+            asalPemulia: string | null;
+            tahunRilis: number | null;
+            umurTanam: string | null;
+            tinggiTanaman: string | null;
+            bentukBiji: string | null;
+            warnaGabah: string | null;
+            potensiHasil: string | null;
+            anjuranDataran: string | null;
+        })[];
+        pagination: {
+            currentPage: number;
+            pageSize: number;
+            totalItems: number;
+            totalPages: number;
+        };
+    }>;
+};
+//# sourceMappingURL=variety.repository.d.ts.map
