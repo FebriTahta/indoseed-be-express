@@ -18,6 +18,13 @@ export const emailOtpRepository = {
     });
   },
 
+  findLatestOtpByUserId: async (userId: string) => {
+    return prisma.emailOtp.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
   deleteByUserId: async (userId: string) => {
     return prisma.emailOtp.deleteMany({
       where: { userId },

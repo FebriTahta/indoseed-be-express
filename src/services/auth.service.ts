@@ -17,6 +17,32 @@ export const authService = {
 
     const existingUser = await userRepository.findByEmailOrUsername(email, username);
     if (existingUser) {
+      if (existingUser.email === email && !existingUser.isEmailVerified) {
+        const latestOtp = await emailOtpRepository.findLatestOtpByUserId(existingUser.id);
+        const now = new Date();
+
+        if (latestOtp && latestOtp.expiresAt > now) {
+          const remainingMs = latestOtp.expiresAt.getTime() - now.getTime();
+          const remainingSeconds = Math.ceil(remainingMs / 1000);
+          
+          const error: any = new Error(`Silakan kirimkan OTP ulang ke email tersebut dalam sisa waktu ${remainingSeconds} detik.`);
+          error.sisaWaktu = remainingSeconds;
+          throw error;
+        } else {
+          const otp = generateOtp();
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+          await emailOtpRepository.create({
+            userId: existingUser.id,
+            otp,
+            expiresAt,
+          });
+
+          await sendOtpEmail(email, otp);
+
+          return existingUser;
+        }
+      }
       throw new Error('User with this email or username already exists');
     }
 
