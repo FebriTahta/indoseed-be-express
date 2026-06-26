@@ -19,6 +19,9 @@ export const register = async (req: Request, res: Response) => {
     if (error.message === 'User with this email or username already exists') {
       return res.status(400).json({ error: error.message });
     }
+    if (error.sisaWaktu !== undefined) {
+      return res.status(400).json({ error: error.message, sisaWaktu: error.sisaWaktu });
+    }
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Failed to register user' });
   }
