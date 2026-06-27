@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 export interface VarietyFilter {
@@ -8,8 +9,11 @@ export interface VarietyFilter {
   pageSize?: number;
 }
 
+export interface CreateVarietyInput extends Prisma.VarietyUncheckedCreateInput {}
+export interface UpdateVarietyInput extends Prisma.VarietyUncheckedUpdateInput {}
+
 export const varietyRepository = {
-  create: async (data: any) => {
+  create: async (data: CreateVarietyInput) => {
     return prisma.variety.create({
       data,
       include: {
@@ -36,7 +40,7 @@ export const varietyRepository = {
     });
   },
 
-  update: async (id: string, data: any) => {
+  update: async (id: string, data: UpdateVarietyInput) => {
     return prisma.variety.update({
       where: { id },
       data,

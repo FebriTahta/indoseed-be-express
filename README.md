@@ -60,7 +60,7 @@
    SMTP_PASS="your_email_password"
 
    # STORAGE MinIO
-    MINIO_PATH=http://145.79.12.74:9000
+    MINIO_PATH=http://storage.domain-anda.com
     MINIO_ACCESS_KEY=admin
     MINIO_SECRET_KEY=PasswordYangSangatKuat123
     MINIO_BUCKET=dev

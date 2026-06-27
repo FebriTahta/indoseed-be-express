@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 export interface CommodityFilter {
@@ -8,8 +9,11 @@ export interface CommodityFilter {
   pageSize?: number;
 }
 
+export interface CreateCommodityInput extends Prisma.CommodityUncheckedCreateInput {}
+export interface UpdateCommodityInput extends Prisma.CommodityUncheckedUpdateInput {}
+
 export const commodityRepository = {
-  create: async (data: any) => {
+  create: async (data: CreateCommodityInput) => {
     return prisma.commodity.create({
       data,
     });
@@ -27,7 +31,7 @@ export const commodityRepository = {
     });
   },
 
-  update: async (id: string, data: any) => {
+  update: async (id: string, data: UpdateCommodityInput) => {
     return prisma.commodity.update({
       where: { id },
       data,

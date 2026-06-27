@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 export interface GreenhouseFilter {
@@ -12,8 +13,11 @@ export interface GreenhouseFilter {
   pageSize?: number;
 }
 
+export interface CreateGreenhouseInput extends Prisma.GreenhouseUncheckedCreateInput {}
+export interface UpdateGreenhouseInput extends Prisma.GreenhouseUncheckedUpdateInput {}
+
 export const greenhouseRepository = {
-  create: async (data: any) => {
+  create: async (data: CreateGreenhouseInput) => {
     return prisma.greenhouse.create({
       data,
       include: {
@@ -43,7 +47,7 @@ export const greenhouseRepository = {
     });
   },
 
-  update: async (id: string, data: any) => {
+  update: async (id: string, data: UpdateGreenhouseInput) => {
     return prisma.greenhouse.update({
       where: { id },
       data,

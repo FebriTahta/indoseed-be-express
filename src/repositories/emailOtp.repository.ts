@@ -1,7 +1,10 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
+export interface CreateEmailOtpInput extends Prisma.EmailOtpUncheckedCreateInput {}
+
 export const emailOtpRepository = {
-  create: async (data: any) => {
+  create: async (data: CreateEmailOtpInput) => {
     return prisma.emailOtp.create({
       data,
     });

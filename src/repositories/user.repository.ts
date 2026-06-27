@@ -1,4 +1,7 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
+
+export interface CreateUserInput extends Prisma.UserUncheckedCreateInput {}
 
 export const userRepository = {
   findByEmailOrUsername: async (email: string, username: string) => {
@@ -21,7 +24,7 @@ export const userRepository = {
     });
   },
 
-  create: async (data: any) => {
+  create: async (data: CreateUserInput) => {
     return prisma.user.create({
       data,
     });

@@ -7,12 +7,23 @@ import { sendOtpEmail } from './email.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
 
+export interface RegisterInput {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginInput {
+  username: string;
+  password: string;
+}
+
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
 };
 
 export const authService = {
-  register: async (data: any) => {
+  register: async (data: RegisterInput) => {
     const { username, email, password } = data;
 
     const existingUser = await userRepository.findByEmailOrUsername(email, username);
@@ -122,7 +133,7 @@ export const authService = {
     return true;
   },
 
-  login: async (data: any) => {
+  login: async (data: LoginInput) => {
     const { username, password } = data;
 
     const user = await userRepository.findByUsername(username);

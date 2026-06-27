@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 export interface PartnerFilter {
@@ -9,8 +10,11 @@ export interface PartnerFilter {
   pageSize?: number;
 }
 
+export interface CreatePartnerInput extends Prisma.PartnerUncheckedCreateInput {}
+export interface UpdatePartnerInput extends Prisma.PartnerUncheckedUpdateInput {}
+
 export const partnerRepository = {
-  create: async (data: any) => {
+  create: async (data: CreatePartnerInput) => {
     return prisma.partner.create({
       data,
     });
@@ -35,7 +39,7 @@ export const partnerRepository = {
     });
   },
 
-  update: async (id: string, data: any) => {
+  update: async (id: string, data: UpdatePartnerInput) => {
     return prisma.partner.update({
       where: { id },
       data,
