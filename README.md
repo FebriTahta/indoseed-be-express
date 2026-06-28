@@ -64,6 +64,10 @@
     MINIO_ACCESS_KEY=admin
     MINIO_SECRET_KEY=PasswordYangSangatKuat123
     MINIO_BUCKET=dev
+
+   # CLOUDFLARE TURNSLITLE
+   CLOUDFLARE_TURNISTILE_SECRET_KEY=your-secret-key
+  
    ```
 
 4. **Generate Prisma Client**
