@@ -9,7 +9,7 @@ const router = Router();
 router.post('/register', registerRateLimiter, verifyTurnstile, register);
 router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', resendOtp);
-router.post('/login', loginRateLimiter, verifyTurnstile, login);
+router.post('/login', loginRateLimiter, login);
 router.post('/logout', authenticateJWT, logout);
 
 // Example protected route for superadmin
