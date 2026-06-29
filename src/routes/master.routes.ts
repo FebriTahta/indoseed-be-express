@@ -31,6 +31,8 @@ import {
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
 import { uploadSingle } from '../middlewares/upload.middleware';
 
+import * as custCont from '../controllers/customer.controller';
+
 const router = Router();
 
 router.get('/user', authenticateJWT, authorizeRoles('superadmin', 'admin'), getUsers);
@@ -62,5 +64,13 @@ router.get('/partner', authenticateJWT, authorizeRoles('superadmin', 'admin'), g
 router.get('/partner/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), getPartnerById);
 router.put('/partner/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), updatePartner);
 router.delete('/partner/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), deletePartner);
+
+// Customer routes
+router.post('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.createCustomer);
+router.get('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.getCustomers);
+router.get('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.getCustomerById);
+router.put('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'),  custCont.updateCustomer);
+router.delete('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.deleteCustomer);
+
 
 export default router;
