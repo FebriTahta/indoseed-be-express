@@ -192,3 +192,34 @@ model Customer {
 
   @@map("customers")
 }
+
+model Gudang {
+  id              String   @id @default(uuid())
+  kodeGudang      String   @unique
+  namaGudang      String
+  kategori      String
+  alamat        String?
+  status          String   @default("Aktif")
+  tglDibuat       DateTime @default(now())
+  dibuatOleh      String?  @default("Admin")
+  tglDiubah       DateTime @default(now()) @updatedAt
+  diubahOleh      String?  @default("Admin")
+
+  @@map("gudangs")
+}
+
+model Supplier {
+  id              String   @id @default(uuid())
+  kodeSupplier      String   @unique
+  namaSupplier      String
+  kategori      String
+  alamat        String?
+  status          String   @default("Aktif")
+  tglDibuat       DateTime @default(now())
+  dibuatOleh      String?  @default("Admin")
+  tglDiubah       DateTime @default(now()) @updatedAt
+  diubahOleh      String?  @default("Admin")
+
+  @@map("suppliers")
+}
+

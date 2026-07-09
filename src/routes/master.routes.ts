@@ -32,6 +32,9 @@ import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware'
 import { uploadSingle } from '../middlewares/upload.middleware';
 
 import * as custCont from '../controllers/customer.controller';
+import * as gudangCont from '../controllers/gudang.controller';
+import * as suppCont from '../controllers/supplier.controller';
+
 
 const router = Router();
 
@@ -72,5 +75,18 @@ router.get('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin
 router.put('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'),  custCont.updateCustomer);
 router.delete('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.deleteCustomer);
 
+// Gudang routes
+router.post('/gudang', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.createGudang);
+router.get('/gudang', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.getGudang);
+router.get('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.getGudangById);
+router.put('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.updateGudang);
+router.delete('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.deleteGudang);
+
+// Supplier routes
+router.post('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.createSupplier);
+router.get('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSuppliers);
+router.get('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSupplierById);
+router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.updateSupplier);
+router.delete('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.deleteSupplier);
 
 export default router;
