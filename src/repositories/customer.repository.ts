@@ -30,14 +30,14 @@ export const customerRepository = {
 
   update: async (id: string, data: any) => {
     return prisma.customer.update({
-      where: { id },
+      where: { kodeCust: id },
       data,
     });
   },
 
   delete: async (id: string) => {
     return prisma.customer.delete({
-      where: { id },
+      where: { kodeCust: id },
     });
   },
 

@@ -12,12 +12,12 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
       pic,
       kota,
       alamat,
-      postalCode,
+      kodePos,
       noTelepon,
       email,
       isTop,
-      credit_limit,
-      remaining_limit,
+      limitKredit,
+      remainKredit,
       tglBergabung,
       status = 'Aktif',
     } = req.body;
@@ -64,11 +64,11 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
       noTelepon: noTelepon || null,
       alamat: alamat || null,
       kota: kota || null,
-      kodePos: postalCode || null,
+      kodePos: kodePos || null,
       tglBergabung: dateBergabung,
       status,
-      limitKredit: Number(credit_limit) || 0,
-      remainKredit: Number(remaining_limit) || 0,
+      limitKredit: Number(limitKredit) || 0,
+      remainKredit: Number(remainKredit) || 0,
       dibuatOleh: createdBy,
       diubahOleh: createdBy,
     });
@@ -160,7 +160,7 @@ export const getCustomerById = async (req: Request, res: Response) => {
 export const updateCustomer = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
-    const existing = await customerRepository.findById(id);
+    const existing = await customerRepository.findBykodeCust(id);
 
     if (!existing) {
       return res.status(404).json({
@@ -177,12 +177,12 @@ export const updateCustomer = async (req: AuthRequest, res: Response) => {
       pic,
       kota,
       alamat,
-      postalCode,
+      kodePos,
       noTelepon,
       email,
       isTop,
-      credit_limit,
-      remaining_limit,
+      limitKredit,
+      remainKredit,
       tglBergabung,
       status = 'Aktif',
     } = req.body;
@@ -207,12 +207,12 @@ export const updateCustomer = async (req: AuthRequest, res: Response) => {
     if (pic !== undefined) updateData.pic = pic;
     if (kota !== undefined) updateData.kota = kota;
     if (alamat !== undefined) updateData.alamat = alamat || null;
-    if (postalCode !== undefined) updateData.postalCode = postalCode || null;
+    if (kodePos !== undefined) updateData.kodePos = kodePos || null;
     if (noTelepon !== undefined) updateData.noTelepon = noTelepon || null;
     if (email !== undefined) updateData.email = email || null;
-    if (isTop !== undefined) updateData.isTop = isTop;
-    if (credit_limit !== undefined) updateData.credit_limit = credit_limit;
-    if (remaining_limit !== undefined) updateData.remaining_limit = remaining_limit;
+    if (isTop !== undefined) updateData.isTop = isTop == 'true' ? true : false;
+    if (limitKredit !== undefined) updateData.limitKredit = Number(limitKredit);
+    if (remainKredit !== undefined) updateData.remainKredit = Number(remainKredit);
     if (status !== undefined) updateData.status = status;
 
     if (tglBergabung !== undefined) {
