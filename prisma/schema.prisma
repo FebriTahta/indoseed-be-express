@@ -360,3 +360,58 @@ model QcKadarAir {
 
   @@map("qc_kadar_air")
 }
+
+model Customer {
+  id              String   @id @default(uuid())
+  kodeCust        String   @unique
+  namaCust        String
+  kategori        String
+  NPWP            String?
+  pic             String?
+  email           String?
+  isTop           Boolean  @default(false)
+  noTelepon       String?
+  alamat          String?  @db.Text
+  kota            String?
+  kodePos         String?
+  tglBergabung    DateTime?
+  status          String   @default("Aktif")
+  limitKredit     Float    @default(0)
+  remainKredit    Float    @default(0)
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Gudang {
+  id              String   @id @default(uuid())
+  kodeGudang      String   @unique
+  namaGudang      String
+  kategori        String
+  status          String   @default("Aktif")
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  tglDibuat       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("gudang")
+}
+
+model Supplier {
+  id              String   @id @default(uuid())
+  kodeSupplier    String   @unique
+  namaSupplier    String
+  kategori        String
+  status          String   @default("Aktif")
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  tglDibuat       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("suppliers")
+}
