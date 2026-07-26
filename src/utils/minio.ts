@@ -58,10 +58,11 @@ export const initMinio = async () => {
 export const uploadFile = async (
   fileBuffer: Buffer,
   originalFilename: string,
-  mimeType: string
+  mimeType: string,
+  folder: string = 'greenhouses'
 ): Promise<string> => {
   const extension = path.extname(originalFilename);
-  const uniqueFilename = `greenhouses/${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extension}`;
+  const uniqueFilename = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extension}`;
 
   await minioClient.putObject(bucketName, uniqueFilename, fileBuffer, fileBuffer.length, {
     'Content-Type': mimeType,
