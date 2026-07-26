@@ -41,32 +41,32 @@ const router = Router();
 router.get('/user', authenticateJWT, authorizeRoles('superadmin', 'admin'), getUsers);
 
 // Greenhouse routes
-router.post('/greenhouse', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), createGreenhouse);
+router.post('/greenhouse', uploadSingle('image'), createGreenhouse);
 router.get('/greenhouse', getGreenhouses);
 router.get('/greenhouse/:id', getGreenhouseById);
-router.put('/greenhouse/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), updateGreenhouse);
-router.delete('/greenhouse/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), deleteGreenhouse);
+router.put('/greenhouse/:id', uploadSingle('image'), updateGreenhouse);
+router.delete('/greenhouse/:id', deleteGreenhouse);
 
 // Commodity routes
-router.post('/commodity', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), createCommodity);
+router.post('/commodity', uploadSingle('image'), createCommodity);
 router.get('/commodity', getCommodities);
 router.get('/commodity/:id', getCommodityById);
-router.put('/commodity/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), updateCommodity);
-router.delete('/commodity/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), deleteCommodity);
+router.put('/commodity/:id', uploadSingle('image'), updateCommodity);
+router.delete('/commodity/:id', deleteCommodity);
 
 // Variety routes
-router.post('/variety', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), createVariety);
+router.post('/variety', uploadSingle('image'), createVariety);
 router.get('/variety', getVarieties);
 router.get('/variety/:id', getVarietyById);
-router.put('/variety/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), updateVariety);
-router.delete('/variety/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), deleteVariety);
+router.put('/variety/:id', uploadSingle('image'), updateVariety);
+router.delete('/variety/:id', deleteVariety);
 
 // Partner routes
-router.post('/partner', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), createPartner);
+router.post('/partner', uploadSingle('image'), createPartner);
 router.get('/partner', getPartners);
 router.get('/partner/:id', getPartnerById);
-router.put('/partner/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadSingle('image'), updatePartner);
-router.delete('/partner/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), deletePartner);
+router.put('/partner/:id', uploadSingle('image'), updatePartner);
+router.delete('/partner/:id', deletePartner);
 
 // Customer routes
 router.post('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.createCustomer);
