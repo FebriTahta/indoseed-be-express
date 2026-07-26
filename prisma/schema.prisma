@@ -109,6 +109,8 @@ model Commodity {
 
   varieties       Variety[]
   greenhouses     Greenhouse[]
+  qcDayaTumbuh    QcDayaTumbuh[]
+  qcKadarAir      QcKadarAir[]
 
   @@map("commodities")
 }
@@ -137,6 +139,8 @@ model Variety {
   updatedAt      DateTime  @updatedAt
 
   commodity      Commodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+  qcDayaTumbuh   QcDayaTumbuh[]
+  qcKadarAir     QcKadarAir[]
 
   @@map("varieties")
 }
@@ -164,4 +168,195 @@ model Partner {
   greenhouses     Greenhouse[]
 
   @@map("partners")
+}
+
+model ReferenceStandard {
+  id           String   @id @default(uuid())
+  kode         String   @unique
+  nama         String
+  jenis        String   @default("Standar Acuan") // Standar Acuan or Metode Uji equivalent if needed, but we separate them
+  organisasi   String?
+  versiTahun   String?
+  kategori     String?
+  deskripsi    String?  @db.Text
+  fileUrl      String?  @db.Text
+  bahasa       String?
+  catatan      String?  @db.Text
+  status       String   @default("Aktif")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  testParameters TestParameter[]
+  testMethods    TestMethod[]
+  
+  documentId     String?
+  document       SupportDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@map("reference_standards")
+}
+
+model TestMethod {
+  id           String   @id @default(uuid())
+  kode         String   @unique
+  nama         String
+  deskripsi    String?  @db.Text
+  status       String   @default("Aktif")
+  standarId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  standar      ReferenceStandard? @relation(fields: [standarId], references: [id], onDelete: SetNull)
+  testParameters TestParameter[]
+  
+  documentId     String?
+  document       SupportDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  qcKadarAir     QcKadarAir[]
+
+  @@map("test_methods")
+}
+
+model TestParameter {
+  id           String   @id @default(uuid())
+  kode         String   @unique
+  nama         String
+  kategori     String?
+  satuan       String?
+  batasAcuan   String?
+  definisi     String?  @db.Text
+  keterangan   String?  @db.Text
+  metodeId     String?
+  standarId    String?
+  status       String   @default("Aktif")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  metode       TestMethod?        @relation(fields: [metodeId], references: [id], onDelete: SetNull)
+  standar      ReferenceStandard? @relation(fields: [standarId], references: [id], onDelete: SetNull)
+
+  @@map("test_parameters")
+}
+
+model SupportDocument {
+  id              String   @id @default(uuid())
+  kode            String   @unique
+  nama            String
+  kategori        String
+  jenisDokumen    String?
+  versi           String?
+  tanggalBerlaku  DateTime?
+  deskripsi       String?  @db.Text
+  tipeFile        String?
+  fileName        String?
+  fileSize        String?
+  fileUrl         String?  @db.Text
+  tingkatAkses    String?
+  status          String   @default("Aktif")
+  catatan         String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  referenceStandards ReferenceStandard[]
+  testMethods        TestMethod[]
+
+  @@map("support_documents")
+}
+
+model QcCertificate {
+  id            String    @id @default(uuid())
+  noSertifikat  String    @unique
+  kodeBatch     String
+  komoditas     String
+  varietas      String
+  parameter     String?   @db.Text
+  tglUji        DateTime?
+  tglTerbit     DateTime?
+  berlakuHingga DateTime?
+  status        String    @default("Menunggu")
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("qc_certificates")
+}
+
+model QcDayaTumbuh {
+  id                    String   @id @default(uuid())
+  kodeBatch             String   @unique
+  commodityId           String?
+  varietyId             String?
+  tanggalUji            DateTime?
+  petugasUji            String?
+  metodeUji             String?
+  jumlahSampel          Int?
+  
+  // Hasil Utama
+  dayaTumbuh            Float?
+  batasMinimal          Float?
+  status                String   @default("Sedang Diuji") // Lulus, Tidak Lulus, Sedang Diuji
+  sertifikat            String?
+  
+  // Detail Pengujian
+  jumlahBenihDitanam    Int?
+  jumlahBerkecambah     Int?
+  jumlahTidakBerkecambah Int?
+  waktuUjiHari          Int?
+  suhuUji               String?
+  mediaUji              String?
+  kelembabanMedia       String?
+  catatan               String?  @db.Text
+  
+  // Parameter Uji (JSON string)
+  parameterUji          String?  @db.Text 
+  
+  lampiranUrl           String?  @db.Text
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  commodity             Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety               Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+
+  @@map("qc_daya_tumbuh")
+}
+
+model QcKadarAir {
+  id               String   @id @default(uuid())
+  kodeBatch        String   @unique
+  commodityId      String?
+  varietyId        String?
+  testMethodId     String?
+  lotNumber        String?
+  tanggalUji       DateTime?
+  lokasiLab        String?
+  petugasUji       String?
+  jumlahSampel     Int?
+  
+  // Hasil Utama
+  kadarAir         Float?
+  batasMaksimal    Float?
+  status           String   @default("Sedang Diuji") // Memenuhi, Mendekati, Tidak Memenuhi
+  sertifikat       String?
+  
+  // Detail Pengujian
+  alat             String?
+  suhuUji          String?
+  waktuPengeringan String?
+  ulangan          String?
+  beratAwal        Float?
+  beratAkhir       Float?
+  catatan          String?  @db.Text
+  
+  // Parameter Uji Tambahan
+  parameterUji     String?  @db.Text 
+  
+  lampiranUrl      String?  @db.Text
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  commodity        Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety          Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  testMethod       TestMethod? @relation(fields: [testMethodId], references: [id], onDelete: SetNull)
+
+  @@map("qc_kadar_air")
 }

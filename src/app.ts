@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import authRoutes from './routes/auth.routes';
 import masterRoutes from './routes/master.routes';
+import qcRoutes from './routes/qc.routes';
+import uploadRoutes from './routes/upload.routes';
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use(morgan('dev'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/master', masterRoutes);
+app.use('/api/qc', qcRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Health check
