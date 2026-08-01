@@ -6,8 +6,8 @@ import authRoutes from './routes/auth.routes';
 import masterRoutes from './routes/master.routes';
 import qcRoutes from './routes/qc.routes';
 import uploadRoutes from './routes/upload.routes';
-import jadwalTanamRoutes from './routes/jadwalTanam.routes';
 import produksiRoutes from './routes/produksi.routes';
+import gudangRoutes from './routes/gudang.routes';
 
 const app = express();
 
@@ -23,7 +23,8 @@ app.use('/api/master', masterRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/produksi', produksiRoutes);
-app.use('/api/jadwal-tanam', jadwalTanamRoutes);
+app.use('/api/gudang', gudangRoutes);
+
 app.use('/uploads', express.static('uploads'));
 
 // Health check

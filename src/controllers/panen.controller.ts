@@ -1,5 +1,17 @@
 import { Request, Response } from 'express';
 import { panenRepository } from '../repositories/panen.repository';
+import prisma from '../utils/prisma';
+
+const validateForeignKey = async (modelName: 'commodity' | 'variety' | 'kesiapanPanen' | 'jadwalTanam', id: any): Promise<string | undefined> => {
+  if (!id || typeof id !== 'string' || !id.trim()) return undefined;
+  const cleanId = id.trim();
+  try {
+    const existing = await (prisma as any)[modelName].findUnique({ where: { id: cleanId } });
+    return existing ? cleanId : undefined;
+  } catch (e) {
+    return undefined;
+  }
+};
 
 export const getPanens = async (req: Request, res: Response) => {
   try {
@@ -49,7 +61,7 @@ export const getPanens = async (req: Request, res: Response) => {
       stats,
     });
   } catch (error: any) {
-    console.error('Error fetching Panen data:', error);
+    console.error('Error fetching Panen:', error);
     return res.status(500).json({
       status: 'error',
       message: error.message || 'Internal server error',
@@ -92,9 +104,18 @@ export const createPanen = async (req: Request, res: Response) => {
     const nextSeq = totalCount + 1;
     const kodePanen = body.kodePanen || `PN-2606-${String(nextSeq).padStart(4, '0')}`;
 
+    const validJadwalTanamId = await validateForeignKey('jadwalTanam', body.jadwalTanamId);
+    const validKesiapanPanenId = await validateForeignKey('kesiapanPanen', body.kesiapanPanenId || body.kesiapanLahanId);
+    const validCommodityId = await validateForeignKey('commodity', body.commodityId || body.komoditasId);
+    const validVarietyId = await validateForeignKey('variety', body.varietyId || body.varietasId);
+
     const newPanen = await panenRepository.create({
       kodePanen,
-      jadwalTanamId: body.jadwalTanamId,
+      jadwalTanamId: validJadwalTanamId,
+      kesiapanPanenId: validKesiapanPanenId,
+      commodityId: validCommodityId,
+      varietyId: validVarietyId,
+      kesiapanLahanId: validKesiapanPanenId,
       komoditas: body.komoditas || 'Padi',
       varietas: body.varietas || 'Inpari 32',
       lahan: body.lahan || 'Lahan A1 - Blok 01',
@@ -144,6 +165,20 @@ export const updatePanen = async (req: Request, res: Response) => {
     const body = req.body;
     const updatePayload: any = {};
 
+    if (body.jadwalTanamId !== undefined) {
+      updatePayload.jadwalTanamId = await validateForeignKey('jadwalTanam', body.jadwalTanamId);
+    }
+    if (body.kesiapanPanenId !== undefined || body.kesiapanLahanId !== undefined) {
+      const kId = await validateForeignKey('kesiapanPanen', body.kesiapanPanenId || body.kesiapanLahanId);
+      updatePayload.kesiapanPanenId = kId;
+      updatePayload.kesiapanLahanId = kId;
+    }
+    if (body.commodityId !== undefined || body.komoditasId !== undefined) {
+      updatePayload.commodityId = await validateForeignKey('commodity', body.commodityId || body.komoditasId);
+    }
+    if (body.varietyId !== undefined || body.varietasId !== undefined) {
+      updatePayload.varietyId = await validateForeignKey('variety', body.varietyId || body.varietasId);
+    }
     if (body.komoditas) updatePayload.komoditas = body.komoditas;
     if (body.varietas) updatePayload.varietas = body.varietas;
     if (body.lahan) updatePayload.lahan = body.lahan;
@@ -211,6 +246,10 @@ const seedInitialPanens = async () => {
   const initialData = [
     {
       kodePanen: 'PN-2606-0001',
+      kesiapanPanenId: 'KSP-001',
+      kesiapanLahanId: 'KSL-001',
+      commodityId: 'CMD-001',
+      varietyId: 'VRT-001',
       komoditas: 'Padi',
       varietas: 'Inpari 32',
       lahan: 'Lahan A1 - Blok 01',

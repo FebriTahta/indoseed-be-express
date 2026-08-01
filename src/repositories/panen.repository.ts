@@ -1,8 +1,12 @@
-import prisma from '../config/database';
+import prisma from '../utils/prisma';
 
 export interface CreatePanenInput {
   kodePanen?: string;
   jadwalTanamId?: string;
+  kesiapanPanenId?: string;
+  commodityId?: string;
+  varietyId?: string;
+  kesiapanLahanId?: string;
   komoditas: string;
   varietas: string;
   lahan: string;
