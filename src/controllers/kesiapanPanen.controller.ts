@@ -26,12 +26,6 @@ export const getKesiapanPanens = async (req: Request, res: Response) => {
       take,
     };
 
-    // Auto seed if empty
-    const totalCount = await kesiapanPanenRepository.countAll();
-    if (totalCount === 0) {
-      await seedInitialKesiapanPanen();
-    }
-
     const { data, total } = await kesiapanPanenRepository.findAll(filters);
     const stats = await kesiapanPanenRepository.getStats();
 
@@ -83,31 +77,80 @@ export const getKesiapanPanenById = async (req: Request, res: Response) => {
   }
 };
 
+const calculateStatusKesiapan = (dateVal: any): string => {
+  if (!dateVal) return 'Belum Siap';
+  let d: Date | null = null;
+  if (typeof dateVal === 'string') {
+    if (dateVal.includes('/')) {
+      const parts = dateVal.split('/');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      }
+    } else if (dateVal.includes('-')) {
+      const parts = dateVal.split('T')[0].split('-');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+  } else if (dateVal instanceof Date) {
+    d = dateVal;
+  }
+
+  if (!d || isNaN(d.getTime())) return 'Belum Siap';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const diffMs = targetDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 2) {
+    return 'Siap Panen';
+  } else if (diffDays >= 3 && diffDays <= 7) {
+    return 'Akan Siap (3-7 Hari)';
+  } else if (diffDays >= 8 && diffDays <= 14) {
+    return 'Akan Siap (8-14 Hari)';
+  } else {
+    return 'Belum Siap';
+  }
+};
+
 export const createKesiapanPanen = async (req: Request, res: Response) => {
   try {
     const body = req.body;
     const totalCount = await kesiapanPanenRepository.countAll();
     const nextNo = totalCount + 1;
-    const kodeLahan = body.kodeLahan || `LA-2605-${String(nextNo).padStart(4, '0')}`;
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const defaultKode = `KP-${yy}${mm}-${String(nextNo).padStart(4, '0')}`;
+    const kodeLahan = body.kodeLahan || defaultKode;
+
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const prediksiPanenVal = body.prediksiPanen || todayStr;
+    const computedStatus = calculateStatusKesiapan(prediksiPanenVal);
 
     const newRecord = await kesiapanPanenRepository.create({
       no: nextNo,
       kodeLahan,
-      lokasi: body.lokasi || 'Blok A - Petak 1',
-      komoditas: body.komoditas || 'Padi',
-      varietas: body.varietas || 'Inpari 32',
+      lokasi: body.lokasi || '',
+      komoditas: body.komoditas || '',
+      varietas: body.varietas || '',
       greenhouseId: body.greenhouseId || undefined,
       commodityId: body.commodityId || undefined,
       varietyId: body.varietyId || undefined,
       jadwalTanamId: body.jadwalTanamId || undefined,
-      tanggalTanam: body.tanggalTanam || '01/03/2026',
-      umurHst: Number(body.umurHst) || 105,
-      prediksiPanen: body.prediksiPanen || '15/06/2026',
-      statusKesiapan: body.statusKesiapan || 'Siap Panen',
-      yieldEst: parseFloat(String(body.yieldEst || '6500')) || 6500,
-      kadarAir: body.kadarAir ? parseFloat(body.kadarAir) : 14.0,
-      kuningDaun: body.kuningDaun ? parseFloat(body.kuningDaun) : 85,
-      kekerasanBiji: body.kekerasanBiji || 'Keras',
+      tanggalTanam: body.tanggalTanam || todayStr,
+      umurHst: Number(body.umurHst) || 0,
+      prediksiPanen: prediksiPanenVal,
+      statusKesiapan: body.statusKesiapan || computedStatus,
+      yieldEst: parseFloat(String(body.yieldEst || '0')) || 0,
+      kadarAir: body.kadarAir ? parseFloat(body.kadarAir) : 0,
+      kuningDaun: body.kuningDaun ? parseFloat(body.kuningDaun) : 0,
+      kekerasanBiji: body.kekerasanBiji || '',
       catatan: body.catatan || '',
     });
 
@@ -152,8 +195,12 @@ export const updateKesiapanPanen = async (req: Request, res: Response) => {
     if (body.jadwalTanamId) updatePayload.jadwalTanamId = body.jadwalTanamId;
     if (body.tanggalTanam !== undefined) updatePayload.tanggalTanam = body.tanggalTanam;
     if (body.umurHst !== undefined) updatePayload.umurHst = Number(body.umurHst);
-    if (body.prediksiPanen !== undefined) updatePayload.prediksiPanen = body.prediksiPanen;
-    if (body.statusKesiapan) updatePayload.statusKesiapan = body.statusKesiapan;
+    if (body.prediksiPanen !== undefined) {
+      updatePayload.prediksiPanen = body.prediksiPanen;
+      updatePayload.statusKesiapan = calculateStatusKesiapan(body.prediksiPanen);
+    } else if (body.statusKesiapan) {
+      updatePayload.statusKesiapan = body.statusKesiapan;
+    }
     if (body.yieldEst !== undefined) updatePayload.yieldEst = parseFloat(String(body.yieldEst)) || 0;
     if (body.kadarAir !== undefined) updatePayload.kadarAir = parseFloat(body.kadarAir);
     if (body.kuningDaun !== undefined) updatePayload.kuningDaun = parseFloat(body.kuningDaun);
@@ -208,14 +255,14 @@ export const deleteKesiapanPanen = async (req: Request, res: Response) => {
 
 const seedInitialKesiapanPanen = async () => {
   const initialData = [
-    { no: 1, kodeLahan: 'LA-2605-0001', lokasi: 'Blok A - Petak 1', komoditas: 'Padi', varietas: 'Inpari 32', tanggalTanam: '01/03/2026', umurHst: 105, prediksiPanen: '15/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6800 },
-    { no: 2, kodeLahan: 'LA-2605-0002', lokasi: 'Blok A - Petak 2', komoditas: 'Jagung', varietas: 'Pioneer 21', tanggalTanam: '10/03/2026', umurHst: 96, prediksiPanen: '18/06/2026', statusKesiapan: 'Akan Siap (3-7 Hari)', yieldEst: 7200 },
-    { no: 3, kodeLahan: 'LA-2605-0003', lokasi: 'Blok B - Petak 1', komoditas: 'Kedelai', varietas: 'Anjasmoro', tanggalTanam: '15/03/2026', umurHst: 91, prediksiPanen: '22/06/2026', statusKesiapan: 'Akan Siap (8-14 Hari)', yieldEst: 3100 },
-    { no: 4, kodeLahan: 'LA-2605-0004', lokasi: 'Blok B - Petak 2', komoditas: 'Padi', varietas: 'Inpari 42', tanggalTanam: '05/03/2026', umurHst: 101, prediksiPanen: '16/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6500 },
-    { no: 5, kodeLahan: 'LA-2605-0005', lokasi: 'Blok C - Petak 1', komoditas: 'Jagung', varietas: 'Bisi 18', tanggalTanam: '20/03/2026', umurHst: 86, prediksiPanen: '28/06/2026', statusKesiapan: 'Belum Siap', yieldEst: 6900 },
-    { no: 6, kodeLahan: 'LA-2605-0006', lokasi: 'Blok C - Petak 2', komoditas: 'Padi', varietas: 'Ciherang', tanggalTanam: '02/03/2026', umurHst: 104, prediksiPanen: '14/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6700 },
-    { no: 7, kodeLahan: 'LA-2605-0007', lokasi: 'Blok D - Petak 1', komoditas: 'Kedelai', varietas: 'Dega 1', tanggalTanam: '12/03/2026', umurHst: 94, prediksiPanen: '19/06/2026', statusKesiapan: 'Akan Siap (3-7 Hari)', yieldEst: 3300 },
-    { no: 8, kodeLahan: 'LA-2605-0008', lokasi: 'Blok D - Petak 2', komoditas: 'Padi', varietas: 'Mekongga', tanggalTanam: '08/03/2026', umurHst: 98, prediksiPanen: '21/06/2026', statusKesiapan: 'Akan Siap (8-14 Hari)', yieldEst: 6400 },
+    { no: 1, kodeLahan: 'KP-2605-0001', lokasi: 'Blok A - Petak 1', komoditas: 'Padi', varietas: 'Inpari 32', tanggalTanam: '01/03/2026', umurHst: 105, prediksiPanen: '15/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6800 },
+    { no: 2, kodeLahan: 'KP-2605-0002', lokasi: 'Blok A - Petak 2', komoditas: 'Jagung', varietas: 'Pioneer 21', tanggalTanam: '10/03/2026', umurHst: 96, prediksiPanen: '18/06/2026', statusKesiapan: 'Akan Siap (3-7 Hari)', yieldEst: 7200 },
+    { no: 3, kodeLahan: 'KP-2605-0003', lokasi: 'Blok B - Petak 1', komoditas: 'Kedelai', varietas: 'Anjasmoro', tanggalTanam: '15/03/2026', umurHst: 91, prediksiPanen: '22/06/2026', statusKesiapan: 'Akan Siap (8-14 Hari)', yieldEst: 3100 },
+    { no: 4, kodeLahan: 'KP-2605-0004', lokasi: 'Blok B - Petak 2', komoditas: 'Padi', varietas: 'Inpari 42', tanggalTanam: '05/03/2026', umurHst: 101, prediksiPanen: '16/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6500 },
+    { no: 5, kodeLahan: 'KP-2605-0005', lokasi: 'Blok C - Petak 1', komoditas: 'Jagung', varietas: 'Bisi 18', tanggalTanam: '20/03/2026', umurHst: 86, prediksiPanen: '28/06/2026', statusKesiapan: 'Belum Siap', yieldEst: 6900 },
+    { no: 6, kodeLahan: 'KP-2605-0006', lokasi: 'Blok C - Petak 2', komoditas: 'Padi', varietas: 'Ciherang', tanggalTanam: '02/03/2026', umurHst: 104, prediksiPanen: '14/06/2026', statusKesiapan: 'Siap Panen', yieldEst: 6700 },
+    { no: 7, kodeLahan: 'KP-2605-0007', lokasi: 'Blok D - Petak 1', komoditas: 'Kedelai', varietas: 'Dega 1', tanggalTanam: '12/03/2026', umurHst: 94, prediksiPanen: '19/06/2026', statusKesiapan: 'Akan Siap (3-7 Hari)', yieldEst: 3300 },
+    { no: 8, kodeLahan: 'KP-2605-0008', lokasi: 'Blok D - Petak 2', komoditas: 'Padi', varietas: 'Mekongga', tanggalTanam: '08/03/2026', umurHst: 98, prediksiPanen: '21/06/2026', statusKesiapan: 'Akan Siap (8-14 Hari)', yieldEst: 6400 },
   ];
 
   for (const item of initialData) {
