@@ -415,3 +415,15 @@ model Supplier {
 
   @@map("suppliers")
 }
+
+model Setting {
+  id           String   @id @default(uuid())
+  namaWebsite  String
+  titleWebsite String
+  logoWebsite  String?  @db.Text
+  logoColor    String?  @default("#11b238")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("settings")
+}
