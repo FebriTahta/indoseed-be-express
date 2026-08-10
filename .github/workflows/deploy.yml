@@ -20,25 +20,27 @@ jobs:
           script: |
             set -e
 
-            echo "Masuk ke folder project..."
+            echo "=== Masuk ke folder project ==="
             cd /var/www/indoseed-be-express
 
-            echo "Pull source terbaru..."
-            git pull origin main
+            echo "=== Reset source ke origin/main ==="
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
 
-            echo "Install dependency..."
+            echo "=== Install dependency ==="
             npm ci
 
-            echo "Generate Prisma..."
+            echo "=== Generate Prisma ==="
             npx prisma generate
 
-            echo "Menjalankan migration..."
-            npx prisma migrate deploy
+            echo "=== Reset database DEV ==="
+            npx prisma migrate reset --force
 
-            echo "Build Typescript..."
+            echo "=== Build Typescript ==="
             npm run build
 
-            echo "Reload PM2..."
+            echo "=== Reload PM2 ==="
             pm2 reload indoseed-api
 
-            echo "Deploy selesai"
+            echo "=== Deploy selesai ==="
