@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes';
 import masterRoutes from './routes/master.routes';
 import qcRoutes from './routes/qc.routes';
 import uploadRoutes from './routes/upload.routes';
+import settingRoutes from './routes/setting.routes';
 import produksiRoutes from './routes/produksi.routes';
 import gudangRoutes from './routes/gudang.routes';
 
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/master', masterRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingRoutes);
 app.use('/api/produksi', produksiRoutes);
 app.use('/api/gudang', gudangRoutes);
 

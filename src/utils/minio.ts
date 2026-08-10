@@ -1,5 +1,6 @@
 import * as Minio from 'minio';
 import path from 'path';
+import sharp from 'sharp';
 
 const minioUrl = process.env.MINIO_PATH || 'http://localhost:9000';
 let parsedUrl: URL;
@@ -64,7 +65,25 @@ export const uploadFile = async (
   const extension = path.extname(originalFilename);
   const uniqueFilename = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extension}`;
 
-  await minioClient.putObject(bucketName, uniqueFilename, fileBuffer, fileBuffer.length, {
+  let processedBuffer = fileBuffer;
+
+  // Compress image if it is an image type
+  if (mimeType.startsWith('image/')) {
+    try {
+      if (mimeType === 'image/png') {
+        processedBuffer = await sharp(fileBuffer).png({ quality: 80, compressionLevel: 8 }).toBuffer();
+      } else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+        processedBuffer = await sharp(fileBuffer).jpeg({ quality: 80 }).toBuffer();
+      } else if (mimeType === 'image/webp') {
+        processedBuffer = await sharp(fileBuffer).webp({ quality: 80 }).toBuffer();
+      }
+    } catch (e) {
+      console.error('Image compression failed, using original file:', e);
+      processedBuffer = fileBuffer;
+    }
+  }
+
+  await minioClient.putObject(bucketName, uniqueFilename, processedBuffer, processedBuffer.length, {
     'Content-Type': mimeType,
   });
 
