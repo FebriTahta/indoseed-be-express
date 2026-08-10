@@ -7,6 +7,9 @@ import masterRoutes from './routes/master.routes';
 import qcRoutes from './routes/qc.routes';
 import uploadRoutes from './routes/upload.routes';
 import settingRoutes from './routes/setting.routes';
+import produksiRoutes from './routes/produksi.routes';
+import gudangRoutes from './routes/gudang.routes';
+
 const app = express();
 
 app.use(express.json());
@@ -21,6 +24,9 @@ app.use('/api/master', masterRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/produksi', produksiRoutes);
+app.use('/api/gudang', gudangRoutes);
+
 app.use('/uploads', express.static('uploads'));
 
 // Health check
