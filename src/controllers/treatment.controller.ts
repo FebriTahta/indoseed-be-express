@@ -34,7 +34,7 @@ export const getTreatments = async (req: Request, res: Response) => {
       await seedInitialTreatment();
     }
 
-    const { data, total } = await treatmentRepository.findAll(filters);
+    const { data, total } = await treatmentRepository.findAll(filters as any);
     const stats = await treatmentRepository.getStats();
 
     return res.status(200).json({
@@ -59,7 +59,7 @@ export const getTreatments = async (req: Request, res: Response) => {
 
 export const getTreatmentById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let item = await treatmentRepository.findById(id);
     if (!item) {
       item = await treatmentRepository.findByKode(id);
@@ -129,7 +129,7 @@ export const createTreatment = async (req: Request, res: Response) => {
 
 export const updateTreatment = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await treatmentRepository.findById(id);
     if (!existing) {
       existing = await treatmentRepository.findByKode(id);
@@ -182,7 +182,7 @@ export const updateTreatment = async (req: Request, res: Response) => {
 
 export const deleteTreatment = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await treatmentRepository.findById(id);
     if (!existing) {
       existing = await treatmentRepository.findByKode(id);

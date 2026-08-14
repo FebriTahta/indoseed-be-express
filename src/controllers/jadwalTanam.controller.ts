@@ -10,9 +10,9 @@ const parseDate = (val: any): Date | null => {
     if (val.includes('/')) {
       const parts = val.split('/');
       if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
+        const day = parseInt(parts[0]!, 10);
+        const month = parseInt(parts[1]!, 10) - 1;
+        const year = parseInt(parts[2]!, 10);
         return new Date(year, month, day);
       }
     }
@@ -270,7 +270,7 @@ export const getJadwalTanams = async (req: Request, res: Response) => {
 
 export const getJadwalTanamById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let item = await jadwalTanamRepository.findById(id);
     if (!item) {
       item = await jadwalTanamRepository.findByKode(id);
@@ -297,7 +297,7 @@ export const getJadwalTanamById = async (req: Request, res: Response) => {
 
 export const updateJadwalTanam = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await jadwalTanamRepository.findById(id);
     if (!existing) {
       existing = await jadwalTanamRepository.findByKode(id);
@@ -419,7 +419,7 @@ export const updateJadwalTanam = async (req: AuthRequest, res: Response) => {
 
 export const deleteJadwalTanam = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await jadwalTanamRepository.findById(id);
     if (!existing) {
       existing = await jadwalTanamRepository.findByKode(id);

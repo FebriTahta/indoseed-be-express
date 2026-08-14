@@ -59,7 +59,7 @@ export const getMonitoringLahans = async (req: Request, res: Response) => {
 
 export const getMonitoringLahanById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let item = await monitoringLahanRepository.findById(id);
     if (!item) {
       item = await monitoringLahanRepository.findByKode(id);
@@ -127,7 +127,7 @@ export const createMonitoringLahan = async (req: Request, res: Response) => {
 
 export const updateMonitoringLahan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await monitoringLahanRepository.findById(id);
     if (!existing) {
       existing = await monitoringLahanRepository.findByKode(id);
@@ -177,7 +177,7 @@ export const updateMonitoringLahan = async (req: Request, res: Response) => {
 
 export const deleteMonitoringLahan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await monitoringLahanRepository.findById(id);
     if (!existing) {
       existing = await monitoringLahanRepository.findByKode(id);

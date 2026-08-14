@@ -71,7 +71,7 @@ export const getPanens = async (req: Request, res: Response) => {
 
 export const getPanenById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id ? String(req.params.id) : '';
     let item = await panenRepository.findById(id);
     if (!item) {
       item = await panenRepository.findByKode(id);
@@ -149,7 +149,7 @@ export const createPanen = async (req: Request, res: Response) => {
 
 export const updatePanen = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await panenRepository.findById(id);
     if (!existing) {
       existing = await panenRepository.findByKode(id);
@@ -213,7 +213,7 @@ export const updatePanen = async (req: Request, res: Response) => {
 
 export const deletePanen = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await panenRepository.findById(id);
     if (!existing) {
       existing = await panenRepository.findByKode(id);
