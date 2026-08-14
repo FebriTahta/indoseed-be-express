@@ -1,22 +1,22 @@
 import prisma from '../utils/prisma';
 
 export interface CreateMonitoringLahanInput {
-  kodeLahan?: string;
+  kodeLahan?: string | undefined;
   lokasi: string;
   komoditas: string;
   varietas: string;
   luas: number;
-  tanggalTanam?: string;
-  umurHst?: string;
-  kondisi?: string;
-  status?: string;
-  latitude?: number;
-  longitude?: number;
-  phTanah?: number;
-  kelembapan?: number;
-  suhuTanah?: number;
-  nutrisiNpk?: string;
-  catatan?: string;
+  tanggalTanam?: string | undefined;
+  umurHst?: string | undefined;
+  kondisi?: string | undefined;
+  status?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  phTanah?: number | undefined;
+  kelembapan?: number | undefined;
+  suhuTanah?: number | undefined;
+  nutrisiNpk?: string | undefined;
+  catatan?: string | undefined;
 }
 
 const getModel = () => (prisma as any).monitoringLahan;

@@ -34,7 +34,7 @@ export const getPengeringans = async (req: Request, res: Response) => {
       await seedInitialPengeringan();
     }
 
-    const { data, total } = await pengeringanRepository.findAll(filters);
+    const { data, total } = await pengeringanRepository.findAll(filters as any);
     const stats = await pengeringanRepository.getStats();
 
     return res.status(200).json({
@@ -59,7 +59,7 @@ export const getPengeringans = async (req: Request, res: Response) => {
 
 export const getPengeringanById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let item = await pengeringanRepository.findById(id);
     if (!item) {
       item = await pengeringanRepository.findByKode(id);
@@ -127,7 +127,7 @@ export const createPengeringan = async (req: Request, res: Response) => {
 
 export const updatePengeringan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await pengeringanRepository.findById(id);
     if (!existing) {
       existing = await pengeringanRepository.findByKode(id);
@@ -176,7 +176,7 @@ export const updatePengeringan = async (req: Request, res: Response) => {
 
 export const deletePengeringan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await pengeringanRepository.findById(id);
     if (!existing) {
       existing = await pengeringanRepository.findByKode(id);

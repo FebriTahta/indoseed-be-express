@@ -34,7 +34,7 @@ export const getStokBenihs = async (req: Request, res: Response) => {
       await stokBenihRepository.deleteAll();
     }
 
-    const { data, total } = await stokBenihRepository.findAll(filters);
+    const { data, total } = await stokBenihRepository.findAll(filters as any);
     const stats = await stokBenihRepository.getStats();
 
     return res.status(200).json({
@@ -59,7 +59,7 @@ export const getStokBenihs = async (req: Request, res: Response) => {
 
 export const getStokBenihById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let item = await stokBenihRepository.findById(id);
     if (!item) {
       item = await stokBenihRepository.findByBatchLot(id);
@@ -129,7 +129,7 @@ export const createStokBenih = async (req: Request, res: Response) => {
 
 export const updateStokBenih = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await stokBenihRepository.findById(id);
     if (!existing) {
       existing = await stokBenihRepository.findByBatchLot(id);
@@ -180,7 +180,7 @@ export const updateStokBenih = async (req: Request, res: Response) => {
 
 export const deleteStokBenih = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await stokBenihRepository.findById(id);
     if (!existing) {
       existing = await stokBenihRepository.findByBatchLot(id);

@@ -34,7 +34,7 @@ export const getSortasis = async (req: Request, res: Response) => {
       await seedInitialSortasi();
     }
 
-    const { data, total } = await sortasiRepository.findAll(filters);
+    const { data, total } = await sortasiRepository.findAll(filters as any);
     const stats = await sortasiRepository.getStats();
 
     return res.status(200).json({
@@ -59,7 +59,7 @@ export const getSortasis = async (req: Request, res: Response) => {
 
 export const getSortasiById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let item = await sortasiRepository.findById(id);
     if (!item) {
       item = await sortasiRepository.findByKode(id);
@@ -130,7 +130,7 @@ export const createSortasi = async (req: Request, res: Response) => {
 
 export const updateSortasi = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await sortasiRepository.findById(id);
     if (!existing) {
       existing = await sortasiRepository.findByKode(id);
@@ -183,7 +183,7 @@ export const updateSortasi = async (req: Request, res: Response) => {
 
 export const deleteSortasi = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     let existing = await sortasiRepository.findById(id);
     if (!existing) {
       existing = await sortasiRepository.findByKode(id);

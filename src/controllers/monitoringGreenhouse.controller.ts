@@ -59,7 +59,7 @@ export const getMonitoringGreenhouses = async (req: Request, res: Response) => {
 
 export const getMonitoringGreenhouseById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let item = await monitoringGreenhouseRepository.findById(id);
     if (!item) {
       item = await monitoringGreenhouseRepository.findByKode(id);
@@ -125,7 +125,7 @@ export const createMonitoringGreenhouse = async (req: Request, res: Response) =>
 
 export const updateMonitoringGreenhouse = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await monitoringGreenhouseRepository.findById(id);
     if (!existing) {
       existing = await monitoringGreenhouseRepository.findByKode(id);
@@ -172,7 +172,7 @@ export const updateMonitoringGreenhouse = async (req: Request, res: Response) =>
 
 export const deleteMonitoringGreenhouse = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await monitoringGreenhouseRepository.findById(id);
     if (!existing) {
       existing = await monitoringGreenhouseRepository.findByKode(id);
