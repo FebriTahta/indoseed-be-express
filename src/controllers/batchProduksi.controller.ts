@@ -59,7 +59,7 @@ export const getBatchProduksis = async (req: Request, res: Response) => {
 
 export const getBatchProduksiById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let item = await batchProduksiRepository.findById(id);
     if (!item) {
       item = await batchProduksiRepository.findByKode(id);
@@ -128,7 +128,7 @@ export const createBatchProduksi = async (req: Request, res: Response) => {
 
 export const updateBatchProduksi = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await batchProduksiRepository.findById(id);
     if (!existing) {
       existing = await batchProduksiRepository.findByKode(id);
@@ -180,7 +180,7 @@ export const updateBatchProduksi = async (req: Request, res: Response) => {
 
 export const deleteBatchProduksi = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await batchProduksiRepository.findById(id);
     if (!existing) {
       existing = await batchProduksiRepository.findByKode(id);

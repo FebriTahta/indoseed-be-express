@@ -51,7 +51,7 @@ export const getKesiapanPanens = async (req: Request, res: Response) => {
 
 export const getKesiapanPanenById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let item = await kesiapanPanenRepository.findById(id);
     if (!item) {
       item = await kesiapanPanenRepository.findByKode(id);
@@ -84,12 +84,13 @@ const calculateStatusKesiapan = (dateVal: any): string => {
     if (dateVal.includes('/')) {
       const parts = dateVal.split('/');
       if (parts.length === 3) {
-        d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        d = new Date(parseInt(parts[2]!, 10), parseInt(parts[1]!, 10) - 1, parseInt(parts[0]!, 10));
       }
     } else if (dateVal.includes('-')) {
-      const parts = dateVal.split('T')[0].split('-');
+      const datePart = dateVal.split('T')[0] || '';
+      const parts = datePart.split('-');
       if (parts.length === 3) {
-        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        d = new Date(parseInt(parts[0]!, 10), parseInt(parts[1]!, 10) - 1, parseInt(parts[2]!, 10));
       }
     } else {
       d = new Date(dateVal);
@@ -170,7 +171,7 @@ export const createKesiapanPanen = async (req: Request, res: Response) => {
 
 export const updateKesiapanPanen = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await kesiapanPanenRepository.findById(id);
     if (!existing) {
       existing = await kesiapanPanenRepository.findByKode(id);
@@ -225,7 +226,7 @@ export const updateKesiapanPanen = async (req: Request, res: Response) => {
 
 export const deleteKesiapanPanen = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id || '');
     let existing = await kesiapanPanenRepository.findById(id);
     if (!existing) {
       existing = await kesiapanPanenRepository.findByKode(id);

@@ -1,27 +1,27 @@
 import prisma from '../utils/prisma';
 
 export interface CreatePanenInput {
-  kodePanen?: string;
-  jadwalTanamId?: string;
-  kesiapanPanenId?: string;
-  commodityId?: string;
-  varietyId?: string;
-  kesiapanLahanId?: string;
+  kodePanen?: string | undefined;
+  jadwalTanamId?: string | undefined;
+  kesiapanPanenId?: string | undefined;
+  commodityId?: string | undefined;
+  varietyId?: string | undefined;
+  kesiapanLahanId?: string | undefined;
   komoditas: string;
   varietas: string;
   lahan: string;
   tanggalPanen: Date;
   luasHa: number;
   produksiKg: number;
-  hasilKgHa?: number;
-  status?: string;
-  penanggungJawab?: string;
-  metodePanen?: string;
-  produksiKotorKg?: number;
-  kadarAir?: number;
-  kebersihan?: number;
-  catatan?: string;
-  dokumen?: string;
+  hasilKgHa?: number | undefined;
+  status?: string | undefined;
+  penanggungJawab?: string | undefined;
+  metodePanen?: string | undefined;
+  produksiKotorKg?: number | undefined;
+  kadarAir?: number | undefined;
+  kebersihan?: number | undefined;
+  catatan?: string | undefined;
+  dokumen?: string | undefined;
 }
 
 const getModel = () => (prisma as any).panen;

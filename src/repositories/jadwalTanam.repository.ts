@@ -24,9 +24,9 @@ export interface CreateJadwalTanamInput {
   penanggungJawab?: string;
   deskripsi?: string;
 
-  greenhouseId?: string;
-  commodityId?: string;
-  varietyId?: string;
+  greenhouseId?: string | null | undefined;
+  commodityId?: string | null | undefined;
+  varietyId?: string | null | undefined;
   luasTanam?: number;
   asalBenih?: string;
   jumlahBenihDiperlukan?: number;
@@ -41,7 +41,7 @@ export interface CreateJadwalTanamInput {
   perkiraanPanen?: Date | null;
   siklusTanamHari?: number;
   metodeTanam?: string;
-  kepadatanTanam?: string;
+  kepadatanTanam?: string | null | undefined;
   irigasi?: string;
   sumberAir?: string;
   catatan?: string;
