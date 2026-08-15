@@ -34,8 +34,9 @@ jobs:
             echo "=== Generate Prisma ==="
             npx prisma generate
 
-            echo "=== Reset database DEV ==="
-            npx prisma migrate reset --force
+            echo "=== Update database DEV ==="
+            npx prisma db push --accept-data-loss
+            npx prisma db seed
 
             echo "=== Build Typescript ==="
             npm run build
