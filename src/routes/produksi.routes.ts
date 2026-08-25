@@ -62,8 +62,12 @@ import {
   updateTreatment,
   deleteTreatment,
 } from '../controllers/treatment.controller';
+import { getDashboardProduksiData } from '../controllers/dashboardProduksi.controller';
 
 const router = Router();
+
+// Dashboard Produksi (/api/produksi/dashboard)
+router.get('/dashboard', getDashboardProduksiData);
 
 // Jadwal Tanam Sub-routes (/api/produksi/jadwal-tanam)
 router.post('/jadwal-tanam', createJadwalTanam);
