@@ -57,7 +57,8 @@ export const PengujiRepository = {
       metodeUji, sertifikasi, 
       email, tanggalBergabung, keterangan, 
       noSertifikat, tanggalSertifikat, berlakuHingga, 
-      foto, sertifikatFile, 
+      foto, sertifikatFile, existingSertifikatUrl, 
+      laboratoriumId,
       ...rest 
     } = data;
     
@@ -88,18 +89,21 @@ export const PengujiRepository = {
 
     // Build sertifikasi array if noSertifikat or namaSertifikasi is provided
     let sertifikasiData = sertifikasi || [];
-    if (noSertifikat || berlakuHingga) {
+    if (noSertifikat || berlakuHingga || sertifikatFile) {
       sertifikasiData.push({
         namaSertifikasi: noSertifikat || 'Sertifikasi Penguji',
         berlakuHingga: berlakuHingga ? new Date(berlakuHingga) : null,
+        lampiranUrl: sertifikatFile || null
       });
     }
 
     return prisma.penguji.create({
       data: {
         ...rest,
-        userId,
+        user: userId ? { connect: { id: userId } } : undefined,
         foto: foto || null,
+        keterangan: keterangan || null,
+        laboratorium: laboratoriumId ? { connect: { id: laboratoriumId } } : undefined,
         metodeUji: metodeUji && metodeUji.length > 0 ? {
           create: metodeUji.map((id: string) => ({
             testMethod: { connect: { id } }
@@ -123,11 +127,12 @@ export const PengujiRepository = {
       metodeUji, sertifikasi, 
       email, tanggalBergabung, keterangan, 
       noSertifikat, tanggalSertifikat, berlakuHingga, 
-      foto, sertifikatFile, 
+      foto, sertifikatFile, existingSertifikatUrl,
+      laboratoriumId,
       ...rest 
     } = data;
 
-    const currentPenguji = await prisma.penguji.findUnique({ where: { id }, include: { user: true } });
+    const currentPenguji = await prisma.penguji.findUnique({ where: { id }, include: { user: true, sertifikasi: true } });
     let userId = currentPenguji?.userId;
 
     if (email) {
@@ -160,10 +165,11 @@ export const PengujiRepository = {
 
     // Build sertifikasi array
     let sertifikasiData = sertifikasi || [];
-    if (noSertifikat || berlakuHingga) {
+    if (noSertifikat || berlakuHingga || sertifikatFile) {
       sertifikasiData.push({
         namaSertifikasi: noSertifikat || 'Sertifikasi Penguji',
         berlakuHingga: berlakuHingga ? new Date(berlakuHingga) : null,
+        lampiranUrl: sertifikatFile || (currentPenguji?.sertifikasi?.[0]?.lampiranUrl) || null
       });
     }
 
@@ -175,8 +181,10 @@ export const PengujiRepository = {
       where: { id },
       data: {
         ...rest,
-        userId,
+        user: userId ? { connect: { id: userId } } : undefined,
         foto: foto || currentPenguji?.foto,
+        keterangan: keterangan !== undefined ? keterangan : currentPenguji?.keterangan,
+        laboratorium: laboratoriumId ? { connect: { id: laboratoriumId } } : (laboratoriumId === '' ? { disconnect: true } : undefined),
         metodeUji: metodeUji && metodeUji.length > 0 ? {
           create: metodeUji.map((methodId: string) => ({
             testMethod: { connect: { id: methodId } }

@@ -1,0 +1,62 @@
+PrismaClientValidationError: 
+Invalid `prisma.penguji.update()` invocation in
+/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/src/repositories/penguji.repository.ts:180:27
+
+  177   await prisma.sertifikasi.deleteMany({ where: { pengujiId: id } });
+  178 }
+  179 
+→ 180 return prisma.penguji.update({
+        where: {
+          id: "28adbe1d-2c53-4a1f-bf27-ecd9474dfef8"
+        },
+        data: {
+          kodePenguji: "PENG-001",
+          nama: "Penguji Utama",
+          noTelepon: "xxx",
+          status: "Aktif",
+          userId: "654f5563-5e87-450e-95ad-e4b177f0e4e4",
+          ~~~~~~
+          foto: "https://storage.myiamseed.com/dev/penguji/1787837071574-esfl05qcjqp.png",
+          keterangan: "",
+          laboratorium: {
+            connect: {
+              id: "95d646c7-b23e-4d5c-a10b-d8aa838a12da"
+            }
+          },
+          metodeUji: {
+            create: [
+              {
+                testMethod: {
+                  connect: {
+                    id: "33552f70-2cb5-4f23-bf4b-06d0c74b1260"
+                  }
+                }
+              }
+            ]
+          },
+          sertifikasi: undefined,
+      ?   id?: String | StringFieldUpdateOperationsInput,
+      ?   createdAt?: DateTime | DateTimeFieldUpdateOperationsInput,
+      ?   updatedAt?: DateTime | DateTimeFieldUpdateOperationsInput,
+      ?   user?: UserUpdateOneWithoutPengujiNestedInput
+        },
+        include: {
+          laboratorium: true,
+          sertifikasi: true,
+          user: true,
+          metodeUji: {
+            include: {
+              testMethod: true
+            }
+          }
+        }
+      })
+
+Unknown argument `userId`. Did you mean `user`? Available options are marked with ?.
+    at throwValidationException (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+    at Jr.handleRequestError (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+    at Jr.handleAndLogRequestError (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+    at Jr.request (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async a (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:24)
+    at async update (/Users/a55555/Documents/PROJECT/SELF/indoseed_agri_makmur/indoseed-be-express/src/controllers/penguji.controller.ts:69:23)
