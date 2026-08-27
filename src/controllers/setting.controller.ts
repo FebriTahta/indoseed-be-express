@@ -11,7 +11,9 @@ export const getSetting = async (req: Request, res: Response) => {
       data: setting || {
         namaWebsite: 'Indoseed',
         titleWebsite: 'Indoseed ERP',
+        deskripsi: '',
         logoWebsite: null,
+        logoKotak: null,
         logoColor: null
       },
     });
@@ -26,12 +28,14 @@ export const getSetting = async (req: Request, res: Response) => {
 
 export const updateSetting = async (req: Request, res: Response) => {
   try {
-    const { namaWebsite, titleWebsite, logoWebsite, logoColor } = req.body;
+    const { namaWebsite, titleWebsite, deskripsi, logoWebsite, logoKotak, logoColor } = req.body;
 
     const updated = await settingRepository.updateSetting({
       namaWebsite,
       titleWebsite,
+      deskripsi,
       logoWebsite,
+      logoKotak,
       logoColor,
     });
 
