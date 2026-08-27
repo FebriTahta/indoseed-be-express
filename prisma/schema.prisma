@@ -786,6 +786,7 @@ model Penguji {
   laboratoriumId String?
   noTelepon      String?
   foto           String?  @db.Text
+  keterangan     String?  @db.Text
   status         String   @default("Aktif")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -803,6 +804,7 @@ model Sertifikasi {
   pengujiId       String
   namaSertifikasi String
   berlakuHingga   DateTime?
+  lampiranUrl     String?   @db.Text
   status          String    @default("Aktif")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

@@ -69,6 +69,7 @@ export const PengujiController = {
       const penguji = await PengujiRepository.update(req.params.id as string, req.body);
       res.status(200).json({ success: true, data: penguji });
     } catch (error: any) {
+      require('fs').writeFileSync('debug_error.log', error.stack || error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   },

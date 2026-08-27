@@ -35,8 +35,8 @@ jobs:
             npx prisma generate
 
             echo "=== Update database DEV ==="
-            npx prisma migrate deploy
-            npx prisma db seed
+            npx prisma migrate reset --force
+            # npx prisma migrate reset --force sudah otomatis menjalankan prisma db seed jika di package.json sudah diset
 
             echo "=== Build Typescript ==="
             npm run build
