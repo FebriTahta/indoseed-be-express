@@ -3,13 +3,13 @@ import { prisma } from './utils/prisma';
 async function seedPenguji() {
   console.log("Seeding Laboratorium...");
   const lab1 = await prisma.laboratorium.create({
-    data: { kodeLaboratorium: 'LAB-01', nama: 'Lab. Benih Utama', lokasi: 'Gedung A' }
+    data: { kodeLaboratorium: 'LAB-01', namaLaboratorium: 'Lab. Benih Utama', alamat: 'Gedung A' }
   });
   const lab2 = await prisma.laboratorium.create({
-    data: { kodeLaboratorium: 'LAB-02', nama: 'Lab. Fisiologi Benih', lokasi: 'Gedung B' }
+    data: { kodeLaboratorium: 'LAB-02', namaLaboratorium: 'Lab. Fisiologi Benih', alamat: 'Gedung B' }
   });
   const lab3 = await prisma.laboratorium.create({
-    data: { kodeLaboratorium: 'LAB-03', nama: 'Lab. Patologi Benih', lokasi: 'Gedung C' }
+    data: { kodeLaboratorium: 'LAB-03', namaLaboratorium: 'Lab. Patologi Benih', alamat: 'Gedung C' }
   });
 
   console.log("Seeding Test Methods...");

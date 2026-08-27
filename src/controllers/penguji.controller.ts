@@ -45,7 +45,7 @@ export const PengujiController = {
 
   getById: async (req: Request, res: Response) => {
     try {
-      const penguji = await PengujiRepository.findById(req.params.id);
+      const penguji = await PengujiRepository.findById(req.params.id as string);
       if (!penguji) {
         return res.status(404).json({ success: false, message: 'Penguji not found' });
       }
@@ -66,7 +66,7 @@ export const PengujiController = {
 
   update: async (req: Request, res: Response) => {
     try {
-      const penguji = await PengujiRepository.update(req.params.id, req.body);
+      const penguji = await PengujiRepository.update(req.params.id as string, req.body);
       res.status(200).json({ success: true, data: penguji });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
@@ -75,7 +75,7 @@ export const PengujiController = {
 
   delete: async (req: Request, res: Response) => {
     try {
-      await PengujiRepository.delete(req.params.id);
+      await PengujiRepository.delete(req.params.id as string);
       res.status(200).json({ success: true, message: 'Penguji deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
