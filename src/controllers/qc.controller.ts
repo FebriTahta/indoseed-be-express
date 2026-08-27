@@ -96,6 +96,16 @@ export const deleteMethod = async (req: Request, res: Response) => {
   }
 };
 
+// -- Laboratorium --
+export const getLaboratoriums = async (req: Request, res: Response) => {
+  try {
+    const data = await qcRepository.findAllLaboratoriums();
+    res.json({ status: 'success', data });
+  } catch (error: any) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
 // -- Test Parameters --
 export const getParameters = async (req: Request, res: Response) => {
   try {
