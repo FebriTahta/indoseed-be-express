@@ -68,23 +68,24 @@ export const PengujiRepository = {
       rest.kodePenguji = `PGJ-${String(count + 1).padStart(4, '0')}`;
     }
 
+    if (!email) {
+      throw new Error('Email is required to create a user for Penguji.');
+    }
+
     let userId: string | undefined = undefined;
 
-    // Handle User creation if email is provided
-    if (email) {
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
-        userId = existingUser.id;
-      } else {
-        const newUser = await prisma.user.create({
-          data: {
-            username: email.split('@')[0] + Math.floor(Math.random() * 1000),
-            email,
-            password: 'password123', // Default password
-          }
-        });
-        userId = newUser.id;
-      }
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      const newUser = await prisma.user.create({
+        data: {
+          username: email.split('@')[0] + Math.floor(Math.random() * 1000),
+          email,
+          password: 'password123', // Default password
+        }
+      });
+      userId = newUser.id;
     }
 
     // Build sertifikasi array if noSertifikat or namaSertifikasi is provided
@@ -137,10 +138,12 @@ export const PengujiRepository = {
 
     if (email) {
       if (currentPenguji?.user) {
-        await prisma.user.update({
-          where: { id: currentPenguji.user.id },
-          data: { email }
-        });
+        if (currentPenguji.user.email !== email) {
+          await prisma.user.update({
+            where: { id: currentPenguji.user.id },
+            data: { email }
+          });
+        }
       } else {
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
