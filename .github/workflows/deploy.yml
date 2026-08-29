@@ -29,7 +29,7 @@ jobs:
             git clean -fd
 
             echo "=== Install dependency ==="
-            npm ci
+            npm ci --include=dev
 
             echo "=== Generate Prisma ==="
             npx prisma generate
