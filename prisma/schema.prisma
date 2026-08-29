@@ -295,7 +295,7 @@ model QcTest {
   varietyId    String?
   testMethodId String
   tanggalUji   DateTime?
-  petugasUji   String?
+  petugasUjiId String?
   lokasiLab    String?
   jumlahSampel Int?
 
@@ -308,7 +308,7 @@ model QcTest {
   detailUji Json? // Field dinamis spesifik per jenis uji
 
   catatan     String? @db.Text
-  lampiranUrl String? @db.Text
+  lampirans   QcLampiran[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -316,10 +316,22 @@ model QcTest {
   commodity  Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   variety    Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   testMethod TestMethod @relation(fields: [testMethodId], references: [id])
+  petugasUji Penguji?   @relation(fields: [petugasUjiId], references: [id], onDelete: SetNull)
 
   // Cegah duplikasi metode uji pada batch yang sama
   @@unique([kodeBatch, testMethodId])
   @@map("qc_tests")
+}
+
+model QcLampiran {
+  id        String   @id @default(uuid())
+  qcTestId  String
+  url       String   @db.Text
+  createdAt DateTime @default(now())
+
+  qcTest    QcTest   @relation(fields: [qcTestId], references: [id], onDelete: Cascade)
+  
+  @@map("qc_lampiran")
 }
 
 model Customer {
@@ -795,6 +807,7 @@ model Penguji {
   laboratorium Laboratorium?       @relation(fields: [laboratoriumId], references: [id], onDelete: SetNull)
   sertifikasi  Sertifikasi[]
   metodeUji    PengujiTestMethod[]
+  qcTests      QcTest[]
 
   @@map("penguji")
 }

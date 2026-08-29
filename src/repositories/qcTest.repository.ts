@@ -53,6 +53,8 @@ export const qcTestRepository = {
         commodity: true,
         variety: true,
         testMethod: true,
+        petugasUji: true,
+        lampirans: true
       }
     });
 
@@ -196,17 +198,34 @@ export const qcTestRepository = {
       include: {
         commodity: true,
         variety: true,
-        testMethod: true
+        testMethod: true,
+        petugasUji: true,
+        lampirans: true
       }
     });
   },
 
-  create: async (data: Prisma.QcTestUncheckedCreateInput) => {
-    return prisma.qcTest.create({ data });
+  create: async (data: any) => {
+    const { lampiranUrls, ...restData } = data;
+    const createData: Prisma.QcTestCreateInput = restData;
+    if (lampiranUrls && Array.isArray(lampiranUrls)) {
+      createData.lampirans = {
+        create: lampiranUrls.map((url: string) => ({ url }))
+      };
+    }
+    return prisma.qcTest.create({ data: createData });
   },
 
-  update: async (id: string, data: Prisma.QcTestUncheckedUpdateInput) => {
-    return prisma.qcTest.update({ where: { id }, data });
+  update: async (id: string, data: any) => {
+    const { lampiranUrls, ...restData } = data;
+    const updateData: Prisma.QcTestUpdateInput = restData;
+    if (lampiranUrls && Array.isArray(lampiranUrls)) {
+      updateData.lampirans = {
+        deleteMany: {},
+        create: lampiranUrls.map((url: string) => ({ url }))
+      };
+    }
+    return prisma.qcTest.update({ where: { id }, data: updateData });
   },
 
   delete: async (id: string) => {
