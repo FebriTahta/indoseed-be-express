@@ -89,4 +89,13 @@ router.get('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin
 router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.updateSupplier);
 router.delete('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.deleteSupplier);
 
+import * as labCont from '../controllers/laboratorium.controller';
+// Laboratorium routes
+router.post('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.createLaboratorium);
+router.get('/laboratorium/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumList);
+router.get('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriums);
+router.get('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumById);
+router.put('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.updateLaboratorium);
+router.delete('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.deleteLaboratorium);
+
 export default router;

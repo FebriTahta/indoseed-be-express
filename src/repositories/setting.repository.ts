@@ -9,7 +9,9 @@ export const settingRepository = {
   updateSetting: async (data: {
     namaWebsite?: string;
     titleWebsite?: string;
+    deskripsi?: string;
     logoWebsite?: string;
+    logoKotak?: string;
     logoColor?: string;
   }): Promise<Setting> => {
     const existing = await prisma.setting.findFirst();
@@ -24,7 +26,9 @@ export const settingRepository = {
         data: {
           namaWebsite: data.namaWebsite || 'Indoseed',
           titleWebsite: data.titleWebsite || 'Indoseed ERP',
+          deskripsi: data.deskripsi || null,
           logoWebsite: data.logoWebsite || null,
+          logoKotak: data.logoKotak || null,
           logoColor: data.logoColor || null,
         },
       });

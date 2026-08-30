@@ -2,8 +2,14 @@ import express from 'express';
 import * as QCController from '../controllers/qc.controller';
 import * as DocumentController from '../controllers/document.controller';
 import { uploadSingle } from '../middlewares/upload.middleware';
+import pengujiRoutes from './penguji.routes';
 
 const router = express.Router();
+
+router.use('/penguji', pengujiRoutes);
+
+// Laboratoriums
+router.get('/laboratoriums', QCController.getLaboratoriums);
 
 // Reference Standards
 router.get('/standards', QCController.getStandards);
@@ -26,7 +32,6 @@ router.post('/parameters', QCController.createParameter);
 router.put('/parameters/:id', QCController.updateParameter);
 router.delete('/parameters/:id', QCController.deleteParameter);
 
-import * as QcDayaTumbuhController from '../controllers/qcDayaTumbuh.controller';
 
 // Documents
 router.get('/documents', DocumentController.getDocuments);
@@ -35,20 +40,14 @@ router.post('/documents', uploadSingle('file'), DocumentController.createDocumen
 router.put('/documents/:id', uploadSingle('file'), DocumentController.updateDocument);
 router.delete('/documents/:id', DocumentController.deleteDocument);
 
-// Daya Tumbuh
-router.get('/daya-tumbuh', QcDayaTumbuhController.getDayaTumbuh);
-router.get('/daya-tumbuh/:id', QcDayaTumbuhController.getDayaTumbuhById);
-router.post('/daya-tumbuh', QcDayaTumbuhController.createDayaTumbuh);
-router.put('/daya-tumbuh/:id', QcDayaTumbuhController.updateDayaTumbuh);
-router.delete('/daya-tumbuh/:id', QcDayaTumbuhController.deleteDayaTumbuh);
+import * as QcTestController from '../controllers/qcTest.controller';
 
-import * as QcKadarAirController from '../controllers/qcKadarAir.controller';
-
-// Kadar Air
-router.get('/kadar-air', QcKadarAirController.getKadarAir);
-router.get('/kadar-air/:id', QcKadarAirController.getKadarAirById);
-router.post('/kadar-air', QcKadarAirController.createKadarAir);
-router.put('/kadar-air/:id', QcKadarAirController.updateKadarAir);
-router.delete('/kadar-air/:id', QcKadarAirController.deleteKadarAir);
+// Unified QC Tests
+router.get('/tests/summary', QcTestController.getQcTestSummary);
+router.get('/tests', QcTestController.getQcTests);
+router.get('/tests/:id', QcTestController.getQcTestById);
+router.post('/tests', QcTestController.createQcTest);
+router.put('/tests/:id', QcTestController.updateQcTest);
+router.delete('/tests/:id', QcTestController.deleteQcTest);
 
 export default router;

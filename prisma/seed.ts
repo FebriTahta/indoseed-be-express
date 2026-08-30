@@ -429,6 +429,7 @@ async function main() {
   }
 
   console.log({ superadminUser, superadminRole });
+  await seedPenguji(prisma);
   await seedQC(prisma);
   await seedModulProduksi(prisma);
   console.log(`Seeding finished.`);
@@ -483,18 +484,18 @@ async function seedQC(prisma: any) {
   }
 
   const parameters = [
-    { kode: 'P001', nama: 'Daya Tumbuh', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal pada periode waktu tertentu.', keterangan: 'Pengujian dilakukan dengan media kertas merang pada suhu 25°C ± 2°C selama 7 hari.', metodeId: createdMethods['ISTA 5.2.1'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '<= 12', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method', metodeId: createdMethods['ISTA 2.2'].id, standarId: createdStandards['SNI 01-2891-1992'].id, status: 'Aktif' },
-    { kode: 'P003', nama: 'Kemurnian', kategori: 'Fisik', batasAcuan: '>= 98', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan manual', metodeId: createdMethods['ISTA 2.10'].id, standarId: createdStandards['SNI 01-2891-1992'].id, status: 'Aktif' },
-    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test', metodeId: createdMethods['ISTA 7.3'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test', metodeId: createdMethods['ISTA 7.4'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '<= 2', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '-', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P008', nama: 'Benih Lain (Other Seed)', kategori: 'Fisik', batasAcuan: '<= 0,5', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['ISTA 2.7'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P009', nama: 'Kotoran (Inert Matter)', kategori: 'Fisik', batasAcuan: '<= 2', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: '-', metodeId: createdMethods['ISTA 2.9'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '<= 20', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'P012', nama: 'Uji Viabilitas', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Potensi hidup benih', keterangan: '-', metodeId: createdMethods['ISTA 5.2.2'].id, standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' }
+    { kode: 'P001', nama: 'Daya Tumbuh', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal pada periode waktu tertentu.', keterangan: 'Pengujian dilakukan dengan media kertas merang pada suhu 25°C ± 2°C selama 7 hari.', metodeId: createdMethods['ISTA 5.2.1'].id, status: 'Aktif' },
+    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '<= 12', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method', metodeId: createdMethods['ISTA 2.2'].id, status: 'Aktif' },
+    { kode: 'P003', nama: 'Kemurnian', kategori: 'Fisik', batasAcuan: '>= 98', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan manual', metodeId: createdMethods['ISTA 2.10'].id, status: 'Aktif' },
+    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test', metodeId: createdMethods['ISTA 7.3'].id, status: 'Aktif' },
+    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test', metodeId: createdMethods['ISTA 7.4'].id, status: 'Aktif' },
+    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '<= 2', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, status: 'Aktif' },
+    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '-', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, status: 'Aktif' },
+    { kode: 'P008', nama: 'Benih Lain (Other Seed)', kategori: 'Fisik', batasAcuan: '<= 0,5', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['ISTA 2.7'].id, status: 'Aktif' },
+    { kode: 'P009', nama: 'Kotoran (Inert Matter)', kategori: 'Fisik', batasAcuan: '<= 2', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: '-', metodeId: createdMethods['ISTA 2.9'].id, status: 'Aktif' },
+    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, status: 'Aktif' },
+    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '<= 20', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, status: 'Aktif' },
+    { kode: 'P012', nama: 'Uji Viabilitas', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Potensi hidup benih', keterangan: '-', metodeId: createdMethods['ISTA 5.2.2'].id, status: 'Aktif' }
   ];
 
   for (const p of parameters) {
@@ -513,8 +514,7 @@ async function seedQC(prisma: any) {
   }
 
   await seedQcCertificates(prisma);
-  await seedQcDayaTumbuh(prisma);
-  await seedQcKadarAir(prisma);
+  await seedQcTests(prisma);
 }
 
 async function seedQcCertificates(prisma: any) {
@@ -531,58 +531,143 @@ async function seedQcCertificates(prisma: any) {
   }
 }
 
-async function seedQcDayaTumbuh(prisma: any) {
-  console.log('Seeding QC Daya Tumbuh...');
-  
-  const parameters = JSON.stringify([
-    { parameter: 'Daya Tumbuh', satuan: '%', batasMinimal: 85, hasilUji: 96.50, status: 'Lulus' },
-    { parameter: 'Kadar Air', satuan: '%', batasMinimal: 12, hasilUji: 10.5, status: 'Lulus' },
-    { parameter: 'Kemurnian', satuan: '%', batasMinimal: 98, hasilUji: 99.2, status: 'Lulus' },
-    { parameter: 'Benih Mati', satuan: '%', batasMinimal: 2, hasilUji: 1.5, status: 'Lulus' },
-    { parameter: 'Benih Lain (Other Seed)', satuan: '%', batasMinimal: 0.5, hasilUji: 0.1, status: 'Lulus' }
-  ]);
+
+
+
+
+async function seedQcTests(prisma: any) {
+  console.log('Seeding QC Tests...');
+
+  const dewi = await prisma.penguji.findFirst({ where: { nama: 'Dewi Lestari' } });
+  const budi = await prisma.penguji.findFirst({ where: { nama: 'Budi Santoso' } });
+  const ratna = await prisma.penguji.findFirst({ where: { nama: 'Ratna Sari' } });
+
+  const dewiId = dewi?.id || null;
+  const budiId = budi?.id || null;
+  const ratnaId = ratna?.id || null;
 
   const tests = [
-    { kodeBatch: 'QC-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', tanggalUji: new Date('2026-06-11'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 96.50, batasMinimal: 85, status: 'Lulus', sertifikat: 'CT-2606-0001', jumlahBenihDitanam: 400, jumlahBerkecambah: 386, jumlahTidakBerkecambah: 14, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang', kelembabanMedia: '70 - 80 %', parameterUji: parameters },
-    { kodeBatch: 'QC-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', tanggalUji: new Date('2026-06-10'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 93.20, batasMinimal: 80, status: 'Lulus', sertifikat: 'CT-2606-0002' },
-    { kodeBatch: 'QC-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', tanggalUji: new Date('2026-06-10'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 88.70, batasMinimal: 80, status: 'Lulus', sertifikat: 'CT-2606-0003' },
-    { kodeBatch: 'QC-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', tanggalUji: new Date('2026-06-09'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 79.50, batasMinimal: 85, status: 'Tidak Lulus', sertifikat: '-' },
-    { kodeBatch: 'QC-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', tanggalUji: new Date('2026-06-09'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 91.10, batasMinimal: 80, status: 'Lulus', sertifikat: 'CT-2606-0005' },
-    { kodeBatch: 'QC-2606-0006', komoditas: 'Padi', varietas: 'Ciherang', tanggalUji: new Date('2026-06-08'), petugasUji: 'Dewi Lestari', metodeUji: 'Top of Paper', jumlahSampel: 400, dayaTumbuh: 90.30, batasMinimal: 85, status: 'Lulus', sertifikat: 'CT-2606-0006' },
-    { kodeBatch: 'QC-2606-0007', komoditas: 'Kedelai', varietas: 'Dega 1', tanggalUji: new Date('2026-06-07'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 73.20, batasMinimal: 80, status: 'Tidak Lulus', sertifikat: '-' },
-    { kodeBatch: 'QC-2606-0008', komoditas: 'Jagung', varietas: 'Pioneer 21', tanggalUji: new Date('2026-06-06'), petugasUji: 'Dewi Lestari', metodeUji: 'ISTA', jumlahSampel: 400, dayaTumbuh: 94.80, batasMinimal: 80, status: 'Lulus', sertifikat: 'CT-2606-0008' },
-  ];
+    // --- Daya Tumbuh ---
+    { 
+      kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-05-12'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 75.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 300, jumlahTidakBerkecambah: 100, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0002', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-05-16'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 82.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 328, jumlahTidakBerkecambah: 72, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0003', komoditas: 'Padi', varietas: 'IR 64', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-05-20'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 70.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 280, jumlahTidakBerkecambah: 120, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0004', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-05-24'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 78.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 312, jumlahTidakBerkecambah: 88, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0005', komoditas: 'Jagung', varietas: 'Pioneer 21', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-05-28'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 65.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 260, jumlahTidakBerkecambah: 140, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0006', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-06-01'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 85.0, batasAcuan: 85, status: 'Lulus', sertifikat: 'CT-DT-001',
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 340, jumlahTidakBerkecambah: 60, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0007', komoditas: 'Kedelai', varietas: 'Grobogan', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-06-05'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 75.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 300, jumlahTidakBerkecambah: 100, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0008', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-06-09'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 70.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 280, jumlahTidakBerkecambah: 120, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0009', komoditas: 'Padi', varietas: 'Ciherang', jenisUji: 'Daya Tumbuh', 
+      tanggalUji: new Date('2026-06-11'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      jumlahSampel: 400, nilaiHasil: 96.5, batasAcuan: 85, status: 'Lulus', sertifikat: 'CT-DT-002',
+      detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 386, jumlahTidakBerkecambah: 14, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
+    },
+    
+    // --- Kadar Air ---
+    { 
+      kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kadar Air', 
+      tanggalUji: new Date('2026-05-15'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      jumlahSampel: 100, nilaiHasil: 11.2, batasAcuan: 13.0, status: 'Lulus', sertifikat: 'CT-KA-001',
+      detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.4 }
+    },
+    { 
+      kodeBatch: 'BP-2606-0002', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kadar Air', 
+      tanggalUji: new Date('2026-05-18'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      jumlahSampel: 100, nilaiHasil: 12.5, batasAcuan: 13.0, status: 'Lulus', sertifikat: null,
+      detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.37 }
+    },
+    { 
+      kodeBatch: 'BP-2606-0003', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Kadar Air', 
+      tanggalUji: new Date('2026-05-22'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      jumlahSampel: 100, nilaiHasil: 14.1, batasAcuan: 12.0, status: 'Tidak Lulus', sertifikat: null,
+      detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.29 }
+    },
+    { 
+      kodeBatch: 'BP-2606-0004', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Kadar Air', 
+      tanggalUji: new Date('2026-06-02'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      jumlahSampel: 100, nilaiHasil: 10.5, batasAcuan: 11.0, status: 'Lulus', sertifikat: 'CT-KA-002',
+      detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.47 }
+    },
 
-  for (const test of tests) {
-    const commodity = await prisma.commodity.findFirst({ where: { namaKomoditas: test.komoditas } });
-    const variety = await prisma.variety.findFirst({ where: { namaVarietas: test.varietas } });
+    // --- Kemurnian ---
+    { 
+      kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kemurnian', 
+      tanggalUji: new Date('2026-05-13'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      jumlahSampel: 500, nilaiHasil: 99.2, batasAcuan: 98.0, status: 'Memenuhi', sertifikat: 'CT-KM-001',
+      detailUji: { beratBenihMurni: 496, beratTanamanLain: 1, beratGulma: 1, beratBahanAsing: 2, alatInstrumen: 'Timbangan Digital' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0002', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Kemurnian', 
+      tanggalUji: new Date('2026-05-25'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      jumlahSampel: 900, nilaiHasil: 97.5, batasAcuan: 98.0, status: 'Mendekati', sertifikat: null,
+      detailUji: { beratBenihMurni: 877.5, beratTanamanLain: 10, beratGulma: 2.5, beratBahanAsing: 10, alatInstrumen: 'Timbangan Digital' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0003', komoditas: 'Kedelai', varietas: 'Grobogan', jenisUji: 'Kemurnian', 
+      tanggalUji: new Date('2026-06-06'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      jumlahSampel: 1000, nilaiHasil: 94.8, batasAcuan: 98.0, status: 'Tidak Memenuhi', sertifikat: null,
+      detailUji: { beratBenihMurni: 948, beratTanamanLain: 20, beratGulma: 10, beratBahanAsing: 22, alatInstrumen: 'Timbangan Digital' }
+    },
 
-    const { komoditas, varietas, ...testData } = test;
-
-    await prisma.qcDayaTumbuh.upsert({ 
-      where: { kodeBatch: test.kodeBatch }, 
-      update: { ...testData, commodityId: commodity?.id, varietyId: variety?.id }, 
-      create: { ...testData, commodityId: commodity?.id, varietyId: variety?.id } 
-    });
-  }
-}
-
-async function seedQcKadarAir(prisma: any) {
-  console.log('Seeding QC Kadar Air...');
-  
-  const parameters = JSON.stringify([
-    { parameter: 'Kadar Air', satuan: '%', batasMaksimal: 13, hasilUji: 11.2, status: 'Memenuhi' }
-  ]);
-
-  const tests = [
-    { kodeBatch: 'QC-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', lotNumber: 'LOT-2606-0001', tanggalUji: new Date('2026-06-11'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 11.2, batasMaksimal: 13.0, status: 'Memenuhi', sertifikat: 'CT-2606-0001', alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', ulangan: '2 kali', beratAwal: 5.0, beratAkhir: 4.4, parameterUji: parameters },
-    { kodeBatch: 'QC-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', lotNumber: 'LOT-2606-0002', tanggalUji: new Date('2026-06-11'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 13.8, batasMaksimal: 14.0, status: 'Mendekati', sertifikat: 'CT-2606-0002' },
-    { kodeBatch: 'QC-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', lotNumber: 'LOT-2606-0003', tanggalUji: new Date('2026-06-10'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 9.6, batasMaksimal: 13.0, status: 'Memenuhi', sertifikat: 'CT-2606-0003' },
-    { kodeBatch: 'QC-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', lotNumber: 'LOT-2606-0004', tanggalUji: new Date('2026-06-10'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 12.6, batasMaksimal: 13.0, status: 'Memenuhi', sertifikat: 'CT-2606-0004' },
-    { kodeBatch: 'QC-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', lotNumber: 'LOT-2606-0005', tanggalUji: new Date('2026-06-09'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 14.7, batasMaksimal: 14.0, status: 'Tidak Memenuhi', sertifikat: 'CT-2606-0005' },
-    { kodeBatch: 'QC-2606-0006', komoditas: 'Padi', varietas: 'Ciherang', lotNumber: 'LOT-2606-0006', tanggalUji: new Date('2026-06-08'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 11.5, batasMaksimal: 13.0, status: 'Memenuhi', sertifikat: 'CT-2606-0006' },
-    { kodeBatch: 'QC-2606-0007', komoditas: 'Kedelai', varietas: 'Dega 1', lotNumber: 'LOT-2606-0007', tanggalUji: new Date('2026-06-08'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 10.3, batasMaksimal: 13.0, status: 'Memenuhi', sertifikat: 'CT-2606-0007' },
-    { kodeBatch: 'QC-2606-0010', komoditas: 'Jagung', varietas: 'NK 212', lotNumber: 'LOT-2606-0010', tanggalUji: new Date('2026-06-07'), petugasUji: 'Dewi Lestari', testMethodName: 'Moisture Content', jumlahSampel: 116, kadarAir: 15.6, batasMaksimal: 14.0, status: 'Tidak Memenuhi', sertifikat: 'CT-2606-0010' },
+    // --- Vigor ---
+    { 
+      kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Vigor', 
+      tanggalUji: new Date('2026-05-14'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      jumlahSampel: 400, nilaiHasil: 880, batasAcuan: 800, status: 'Memenuhi', sertifikat: 'CT-VG-001',
+      detailUji: { kategori: 'Tinggi', alatInstrumen: 'Germinator', suhuRuangan: '26°C' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', jenisUji: 'Vigor', 
+      tanggalUji: new Date('2026-05-29'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      jumlahSampel: 400, nilaiHasil: 750, batasAcuan: 800, status: 'Mendekati', sertifikat: null,
+      detailUji: { kategori: 'Sedang', alatInstrumen: 'Germinator', suhuRuangan: '27°C' }
+    },
+    { 
+      kodeBatch: 'BP-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Vigor', 
+      tanggalUji: new Date('2026-06-03'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      jumlahSampel: 400, nilaiHasil: 590, batasAcuan: 800, status: 'Tidak Memenuhi', sertifikat: null,
+      detailUji: { kategori: 'Rendah', alatInstrumen: 'Germinator', suhuRuangan: '26°C' }
+    }
   ];
 
   for (const test of tests) {
@@ -592,11 +677,19 @@ async function seedQcKadarAir(prisma: any) {
 
     const { komoditas, varietas, testMethodName, ...testData } = test;
 
-    await prisma.qcKadarAir.upsert({ 
-      where: { kodeBatch: test.kodeBatch }, 
-      update: { ...testData, commodityId: commodity?.id, varietyId: variety?.id, testMethodId: testMethod?.id }, 
-      create: { ...testData, commodityId: commodity?.id, varietyId: variety?.id, testMethodId: testMethod?.id } 
-    });
+    if (testMethod) {
+      let targetBatch = test.kodeBatch;
+      const existingBatch = await prisma.batchProduksi.findFirst({ where: { komoditas: test.komoditas } });
+      if (existingBatch) {
+        targetBatch = existingBatch.kodeBatch;
+      }
+      
+      await prisma.qcTest.upsert({ 
+        where: { kodeBatch_testMethodId: { kodeBatch: targetBatch, testMethodId: testMethod.id } }, 
+        update: { ...testData, kodeBatch: targetBatch, commodityId: commodity?.id, varietyId: variety?.id, testMethodId: testMethod.id }, 
+        create: { ...testData, kodeBatch: targetBatch, commodityId: commodity?.id, varietyId: variety?.id, testMethodId: testMethod.id } 
+      });
+    }
   }
 }
 
@@ -1212,13 +1305,24 @@ async function seedBatchProduksi(prisma: any) {
   ];
 
   for (const item of items) {
-    await prisma.batchProduksi.upsert({
+    const batch = await prisma.batchProduksi.upsert({
       where: { kodeBatch: item.kodeBatch },
       update: item,
       create: { ...item, dibuatOleh: 'Admin', diubahOleh: 'Admin' },
     });
+
+    const kodeLot = `LOT-${item.kodeBatch.replace('BP-', '')}`;
+    await prisma.batchLot.upsert({
+      where: { kodeBatch: item.kodeBatch },
+      update: { kodeLot, batchProduksiId: batch.id },
+      create: {
+        kodeBatch: item.kodeBatch,
+        kodeLot,
+        batchProduksiId: batch.id
+      }
+    });
   }
-  console.log('Seeding Batch Produksi completed.');
+  console.log('Seeding Batch Produksi & Batch Lot completed.');
 }
 
 async function seedPengeringan(prisma: any) {
@@ -1336,4 +1440,178 @@ async function seedModulProduksi(prisma: any) {
   console.log('--- SEEDING MODUL PRODUKSI COMPLETE ---');
 }
 
+async function seedPenguji(prisma: any) {
+  console.log('Seeding Penguji, Laboratorium, and User...');
+
+  // 1. Create Role Penguji
+  const pengujiRole = await prisma.role.upsert({
+    where: { name: 'penguji' },
+    update: {},
+    create: {
+      name: 'penguji',
+    },
+  });
+
+  // 3. Create Laboratorium
+  const labsData = [
+    {
+      kodeLaboratorium: 'LAB-01',
+      namaLaboratorium: 'Laboratorium Pusat Uji Benih',
+      deskripsi: 'Laboratorium utama untuk pengujian benih inti',
+      alamat: 'Jl. Ahmad Yani No. 100, Surabaya',
+      telepon: '031-1234567',
+      nomorAkreditasi: 'KAN-LP-001-IDN',
+      lembagaAkreditasi: 'Komite Akreditasi Nasional',
+      tanggalAkreditasi: new Date('2024-01-15'),
+      tanggalBerlakuAkreditasi: new Date('2029-01-15'),
+      ruangLingkupPengujian: 'Pengujian Mutu Fisik dan Fisiologis Benih',
+      status: 'Aktif',
+    },
+    {
+      kodeLaboratorium: 'LAB-02',
+      namaLaboratorium: 'Laboratorium Tanah & Air',
+      deskripsi: 'Laboratorium untuk pengujian sampel tanah dan air irigasi',
+      alamat: 'Gedung B Lantai 2, Kompleks Pertanian',
+      telepon: '031-7654321',
+      nomorAkreditasi: 'KAN-LP-002-IDN',
+      lembagaAkreditasi: 'Komite Akreditasi Nasional',
+      tanggalAkreditasi: new Date('2023-05-10'),
+      tanggalBerlakuAkreditasi: new Date('2028-05-10'),
+      ruangLingkupPengujian: 'Pengujian Kesuburan Tanah dan Kualitas Air',
+      status: 'Aktif',
+    }
+  ];
+
+  let lab = null;
+  for (const labData of labsData) {
+    const createdLab = await prisma.laboratorium.upsert({
+      where: { kodeLaboratorium: labData.kodeLaboratorium },
+      update: labData,
+      create: labData,
+    });
+    if (labData.kodeLaboratorium === 'LAB-01') lab = createdLab; // Keep reference to first lab for Penguji relation
+  }
+
+  const pengujis = [
+    {
+      username: 'dewi',
+      email: 'dewi.lestari@example.com',
+      kodePenguji: 'PENG-001',
+      nama: 'Dewi Lestari',
+      methods: ['ISTA 5.2.1', 'ISTA 2.2'] // Daya Tumbuh, Kadar Air
+    },
+    {
+      username: 'budi',
+      email: 'budi.santoso@example.com',
+      kodePenguji: 'PENG-002',
+      nama: 'Budi Santoso',
+      methods: ['ISTA 2.10'] // Kemurnian
+    },
+    {
+      username: 'ratna',
+      email: 'ratna.sari@example.com',
+      kodePenguji: 'PENG-003',
+      nama: 'Ratna Sari',
+      methods: ['ISTA 7.3'] // Vigor
+    },
+    {
+      username: 'andi',
+      email: 'andi.pratama@example.com',
+      kodePenguji: 'PENG-004',
+      nama: 'Andi Pratama',
+      methods: ['ISTA 7.4'] // Pathogen Test
+    },
+    {
+      username: 'siti',
+      email: 'siti.nurhaliza@example.com',
+      kodePenguji: 'PENG-005',
+      nama: 'Siti Nurhaliza',
+      methods: ['ISTA 2.3', 'ISTA 2.7'] // Weight Determination, Other Seed Test
+    },
+    {
+      username: 'rina',
+      email: 'rina.wulandari@example.com',
+      kodePenguji: 'PENG-006',
+      nama: 'Rina Wulandari',
+      methods: ['ISTA 2.9'] // Inert Matter Test
+    },
+    {
+      username: 'dedi',
+      email: 'dedi.kurniawan@example.com',
+      kodePenguji: 'PENG-007',
+      nama: 'Dedi Kurniawan',
+      methods: ['ISTA 5.1.1'] // Normal & Abnormal Seed
+    },
+    {
+      username: 'maya',
+      email: 'maya.lestari@example.com',
+      kodePenguji: 'PENG-008',
+      nama: 'Maya Lestari',
+      methods: ['ISTA 5.2.2'] // Viability Test
+    },
+    {
+      username: 'fajar',
+      email: 'fajar.nugroho@example.com',
+      kodePenguji: 'PENG-009',
+      nama: 'Fajar Nugroho',
+      methods: ['ISTA 5.2.1', 'ISTA 2.10'] // Germination Test, Purity Analysis
+    }
+  ];
+
+  const hashedPassword = await require('bcryptjs').hash('penguji123', 10);
+
+  for (const p of pengujis) {
+    const pUser = await prisma.user.upsert({
+      where: { username: p.username },
+      update: {},
+      create: {
+        username: p.username,
+        email: p.email,
+        password: hashedPassword,
+        isEmailVerified: true,
+        defaultRoleId: pengujiRole.id,
+        roles: {
+          create: {
+            roleId: pengujiRole.id,
+          },
+        },
+      },
+    });
+
+    const pengujiRecord = await prisma.penguji.upsert({
+      where: { kodePenguji: p.kodePenguji },
+      update: { userId: pUser.id, laboratoriumId: lab.id },
+      create: {
+        kodePenguji: p.kodePenguji,
+        nama: p.nama,
+        userId: pUser.id,
+        laboratoriumId: lab.id,
+        status: 'Aktif',
+      },
+    });
+
+    for (const methodCode of p.methods) {
+      const testMethod = await prisma.testMethod.findUnique({
+        where: { kode: methodCode },
+      });
+      if (testMethod) {
+        await prisma.pengujiTestMethod.upsert({
+          where: {
+            pengujiId_testMethodId: {
+              pengujiId: pengujiRecord.id,
+              testMethodId: testMethod.id,
+            },
+          },
+          update: {},
+          create: {
+            pengujiId: pengujiRecord.id,
+            testMethodId: testMethod.id,
+          },
+        });
+      }
+    }
+  }
+
+  console.log('Seeding Penguji complete.');
+}
 

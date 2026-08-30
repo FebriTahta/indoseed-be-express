@@ -33,9 +33,15 @@ export const qcRepository = {
   deleteMethod: (id: string) => prisma.testMethod.delete({ where: { id } }),
 
   // Test Parameters
-  findAllParameters: () => prisma.testParameter.findMany({ include: { metode: true, standar: true } }),
-  findParameterById: (id: string) => prisma.testParameter.findUnique({ where: { id }, include: { metode: true, standar: true } }),
+  findAllParameters: () => prisma.testParameter.findMany({ include: { metode: true } }),
+  findParameterById: (id: string) => prisma.testParameter.findUnique({ where: { id }, include: { metode: true } }),
   createParameter: (data: any) => prisma.testParameter.create({ data }),
   updateParameter: (id: string, data: any) => prisma.testParameter.update({ where: { id }, data }),
   deleteParameter: (id: string) => prisma.testParameter.delete({ where: { id } }),
+
+  // Laboratorium
+  findAllLaboratoriums: () => prisma.laboratorium.findMany({
+    where: { status: 'Aktif' },
+    orderBy: { namaLaboratorium: 'asc' }
+  })
 };

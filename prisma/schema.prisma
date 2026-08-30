@@ -10,30 +10,31 @@ datasource db {
 }
 
 model User {
-  id              String     @id @default(uuid())
-  username        String     @unique
-  email           String     @unique
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
   password        String
-  isEmailVerified Boolean    @default(false)
+  isEmailVerified Boolean  @default(false)
   defaultRoleId   String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  roles           UserRole[]
-  defaultRole     Role?      @relation("DefaultRole", fields: [defaultRoleId], references: [id])
-  otps            EmailOtp[]
+  roles       UserRole[]
+  defaultRole Role?      @relation("DefaultRole", fields: [defaultRoleId], references: [id])
+  otps        EmailOtp[]
+  penguji     Penguji?
 
   @@map("users")
 }
 
 model Role {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userRoles   UserRole[]
-  defaultFor  User[]     @relation("DefaultRole")
+  userRoles  UserRole[]
+  defaultFor User[]     @relation("DefaultRole")
 
   @@map("roles")
 }
@@ -44,8 +45,8 @@ model UserRole {
   roleId    String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@map("user_roles")
@@ -58,210 +59,207 @@ model EmailOtp {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("email_otps")
 }
 
 model Greenhouse {
-  id              String   @id @default(uuid())
-  kodeLahan       String   @unique
-  namaLahan       String
-  jenisLahan      String   @default("Greenhouse")
-  komoditasUtama  String
-  komoditasColor  String   @default("emerald")
-  komoditasIcon   String   @default("ri-leaf-line")
-  lokasi          String
-  luas            Float
-  status          String   @default("Aktif")
-  detailLokasi    String?  @db.Text
-  koordinat       String?
-  petaniMitra     String?
-  commodityId     String?
-  partnerId       String?
-  tglDibuat       DateTime @default(now())
-  dibuatOleh      String?  @default("Admin")
-  keterangan      String?  @db.Text
-  image           String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  kodeLahan      String   @unique
+  namaLahan      String
+  jenisLahan     String   @default("Greenhouse")
+  komoditasUtama String
+  komoditasColor String   @default("emerald")
+  komoditasIcon  String   @default("ri-leaf-line")
+  lokasi         String
+  luas           Float
+  status         String   @default("Aktif")
+  detailLokasi   String?  @db.Text
+  koordinat      String?
+  petaniMitra    String?
+  commodityId    String?
+  partnerId      String?
+  tglDibuat      DateTime @default(now())
+  dibuatOleh     String?  @default("Admin")
+  keterangan     String?  @db.Text
+  image          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  commodity       Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  partner         Partner?   @relation(fields: [partnerId], references: [id], onDelete: SetNull)
-  jadwalTanams    JadwalTanam[]
-  kesiapanPanens  KesiapanPanen[]
+  commodity      Commodity?      @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  partner        Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  jadwalTanams   JadwalTanam[]
+  kesiapanPanens KesiapanPanen[]
 
   @@map("greenhouses")
 }
 
 model Commodity {
-  id              String   @id @default(uuid())
-  kodeKomoditas   String   @unique
-  namaKomoditas   String
-  kategori        String
-  deskripsi       String?  @db.Text
-  status          String   @default("Aktif")
-  image           String?  @db.Text
-  tglDibuat       DateTime @default(now())
-  dibuatOleh      String?  @default("Admin")
-  tglDiubah       DateTime @default(now()) @updatedAt
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(uuid())
+  kodeKomoditas String   @unique
+  namaKomoditas String
+  kategori      String
+  deskripsi     String?  @db.Text
+  status        String   @default("Aktif")
+  image         String?  @db.Text
+  tglDibuat     DateTime @default(now())
+  dibuatOleh    String?  @default("Admin")
+  tglDiubah     DateTime @default(now()) @updatedAt
+  diubahOleh    String?  @default("Admin")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  varieties       Variety[]
-  greenhouses     Greenhouse[]
-  qcDayaTumbuh    QcDayaTumbuh[]
-  qcKadarAir      QcKadarAir[]
-  jadwalTanams    JadwalTanam[]
-  kesiapanPanens  KesiapanPanen[]
-  panens          Panen[]
+  varieties      Variety[]
+  greenhouses    Greenhouse[]
+  qcTests        QcTest[]
+  jadwalTanams   JadwalTanam[]
+  kesiapanPanens KesiapanPanen[]
+  panens         Panen[]
 
   @@map("commodities")
 }
 
 model Variety {
-  id             String    @id @default(uuid())
-  kodeVarietas   String    @unique
+  id             String   @id @default(uuid())
+  kodeVarietas   String   @unique
   namaVarietas   String
   commodityId    String
   asalPemulia    String?
   tahunRilis     Int?
-  deskripsi      String?   @db.Text
+  deskripsi      String?  @db.Text
   umurTanam      String?
   tinggiTanaman  String?
   bentukBiji     String?
   warnaGabah     String?
   potensiHasil   String?
   anjuranDataran String?
-  status         String    @default("Aktif")
-  image          String?   @db.Text
-  tglDibuat      DateTime  @default(now())
-  dibuatOleh     String?   @default("Admin")
-  tglDiubah      DateTime  @default(now()) @updatedAt
-  diubahOleh     String?   @default("Admin")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  status         String   @default("Aktif")
+  image          String?  @db.Text
+  tglDibuat      DateTime @default(now())
+  dibuatOleh     String?  @default("Admin")
+  tglDiubah      DateTime @default(now()) @updatedAt
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  commodity      Commodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
-  qcDayaTumbuh   QcDayaTumbuh[]
-  qcKadarAir     QcKadarAir[]
+  commodity      Commodity       @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+  qcTests        QcTest[]
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
 
   @@map("varieties")
 }
-model Partner {
-  id              String   @id @default(uuid())
-  kodePetani      String   @unique
-  namaPetani      String
-  kelompokTani    String
-  komoditasUtama  String
-  noKtp           String?
-  noTelepon       String?
-  alamat          String?  @db.Text
-  luasLahan       Float    @default(0.0) // Luas Lahan (Ha)
-  pengalaman      Int      @default(0)   // Pengalaman Bertani (tahun)
-  tglBergabung    DateTime @default(now())
-  status          String   @default("Aktif")
-  image           String?  @db.Text
-  tglDibuat       DateTime @default(now())
-  dibuatOleh      String?  @default("Admin")
-  tglDiubah       DateTime @default(now()) @updatedAt
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 
-  greenhouses     Greenhouse[]
+model Partner {
+  id             String   @id @default(uuid())
+  kodePetani     String   @unique
+  namaPetani     String
+  kelompokTani   String
+  komoditasUtama String
+  noKtp          String?
+  noTelepon      String?
+  alamat         String?  @db.Text
+  luasLahan      Float    @default(0.0) // Luas Lahan (Ha)
+  pengalaman     Int      @default(0) // Pengalaman Bertani (tahun)
+  tglBergabung   DateTime @default(now())
+  status         String   @default("Aktif")
+  image          String?  @db.Text
+  tglDibuat      DateTime @default(now())
+  dibuatOleh     String?  @default("Admin")
+  tglDiubah      DateTime @default(now()) @updatedAt
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  greenhouses Greenhouse[]
 
   @@map("partners")
 }
 
 model ReferenceStandard {
-  id           String   @id @default(uuid())
-  kode         String   @unique
-  nama         String
-  jenis        String   @default("Standar Acuan") // Standar Acuan or Metode Uji equivalent if needed, but we separate them
-  organisasi   String?
-  versiTahun   String?
-  kategori     String?
-  deskripsi    String?  @db.Text
-  fileUrl      String?  @db.Text
-  bahasa       String?
-  catatan      String?  @db.Text
-  status       String   @default("Aktif")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(uuid())
+  kode       String   @unique
+  nama       String
+  jenis      String   @default("Standar Acuan") // Standar Acuan or Metode Uji equivalent if needed, but we separate them
+  organisasi String?
+  versiTahun String?
+  kategori   String?
+  deskripsi  String?  @db.Text
+  fileUrl    String?  @db.Text
+  bahasa     String?
+  catatan    String?  @db.Text
+  status     String   @default("Aktif")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  testParameters TestParameter[]
-  testMethods    TestMethod[]
-  
-  documentId     String?
-  document       SupportDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  testMethods TestMethod[]
+
+  documentId String?
+  document   SupportDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
 
   @@map("reference_standards")
 }
 
 model TestMethod {
-  id           String   @id @default(uuid())
-  kode         String   @unique
-  nama         String
-  deskripsi    String?  @db.Text
-  status       String   @default("Aktif")
-  standarId    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  kode      String   @unique
+  nama      String
+  deskripsi String?  @db.Text
+  status    String   @default("Aktif")
+  standarId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  standar      ReferenceStandard? @relation(fields: [standarId], references: [id], onDelete: SetNull)
+  standar        ReferenceStandard? @relation(fields: [standarId], references: [id], onDelete: SetNull)
   testParameters TestParameter[]
-  
-  documentId     String?
-  document       SupportDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
-  qcKadarAir     QcKadarAir[]
+
+  documentId         String?
+  document           SupportDocument?    @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  qcTests            QcTest[]
+  pengujiTestMethods PengujiTestMethod[]
 
   @@map("test_methods")
 }
 
 model TestParameter {
-  id           String   @id @default(uuid())
-  kode         String   @unique
-  nama         String
-  kategori     String?
-  satuan       String?
-  batasAcuan   String?
-  definisi     String?  @db.Text
-  keterangan   String?  @db.Text
-  metodeId     String?
-  standarId    String?
-  status       String   @default("Aktif")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(uuid())
+  kode       String   @unique
+  nama       String
+  kategori   String?
+  satuan     String?
+  batasAcuan String?
+  definisi   String?  @db.Text
+  keterangan String?  @db.Text
+  metodeId   String?
+  status     String   @default("Aktif")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  metode       TestMethod?        @relation(fields: [metodeId], references: [id], onDelete: SetNull)
-  standar      ReferenceStandard? @relation(fields: [standarId], references: [id], onDelete: SetNull)
+  metode TestMethod? @relation(fields: [metodeId], references: [id], onDelete: SetNull)
 
   @@map("test_parameters")
 }
 
 model SupportDocument {
-  id              String   @id @default(uuid())
-  kode            String   @unique
-  nama            String
-  kategori        String
-  jenisDokumen    String?
-  versi           String?
-  tanggalBerlaku  DateTime?
-  deskripsi       String?  @db.Text
-  tipeFile        String?
-  fileName        String?
-  fileSize        String?
-  fileUrl         String?  @db.Text
-  tingkatAkses    String?
-  status          String   @default("Aktif")
-  catatan         String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(uuid())
+  kode           String    @unique
+  nama           String
+  kategori       String
+  jenisDokumen   String?
+  versi          String?
+  tanggalBerlaku DateTime?
+  deskripsi      String?   @db.Text
+  tipeFile       String?
+  fileName       String?
+  fileSize       String?
+  fileUrl        String?   @db.Text
+  tingkatAkses   String?
+  status         String    @default("Aktif")
+  catatan        String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   referenceStandards ReferenceStandard[]
   testMethods        TestMethod[]
@@ -280,146 +278,113 @@ model QcCertificate {
   tglTerbit     DateTime?
   berlakuHingga DateTime?
   status        String    @default("Menunggu")
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("qc_certificates")
 }
 
-model QcDayaTumbuh {
-  id                    String   @id @default(uuid())
-  kodeBatch             String   @unique
-  commodityId           String?
-  varietyId             String?
-  tanggalUji            DateTime?
-  petugasUji            String?
-  metodeUji             String?
-  jumlahSampel          Int?
-  
-  // Hasil Utama
-  dayaTumbuh            Float?
-  batasMinimal          Float?
-  status                String   @default("Sedang Diuji") // Lulus, Tidak Lulus, Sedang Diuji
-  sertifikat            String?
-  
-  // Detail Pengujian
-  jumlahBenihDitanam    Int?
-  jumlahBerkecambah     Int?
-  jumlahTidakBerkecambah Int?
-  waktuUjiHari          Int?
-  suhuUji               String?
-  mediaUji              String?
-  kelembabanMedia       String?
-  catatan               String?  @db.Text
-  
-  // Parameter Uji (JSON string)
-  parameterUji          String?  @db.Text 
-  
-  lampiranUrl           String?  @db.Text
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+model QcTest {
+  id        String @id @default(uuid())
+  kodeBatch String
+  jenisUji  String // "Daya Tumbuh", "Kadar Air", "Kemurnian", "Vigor", dsb
 
-  commodity             Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety               Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  // -- Metadata Umum --
+  commodityId  String?
+  varietyId    String?
+  testMethodId String
+  tanggalUji   DateTime?
+  petugasUjiId String?
+  lokasiLab    String?
+  jumlahSampel Int?
 
-  @@map("qc_daya_tumbuh")
+  // -- Hasil & Form Dinamis --
+  nilaiHasil Float?
+  batasAcuan Float?
+  status     String  @default("Sedang Diuji")
+  sertifikat String?
+
+  detailUji Json? // Field dinamis spesifik per jenis uji
+
+  catatan     String? @db.Text
+  lampirans   QcLampiran[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commodity  Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety    Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  testMethod TestMethod @relation(fields: [testMethodId], references: [id])
+  petugasUji Penguji?   @relation(fields: [petugasUjiId], references: [id], onDelete: SetNull)
+
+  // Cegah duplikasi metode uji pada batch yang sama
+  @@unique([kodeBatch, testMethodId])
+  @@map("qc_tests")
 }
 
-model QcKadarAir {
-  id               String   @id @default(uuid())
-  kodeBatch        String   @unique
-  commodityId      String?
-  varietyId        String?
-  testMethodId     String?
-  lotNumber        String?
-  tanggalUji       DateTime?
-  lokasiLab        String?
-  petugasUji       String?
-  jumlahSampel     Int?
-  
-  // Hasil Utama
-  kadarAir         Float?
-  batasMaksimal    Float?
-  status           String   @default("Sedang Diuji") // Memenuhi, Mendekati, Tidak Memenuhi
-  sertifikat       String?
-  
-  // Detail Pengujian
-  alat             String?
-  suhuUji          String?
-  waktuPengeringan String?
-  ulangan          String?
-  beratAwal        Float?
-  beratAkhir       Float?
-  catatan          String?  @db.Text
-  
-  // Parameter Uji Tambahan
-  parameterUji     String?  @db.Text 
-  
-  lampiranUrl      String?  @db.Text
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+model QcLampiran {
+  id        String   @id @default(uuid())
+  qcTestId  String
+  url       String   @db.Text
+  createdAt DateTime @default(now())
 
-  commodity        Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety          Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
-  testMethod       TestMethod? @relation(fields: [testMethodId], references: [id], onDelete: SetNull)
-
-  @@map("qc_kadar_air")
+  qcTest    QcTest   @relation(fields: [qcTestId], references: [id], onDelete: Cascade)
+  
+  @@map("qc_lampiran")
 }
 
 model Customer {
-  id              String   @id @default(uuid())
-  kodeCust        String   @unique
-  namaCust        String
-  kategori        String
-  NPWP            String?
-  pic             String?
-  email           String?
-  isTop           Boolean  @default(false)
-  noTelepon       String?
-  alamat          String?  @db.Text
-  kota            String?
-  kodePos         String?
-  tglBergabung    DateTime?
-  status          String   @default("Aktif")
-  limitKredit     Float    @default(0)
-  remainKredit    Float    @default(0)
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id           String    @id @default(uuid())
+  kodeCust     String    @unique
+  namaCust     String
+  kategori     String
+  NPWP         String?
+  pic          String?
+  email        String?
+  isTop        Boolean   @default(false)
+  noTelepon    String?
+  alamat       String?   @db.Text
+  kota         String?
+  kodePos      String?
+  tglBergabung DateTime?
+  status       String    @default("Aktif")
+  limitKredit  Float     @default(0)
+  remainKredit Float     @default(0)
+  dibuatOleh   String?   @default("Admin")
+  diubahOleh   String?   @default("Admin")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
 
   @@map("customers")
 }
 
 model Gudang {
-  id              String   @id @default(uuid())
-  kodeGudang      String   @unique
-  namaGudang      String
-  kategori        String
-  status          String   @default("Aktif")
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  tglDibuat       DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id         String   @id @default(uuid())
+  kodeGudang String   @unique
+  namaGudang String
+  kategori   String
+  status     String   @default("Aktif")
+  dibuatOleh String?  @default("Admin")
+  diubahOleh String?  @default("Admin")
+  tglDibuat  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("gudang")
 }
 
 model Supplier {
-  id              String   @id @default(uuid())
-  kodeSupplier    String   @unique
-  namaSupplier    String
-  kategori        String
-  status          String   @default("Aktif")
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  tglDibuat       DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id           String   @id @default(uuid())
+  kodeSupplier String   @unique
+  namaSupplier String
+  kategori     String
+  status       String   @default("Aktif")
+  dibuatOleh   String?  @default("Admin")
+  diubahOleh   String?  @default("Admin")
+  tglDibuat    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
   @@map("suppliers")
 }
@@ -428,122 +393,125 @@ model Setting {
   id           String   @id @default(uuid())
   namaWebsite  String
   titleWebsite String
+  deskripsi    String?  @db.Text
   logoWebsite  String?  @db.Text
+  logoKotak    String?  @db.Text
   logoColor    String?  @default("#11b238")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("settings")
 }
+
 model JadwalTanam {
-  id                    String   @id @default(uuid())
-  kodeJadwalTanam       String   @unique
-  periodeTanam          String?
-  periodeTanamMulai     DateTime?
-  periodeTanamSelesai   DateTime?
-  musimTanam            String?
-  tujuanProduksi        String?
-  tipeProduksi          String?
-  statusJadwal          String   @default("Draft")
-  penanggungJawab       String?
-  deskripsi             String?  @db.Text
+  id                  String    @id @default(uuid())
+  kodeJadwalTanam     String    @unique
+  periodeTanam        String?
+  periodeTanamMulai   DateTime?
+  periodeTanamSelesai DateTime?
+  musimTanam          String?
+  tujuanProduksi      String?
+  tipeProduksi        String?
+  statusJadwal        String    @default("Draft")
+  penanggungJawab     String?
+  deskripsi           String?   @db.Text
 
   // Lahan & Komoditas
   greenhouseId          String?
   commodityId           String?
   varietyId             String?
-  luasTanam             Float    @default(0)
+  luasTanam             Float   @default(0)
   asalBenih             String?
-  jumlahBenihDiperlukan Float?   @default(0)
+  jumlahBenihDiperlukan Float?  @default(0)
   jarakTanam            String?
   sistemTanam           String?
-  targetProduksi        Float?   @default(0)
+  targetProduksi        Float?  @default(0)
   standarKualitas       String?
   perkecambahanMin      Float?
 
   // Rencana Tanam & Jadwal
-  tanggalPersemaian     DateTime?
-  tanggalTanam          DateTime?
-  perkiraanPanen        DateTime?
-  siklusTanamHari       Int?     @default(0)
-  metodeTanam           String?
-  kepadatanTanam        String?
-  irigasi               String?
-  sumberAir             String?
-  catatan               String?  @db.Text
+  tanggalPersemaian DateTime?
+  tanggalTanam      DateTime?
+  perkiraanPanen    DateTime?
+  siklusTanamHari   Int?      @default(0)
+  metodeTanam       String?
+  kepadatanTanam    String?
+  irigasi           String?
+  sumberAir         String?
+  catatan           String?   @db.Text
 
   // Audit
-  status                String   @default("Aktif")
-  dibuatOleh            String?  @default("Admin")
-  diubahOleh            String?  @default("Admin")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  status     String   @default("Aktif")
+  dibuatOleh String?  @default("Admin")
+  diubahOleh String?  @default("Admin")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  greenhouse            Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
-  commodity             Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety               Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  greenhouse Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+  commodity  Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety    Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
 
-  detailLahan           JadwalTanamDetail[]
-  personil              JadwalTanamPersonil[]
-  peralatan             JadwalTanamPeralatan[]
-  dokumen               JadwalTanamDokumen[]
+  detailLahan JadwalTanamDetail[]
+  personil    JadwalTanamPersonil[]
+  peralatan   JadwalTanamPeralatan[]
+  dokumen     JadwalTanamDokumen[]
 
   @@map("jadwal_tanam")
 }
 
 model JadwalTanamDetail {
-  id             String      @id @default(uuid())
-  jadwalTanamId  String
-  greenhouseId   String?
-  namaLahan      String
-  luas           Float       @default(0)
-  tipeLahan      String?     @default("Lahan Terbuka")
-  irigasi        String?
-  sumberAir      String?
+  id            String  @id @default(uuid())
+  jadwalTanamId String
+  greenhouseId  String?
+  namaLahan     String
+  luas          Float   @default(0)
+  tipeLahan     String? @default("Lahan Terbuka")
+  irigasi       String?
+  sumberAir     String?
 
-  jadwalTanam    JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
+  jadwalTanam JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
 
   @@map("jadwal_tanam_detail")
 }
 
 model JadwalTanamPersonil {
-  id             String      @id @default(uuid())
-  jadwalTanamId  String
-  nama           String
-  peran          String
-  kontak         String?
-  tugas          String?
+  id            String  @id @default(uuid())
+  jadwalTanamId String
+  nama          String
+  peran         String
+  kontak        String?
+  tugas         String?
 
-  jadwalTanam    JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
+  jadwalTanam JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
 
   @@map("jadwal_tanam_personil")
 }
 
 model JadwalTanamPeralatan {
-  id             String      @id @default(uuid())
-  jadwalTanamId  String
-  nama           String
-  jenis          String
-  jumlah         Int         @default(1)
-  satuan         String      @default("Unit")
-  kondisi        String      @default("Baik")
+  id            String @id @default(uuid())
+  jadwalTanamId String
+  nama          String
+  jenis         String
+  jumlah        Int    @default(1)
+  satuan        String @default("Unit")
+  kondisi       String @default("Baik")
 
-  jadwalTanam    JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
+  jadwalTanam JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
 
   @@map("jadwal_tanam_peralatan")
 }
 
 model JadwalTanamDokumen {
-  id             String      @id @default(uuid())
-  jadwalTanamId  String
-  nama           String
-  fileUrl        String      @db.Text
-  fileSize       String?
-  fileType       String?
-  uploadedAt     DateTime    @default(now())
+  id            String   @id @default(uuid())
+  jadwalTanamId String
+  nama          String
+  fileUrl       String   @db.Text
+  fileSize      String?
+  fileType      String?
+  uploadedAt    DateTime @default(now())
 
-  jadwalTanam    JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
+  jadwalTanam JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
 
   @@map("jadwal_tanam_dokumen")
 }
@@ -576,9 +544,9 @@ model Panen {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
 
-  commodity       Commodity?     @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety         Variety?       @relation(fields: [varietyId], references: [id], onDelete: SetNull)
-  kesiapanPanen   KesiapanPanen? @relation(fields: [kesiapanPanenId], references: [id], onDelete: SetNull)
+  commodity     Commodity?     @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety       Variety?       @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  kesiapanPanen KesiapanPanen? @relation(fields: [kesiapanPanenId], references: [id], onDelete: SetNull)
 
   @@map("panen")
 }
@@ -634,131 +602,146 @@ model MonitoringGreenhouse {
 }
 
 model KesiapanPanen {
-  id              String   @id @default(uuid())
-  no              Int?
-  kodeLahan       String   @unique
-  lokasi          String?  @default("Blok A - Petak 1")
-  komoditas       String?
-  varietas        String?
-  greenhouseId    String?
-  commodityId     String?
-  varietyId       String?
-  jadwalTanamId   String?
-  tanggalTanam    String?
-  umurHst         Int      @default(0)
-  prediksiPanen   String?
-  statusKesiapan  String   @default("Belum Siap")
-  yieldEst        Float    @default(0)
-  kadarAir        Float?   @default(14.0)
-  kuningDaun      Float?   @default(80)
-  kekerasanBiji   String?  @default("Keras")
-  catatan         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id             String   @id @default(uuid())
+  no             Int?
+  kodeLahan      String   @unique
+  lokasi         String?  @default("Blok A - Petak 1")
+  komoditas      String?
+  varietas       String?
+  greenhouseId   String?
+  commodityId    String?
+  varietyId      String?
+  jadwalTanamId  String?
+  tanggalTanam   String?
+  umurHst        Int      @default(0)
+  prediksiPanen  String?
+  statusKesiapan String   @default("Belum Siap")
+  yieldEst       Float    @default(0)
+  kadarAir       Float?   @default(14.0)
+  kuningDaun     Float?   @default(80)
+  kekerasanBiji  String?  @default("Keras")
+  catatan        String?  @db.Text
+  dibuatOleh     String?  @default("Admin")
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
-  greenhouse      Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
-  commodity       Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety         Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
-  panens          Panen[]
+  greenhouse Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+  commodity  Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety    Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  panens     Panen[]
 
   @@map("kesiapan_panen")
 }
 
 model Pengeringan {
-  id                String   @id @default(uuid())
-  no                Int?
-  kodeBatch         String   @unique
-  komoditas         String
-  varietas          String
-  alatPengering     String
-  beratMasuk        Float    @default(0)
-  kadarAirMasuk     Float    @default(0)
-  kadarAirTarget    Float    @default(12.0)
-  kadarAirSaatIni   Float    @default(0)
-  beratKeluar       Float?   @default(0)
-  status            String   @default("Proses")
-  selesai           String?
-  suhuRataRata      Float?   @default(41.5)
-  durasiJam         Float?   @default(0)
-  lokasi            String?  @default("Gudang Pengeringan 1")
-  catatan           String?  @db.Text
-  dibuatOleh        String?  @default("Admin")
-  diubahOleh        String?  @default("Admin")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  id              String   @id @default(uuid())
+  no              Int?
+  kodeBatch       String   @unique
+  komoditas       String
+  varietas        String
+  alatPengering   String
+  beratMasuk      Float    @default(0)
+  kadarAirMasuk   Float    @default(0)
+  kadarAirTarget  Float    @default(12.0)
+  kadarAirSaatIni Float    @default(0)
+  beratKeluar     Float?   @default(0)
+  status          String   @default("Proses")
+  selesai         String?
+  suhuRataRata    Float?   @default(41.5)
+  durasiJam       Float?   @default(0)
+  lokasi          String?  @default("Gudang Pengeringan 1")
+  catatan         String?  @db.Text
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
 
   @@map("pengeringan")
 }
 
 model BatchProduksi {
-  id              String   @id @default(uuid())
-  no              Int?
-  kodeBatch       String   @unique
-  komoditas       String
-  varietas        String
-  sumberBahan     String
-  tanggalMulai    String
-  tanggalSelesai  String
-  targetKg        Float    @default(0)
-  hasilKg         Float?   @default(0)
-  yieldPercent    Float?   @default(0)
-  status          String   @default("Proses")
-  lokasi          String?  @default("Blok A")
-  catatan         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id             String   @id @default(uuid())
+  no             Int?
+  kodeBatch      String   @unique
+  komoditas      String
+  varietas       String
+  sumberBahan    String
+  tanggalMulai   String
+  tanggalSelesai String
+  targetKg       Float    @default(0)
+  hasilKg        Float?   @default(0)
+  yieldPercent   Float?   @default(0)
+  status         String   @default("Proses")
+  lokasi         String?  @default("Blok A")
+  catatan        String?  @db.Text
+  dibuatOleh     String?  @default("Admin")
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  batchLot BatchLot?
 
   @@map("batch_produksi")
 }
 
-model Sortasi {
+model BatchLot {
   id              String   @id @default(uuid())
-  no              Int?
   kodeBatch       String   @unique
-  komoditas       String
-  varietas        String
-  alatSortasi     String   @default("Air Screen Cleaner 01")
-  beratMasuk      Float    @default(0)
-  hasilLulus      Float    @default(0)
-  hasilTolak      Float    @default(0)
-  recovery        Float    @default(0)
-  tanggalSortasi  String
-  status          String   @default("Selesai")
-  lokasi          String?  @default("Gudang Sortasi 1")
-  operator        String?  @default("Admin")
-  catatan         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
+  kodeLot         String   @unique
+  batchProduksiId String?  @unique
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  updatedAt       DateTime @updatedAt
+
+  batchProduksi BatchProduksi? @relation(fields: [batchProduksiId], references: [id], onDelete: Cascade)
+
+  @@map("batch_lots")
+}
+
+model Sortasi {
+  id             String   @id @default(uuid())
+  no             Int?
+  kodeBatch      String   @unique
+  komoditas      String
+  varietas       String
+  alatSortasi    String   @default("Air Screen Cleaner 01")
+  beratMasuk     Float    @default(0)
+  hasilLulus     Float    @default(0)
+  hasilTolak     Float    @default(0)
+  recovery       Float    @default(0)
+  tanggalSortasi String
+  status         String   @default("Selesai")
+  lokasi         String?  @default("Gudang Sortasi 1")
+  operator       String?  @default("Admin")
+  catatan        String?  @db.Text
+  dibuatOleh     String?  @default("Admin")
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@map("sortasi")
 }
 
 model Treatment {
-  id              String   @id @default(uuid())
-  no              Int?
-  kodeBatch       String   @unique
-  komoditas       String
-  varietas        String
-  treatment       String   @default("Fungisida + Insektisida")
-  dosis           String   @default("2.5 ml/kg")
-  operator        String   @default("Slamet Riyadi")
-  beratAwal       Float    @default(0)
-  beratAkhir      Float    @default(0)
-  loss            Float    @default(0)
-  tanggalSelesai  String
-  status          String   @default("Selesai")
-  lokasi          String?  @default("Ruang Treatment 1")
-  catatan         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id             String   @id @default(uuid())
+  no             Int?
+  kodeBatch      String   @unique
+  komoditas      String
+  varietas       String
+  treatment      String   @default("Fungisida + Insektisida")
+  dosis          String   @default("2.5 ml/kg")
+  operator       String   @default("Slamet Riyadi")
+  beratAwal      Float    @default(0)
+  beratAkhir     Float    @default(0)
+  loss           Float    @default(0)
+  tanggalSelesai String
+  status         String   @default("Selesai")
+  lokasi         String?  @default("Ruang Treatment 1")
+  catatan        String?  @db.Text
+  dibuatOleh     String?  @default("Admin")
+  diubahOleh     String?  @default("Admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@map("treatment")
 }
@@ -786,3 +769,72 @@ model StokBenih {
   @@map("stok_benih")
 }
 
+model Laboratorium {
+  id                       String   @id @default(uuid())
+  kodeLaboratorium         String   @unique
+  namaLaboratorium         String
+  deskripsi                String?  @db.Text
+  alamat                   String?  @db.Text
+  telepon                  String?
+  nomorAkreditasi          String?
+  lembagaAkreditasi        String?
+  tanggalAkreditasi        DateTime? @db.Date
+  tanggalBerlakuAkreditasi DateTime? @db.Date
+  ruangLingkupPengujian    String?  @db.Text
+  status                   String   @default("Aktif")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  penguji Penguji[]
+
+  @@map("laboratorium")
+}
+
+model Penguji {
+  id             String   @id @default(uuid())
+  userId         String?  @unique
+  kodePenguji    String   @unique
+  nama           String
+  laboratoriumId String?
+  noTelepon      String?
+  foto           String?  @db.Text
+  keterangan     String?  @db.Text
+  status         String   @default("Aktif")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  laboratorium Laboratorium?       @relation(fields: [laboratoriumId], references: [id], onDelete: SetNull)
+  sertifikasi  Sertifikasi[]
+  metodeUji    PengujiTestMethod[]
+  qcTests      QcTest[]
+
+  @@map("penguji")
+}
+
+model Sertifikasi {
+  id              String    @id @default(uuid())
+  pengujiId       String
+  namaSertifikasi String
+  berlakuHingga   DateTime?
+  lampiranUrl     String?   @db.Text
+  status          String    @default("Aktif")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  penguji Penguji @relation(fields: [pengujiId], references: [id], onDelete: Cascade)
+
+  @@map("sertifikasi")
+}
+
+model PengujiTestMethod {
+  pengujiId    String
+  testMethodId String
+  createdAt    DateTime @default(now())
+
+  penguji    Penguji    @relation(fields: [pengujiId], references: [id], onDelete: Cascade)
+  testMethod TestMethod @relation(fields: [testMethodId], references: [id], onDelete: Cascade)
+
+  @@id([pengujiId, testMethodId])
+  @@map("penguji_test_methods")
+}
