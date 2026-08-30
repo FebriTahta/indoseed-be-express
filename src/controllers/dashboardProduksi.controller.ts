@@ -116,7 +116,21 @@ export const getDashboardProduksiData = async (req: Request, res: Response) => {
       tanggal: b.tanggalMulai,
     }));
 
-    const filteredPengeringan = allPengeringan.filter((p: any) => isDateInRange(p.selesai) || isDateInRange(p.createdAt));
+    // Collect sets of kodeBatch that have reached subsequent stages
+    const sortasiKodeBatches = new Set(allSortasi.map((s: any) => s.kodeBatch));
+    const treatmentKodeBatches = new Set(allTreatment.map((t: any) => t.kodeBatch));
+    const completedBatchCodes = new Set(
+      allBatchProduksi.filter((b: any) => b.status === 'Selesai').map((b: any) => b.kodeBatch)
+    );
+
+    // Pengeringan: Hanya yang MASIH aktif/berhenti di tahap Pengeringan (belum lanjut ke Sortasi/Treatment/Selesai)
+    const filteredPengeringan = allPengeringan.filter((p: any) => {
+      const inRange = isDateInRange(p.selesai) || isDateInRange(p.createdAt);
+      if (!inRange) return false;
+      const hasAdvanced = p.status === 'Selesai' || sortasiKodeBatches.has(p.kodeBatch) || completedBatchCodes.has(p.kodeBatch);
+      return !hasAdvanced;
+    });
+
     const listPengeringan = filteredPengeringan.map((p: any, idx: number) => ({
       no: idx + 1,
       kodeBatch: p.kodeBatch,
@@ -130,7 +144,14 @@ export const getDashboardProduksiData = async (req: Request, res: Response) => {
       tanggal: p.selesai || 'Proses Pengeringan',
     }));
 
-    const filteredSortasi = allSortasi.filter((s: any) => isDateInRange(s.tanggalSortasi) || isDateInRange(s.createdAt));
+    // Sortasi / QC: Hanya yang MASIH aktif/berhenti di tahap Sortasi (belum lanjut ke Treatment/Selesai)
+    const filteredSortasi = allSortasi.filter((s: any) => {
+      const inRange = isDateInRange(s.tanggalSortasi) || isDateInRange(s.createdAt);
+      if (!inRange) return false;
+      const hasAdvanced = s.status === 'Selesai' || treatmentKodeBatches.has(s.kodeBatch) || completedBatchCodes.has(s.kodeBatch);
+      return !hasAdvanced;
+    });
+
     const listSortasi = filteredSortasi.map((s: any, idx: number) => ({
       no: idx + 1,
       kodeBatch: s.kodeBatch,
@@ -192,7 +213,7 @@ export const getDashboardProduksiData = async (req: Request, res: Response) => {
     const targetProgress = Math.min(100, Math.round((prodTodayVal * 100) / targetMonthVal));
 
     // Format active batch list from DB records if available
-    const activeBatchListFormatted = filteredBatches.slice(0, 10).map((b: any, idx: number) => ({
+    const activeBatchListFormatted = filteredBatches.slice(0, 5).map((b: any, idx: number) => ({
       no: idx + 1,
       kodeBatch: b.kodeBatch,
       produk: `${b.komoditas} ${b.varietas}`,
