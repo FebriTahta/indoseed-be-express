@@ -1,17 +1,32 @@
-const axios = require('axios');
-axios.put('http://localhost:5000/api/qc/penguji/28adbe1d-2c53-4a1f-bf27-ecd9474dfef8', {
-  kodePenguji: "PENG-001",
-  nama: "Penguji Utama",
-  email: "as@gmail.com",
-  laboratoriumId: "879db46b-e75c-4a3c-8c4c-5d67622bbee4",
-  noTelepon: "",
-  metodeUji: [],
-  tanggalBergabung: "2026-08-27",
-  status: "Aktif",
-  berlakuHingga: "",
-  keterangan: "",
-  noSertifikat: "",
-  tanggalSertifikat: "",
-  foto: null,
-  sertifikatFile: null
-}).then(res => console.log(res.data)).catch(err => console.error(err.response?.data || err.message));
+async function run() {
+  try {
+    const getRes = await fetch('http://localhost:8080/api/qc/tests?jenisUji=Kadar Air');
+    const getData = await getRes.json();
+    const tests = getData.data;
+    if (!tests || tests.length === 0) {
+      console.log('No tests found');
+      return;
+    }
+    const test = tests[0];
+    console.log('Testing with ID:', test.id);
+    
+    const payload = {
+      kodeBatch: test.kodeBatch,
+      testMethodId: test.testMethodId,
+      jenisUji: test.jenisUji,
+      lampiranUrls: []
+    };
+    
+    const updateRes = await fetch(`http://localhost:8080/api/qc/tests/${test.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const updateData = await updateRes.json();
+    console.log('Status:', updateRes.status);
+    console.log('Data:', updateData);
+  } catch (err) {
+    console.error('Error:', err.message);
+  }
+}
+run();
