@@ -43,7 +43,12 @@ jobs:
             git clean -fd
 
             echo "=== Install dependency (Ringan) ==="
-            npm install --omit=dev --prefer-offline --no-audit --no-fund
+            rm -rf node_modules/.*-* node_modules/.staging 2>/dev/null || true
+            npm install --omit=dev --prefer-offline --no-audit --no-fund || {
+              echo "Membersihkan node_modules yang corrupt dan mengulang install..."
+              rm -rf node_modules
+              npm install --omit=dev --prefer-offline --no-audit --no-fund
+            }
 
             echo "=== Generate Prisma ==="
             npx prisma generate
