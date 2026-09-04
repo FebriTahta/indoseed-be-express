@@ -1,4 +1,5 @@
 import express from 'express';
+import 'express-async-errors';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -12,11 +13,59 @@ import gudangRoutes from './routes/gudang.routes';
 
 const app = express();
 
+// Allowed Origins for CORS
+const allowedOrigins = [
+  'https://myiamseed.com',
+  'https://www.myiamseed.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim()) : []),
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+      /^https?:\/\/([a-zA-Z0-9-]+\.)*myiamseed\.com$/.test(origin);
+
+    if (isAllowed || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+  ],
+  optionsSuccessStatus: 200,
+};
+
+// 1. CORS Middleware (Must be before all routes and body parsers)
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// 2. Helmet - configured to allow cross-origin resource sharing for static files & API
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+// 3. Logger & Body Parsers
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -36,6 +85,15 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.send('API SERVER IS READY');
+});
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled server error:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {}),
+  });
 });
 
 export default app;
