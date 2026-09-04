@@ -7,7 +7,7 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",
@@ -36,13 +36,13 @@
     "nodemailer": "^9.0.1",
     "prisma": "^7.9.0",
     "sharp": "^0.35.3",
-    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "eslint": "^10.5.0",
     "nodemon": "^3.1.14",
-    "prettier": "^3.8.4"
+    "prettier": "^3.8.4",
+    "tsx": "^4.22.4"
   }
 }
