@@ -24,13 +24,26 @@ jobs:
             echo "=== Masuk ke folder project ==="
             cd /var/www/indoseed-be-express
 
+            echo "=== Konfigurasi Memori & Swap ==="
+            export NODE_OPTIONS="--max-old-space-size=1024"
+            if [ $(swapon --show | wc -l) -le 1 ]; then
+              echo "Membuat swap file 2GB untuk mencegah OOM..."
+              (sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048) 2>/dev/null || true
+              sudo chmod 600 /swapfile 2>/dev/null || true
+              sudo mkswap /swapfile 2>/dev/null || true
+              sudo swapon /swapfile 2>/dev/null || true
+            fi
+
+            echo "=== Bebaskan RAM sementara ==="
+            pm2 stop indoseed-api || true
+
             echo "=== Reset source ke origin/main ==="
             git fetch origin
             git reset --hard origin/main
             git clean -fd
 
-            echo "=== Install dependency ==="
-            npm install --prefer-offline --no-audit --no-fund
+            echo "=== Install dependency (Ringan) ==="
+            npm install --omit=dev --prefer-offline --no-audit --no-fund
 
             echo "=== Generate Prisma ==="
             npx prisma generate
@@ -40,10 +53,11 @@ jobs:
             
             echo "=== Jalankan Seeder ==="
             npx prisma db seed
+
             echo "=== Build Typescript ==="
             npm run build
 
             echo "=== Reload PM2 ==="
-            pm2 reload indoseed-api
+            pm2 restart indoseed-api || pm2 start indoseed-api || pm2 reload indoseed-api
 
             echo "=== Deploy selesai ==="
