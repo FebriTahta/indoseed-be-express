@@ -413,6 +413,22 @@ jobs:
             "
 
 
+      # ----------------------------------------------------------
+      # Upload Backend .env from GitHub Secrets
+      # ----------------------------------------------------------
+      - name: Upload Backend .env
+        env:
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+        run: |
+          echo "Writing backend .env from GitHub Secrets to VPS..."
+          printf '%s\n' "$BACKEND_ENV" | ssh \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            root@${{ secrets.VPS_HOST }} \
+            "cat > /var/indoseed-deploy/backend.env && chmod 600 /var/indoseed-deploy/backend.env"
+          echo "Backend .env uploaded successfully."
+
+
       # ==========================================================
       # DEPLOY ON VPS
       # ==========================================================
@@ -519,10 +535,15 @@ jobs:
 
           echo "Backend extracted."
 
-          # Preserve .env
-          if [ -f "$BACKEND_DIR/.env" ]; then
+          # Setup .env
+          if [ -f "$DEPLOY_DIR/backend.env" ]; then
+            cp "$DEPLOY_DIR/backend.env" "${BACKEND_DIR}.new/.env"
+            echo "Backend .env configured from GitHub Secrets (BACKEND_ENV)."
+          elif [ -f "$BACKEND_DIR/.env" ]; then
             cp "$BACKEND_DIR/.env" "${BACKEND_DIR}.new/.env"
-            echo ".env preserved."
+            echo "Backend .env preserved from previous version."
+          else
+            echo "WARNING: No .env file found!"
           fi
 
           # Backup current backend
