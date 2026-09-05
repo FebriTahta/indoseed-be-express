@@ -227,19 +227,19 @@ jobs:
           mkdir -p frontend-package
 
           cp -R .next/standalone frontend-package/standalone
+          mkdir -p frontend-package/standalone/.next
+          cp -R .next/static frontend-package/standalone/.next/static
           cp -R .next/static frontend-package/static
 
           if [ -d public ]; then
+            cp -R public frontend-package/standalone/public
             cp -R public frontend-package/public
           fi
 
       - name: Package Frontend
         run: |
           tar -czf frontend.tar.gz \
-            -C frontend-package \
-            standalone \
-            static \
-            $(if [ -d frontend-package/public ]; then echo public; fi)
+            -C frontend-package .
 
           echo "=== Frontend artifact ==="
           ls -lh frontend.tar.gz
@@ -662,16 +662,10 @@ jobs:
 
           cd "$FRONTEND_DIR"
 
-          if pm2 describe indoseed-fe-next > /dev/null 2>&1; then
+          pm2 delete indoseed-fe-next > /dev/null 2>&1 || true
 
-            pm2 restart indoseed-fe-next --update-env
-
-          else
-
-            pm2 start standalone/server.js \
-              --name indoseed-fe-next
-
-          fi
+          PORT=3000 pm2 start standalone/server.js \
+            --name indoseed-fe-next
 
 
           # ======================================================
