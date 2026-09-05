@@ -97,7 +97,7 @@ export const uploadFile = async (
 export const deleteFile = async (fileUrl: string): Promise<void> => {
   try {
     if (!fileUrl) return;
-    
+
     // Extract object name from public URL
     // e.g. http://145.79.12.74:9000/dev/greenhouses/123-abc.jpg -> greenhouses/123-abc.jpg
     const searchString = `/${bucketName}/`;
