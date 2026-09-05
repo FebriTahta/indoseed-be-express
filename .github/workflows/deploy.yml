@@ -27,9 +27,79 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
 
+      - name: Diagnose Prisma Installation
+        run: |
+          echo "========================================"
+          echo "PRISMA PACKAGE"
+          echo "========================================"
+
+          npm ls prisma @prisma/client @prisma/engines || true
+
+          echo ""
+          echo "========================================"
+          echo "PRISMA ENGINES"
+          echo "========================================"
+
+          find node_modules/@prisma/engines \
+            -maxdepth 5 \
+            -type f \
+            -ls || true
+
+          echo ""
+          echo "========================================"
+          echo "SCHEMA ENGINE"
+          echo "========================================"
+
+          find node_modules/@prisma \
+            -type f \
+            -name 'schema-engine*' \
+            -ls || true
+
+          echo ""
+          echo "========================================"
+          echo "QUERY ENGINE"
+          echo "========================================"
+
+          find node_modules/@prisma \
+            -type f \
+            -name 'query-engine*' \
+            -ls || true
+
       - name: Generate Prisma Client
         run: |
           npx prisma generate
+
+      - name: Verify Prisma
+        run: |
+          echo "========================================"
+          echo "PRISMA VERSION"
+          echo "========================================"
+
+          npx prisma -v
+
+          echo ""
+          echo "========================================"
+          echo "PRISMA DIRECTORY"
+          echo "========================================"
+
+          ls -lah node_modules/@prisma || true
+
+          echo ""
+          echo "========================================"
+          echo "PRISMA ENGINES DIRECTORY"
+          echo "========================================"
+
+          ls -lah node_modules/@prisma/engines || true
+
+          echo ""
+          echo "========================================"
+          echo "SCHEMA ENGINE / QUERY ENGINE"
+          echo "========================================"
+
+          find node_modules/@prisma \
+            -type f \
+            \( -name 'schema-engine*' -o -name 'query-engine*' \) \
+            -ls || true
 
       - name: Build Backend
         run: |
@@ -49,8 +119,10 @@ jobs:
         run: |
           test -f prisma.config.ts
           test -f prisma/schema.prisma
+
           echo "Prisma config:"
           ls -lh prisma.config.ts
+
           echo "Prisma schema:"
           ls -lh prisma/schema.prisma
 
@@ -66,6 +138,32 @@ jobs:
 
           echo "=== Backend artifact ==="
           ls -lh backend.tar.gz
+
+      - name: Verify backend package
+        run: |
+          echo "========================================"
+          echo "BACKEND ARTIFACT CONTENT"
+          echo "========================================"
+
+          echo ""
+          echo "=== prisma.config.ts ==="
+          tar -tzf backend.tar.gz | grep \
+            'prisma.config.ts' || true
+
+          echo ""
+          echo "=== Prisma schema ==="
+          tar -tzf backend.tar.gz | grep \
+            'prisma/schema.prisma' || true
+
+          echo ""
+          echo "=== Prisma engines ==="
+          tar -tzf backend.tar.gz | grep -E \
+            'schema-engine|query-engine' || true
+
+          echo ""
+          echo "=== Generated Prisma Client ==="
+          tar -tzf backend.tar.gz | grep \
+            'node_modules/.prisma/client' | head -20 || true
 
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
