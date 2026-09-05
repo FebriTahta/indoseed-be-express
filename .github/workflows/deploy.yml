@@ -23,45 +23,109 @@ jobs:
 
     steps:
 
+      # --------------------------------------------------------
+      # CHECKOUT
+      # --------------------------------------------------------
+
       - name: Checkout Backend
         uses: actions/checkout@v4
         with:
           path: backend
 
+
+      # --------------------------------------------------------
+      # NODE
+      # --------------------------------------------------------
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+
+      # --------------------------------------------------------
+      # INSTALL
+      # --------------------------------------------------------
 
       - name: Install Backend Dependencies
         working-directory: backend
         run: |
           npm ci --no-audit --no-fund
 
+
+      # --------------------------------------------------------
+      # PRISMA
+      # --------------------------------------------------------
+
       - name: Generate Prisma Client
         working-directory: backend
         run: |
           npx prisma generate
+
+
+      # --------------------------------------------------------
+      # BUILD
+      # --------------------------------------------------------
 
       - name: Build Backend
         working-directory: backend
         run: |
           npm run build
 
+
+      # --------------------------------------------------------
+      # PREPARE ARTIFACT
+      # --------------------------------------------------------
+
       - name: Prepare Backend Artifact
         working-directory: backend
         run: |
+
+          set -e
+
           rm -rf deploy
+
           mkdir -p deploy
 
+
+          echo "=== COPY DIST ==="
+
           cp -r dist deploy/
+
+
+          echo "=== COPY PRISMA ==="
+
           cp -r prisma deploy/
+
+
+          echo "=== COPY NODE MODULES ==="
+
           cp -r node_modules deploy/
+
+
+          echo "=== COPY PACKAGE FILES ==="
 
           cp package.json deploy/
           cp package-lock.json deploy/
 
-          tar -czf ../backend.tar.gz -C deploy .
+
+          echo "=== CREATE ARCHIVE ==="
+
+          tar \
+            -czf ../backend.tar.gz \
+            -C deploy .
+
+
+          echo "=== BACKEND ARTIFACT SIZE ==="
+
+          du -h ../backend.tar.gz
+
+
+      # --------------------------------------------------------
+      # UPLOAD ARTIFACT
+      # --------------------------------------------------------
 
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
@@ -80,6 +144,10 @@ jobs:
 
     steps:
 
+      # --------------------------------------------------------
+      # CHECKOUT PRIVATE FRONTEND
+      # --------------------------------------------------------
+
       - name: Checkout Private Frontend
         uses: actions/checkout@v4
         with:
@@ -88,15 +156,32 @@ jobs:
           token: ${{ secrets.FE_REPO_PAT }}
           path: frontend
 
+
+      # --------------------------------------------------------
+      # NODE
+      # --------------------------------------------------------
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+
+      # --------------------------------------------------------
+      # INSTALL
+      # --------------------------------------------------------
 
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: |
           npm ci --no-audit --no-fund
+
+
+      # --------------------------------------------------------
+      # BUILD
+      # --------------------------------------------------------
 
       - name: Build Frontend
         working-directory: frontend
@@ -105,20 +190,70 @@ jobs:
         run: |
           npm run build
 
+
+      # --------------------------------------------------------
+      # PREPARE FRONTEND STANDALONE
+      # --------------------------------------------------------
+
       - name: Prepare Frontend Artifact
         working-directory: frontend
         run: |
+
+          set -e
+
           rm -rf deploy
+
           mkdir -p deploy
 
-          cp -r .next deploy/
-          cp -r public deploy/
-          cp -r node_modules deploy/
 
-          cp package.json deploy/
-          cp package-lock.json deploy/
+          echo "=== CHECK NEXT STANDALONE ==="
 
-          tar -czf ../frontend.tar.gz -C deploy .
+          if [ ! -d ".next/standalone" ]; then
+            echo ""
+            echo "ERROR: .next/standalone tidak ditemukan."
+            echo ""
+            echo "Pastikan next.config.js / next.config.ts memiliki:"
+            echo ""
+            echo "output: 'standalone'"
+            echo ""
+            exit 1
+          fi
+
+
+          echo "=== COPY STANDALONE ==="
+
+          cp -r .next/standalone deploy/standalone
+
+
+          echo "=== COPY STATIC ==="
+
+          mkdir -p deploy/standalone/.next
+
+          cp -r .next/static deploy/standalone/.next/static
+
+
+          echo "=== COPY PUBLIC ==="
+
+          if [ -d "public" ]; then
+            cp -r public deploy/standalone/public
+          fi
+
+
+          echo "=== CREATE ARCHIVE ==="
+
+          tar \
+            -czf ../frontend.tar.gz \
+            -C deploy .
+
+
+          echo "=== FRONTEND ARTIFACT SIZE ==="
+
+          du -h ../frontend.tar.gz
+
+
+      # --------------------------------------------------------
+      # UPLOAD ARTIFACT
+      # --------------------------------------------------------
 
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
@@ -129,7 +264,7 @@ jobs:
 
 
   # ============================================================
-  # DEPLOY TO VPS
+  # DEPLOY
   # ============================================================
   deploy:
     name: Deploy Backend + Frontend
@@ -141,15 +276,16 @@ jobs:
 
     steps:
 
-      # --------------------------------------------------------
+      # ========================================================
       # DOWNLOAD ARTIFACT
-      # --------------------------------------------------------
+      # ========================================================
 
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
           name: backend
           path: artifacts/backend
+
 
       - name: Download Frontend Artifact
         uses: actions/download-artifact@v4
@@ -158,9 +294,29 @@ jobs:
           path: artifacts/frontend
 
 
-      # --------------------------------------------------------
+      # ========================================================
+      # SHOW ARTIFACT SIZE
+      # ========================================================
+
+      - name: Show Artifact Sizes
+        run: |
+
+          echo "=============================================="
+          echo "ARTIFACT SIZE"
+          echo "=============================================="
+
+          du -h artifacts/backend/backend.tar.gz
+          du -h artifacts/frontend/frontend.tar.gz
+
+          echo ""
+
+          ls -lh artifacts/backend/backend.tar.gz
+          ls -lh artifacts/frontend/frontend.tar.gz
+
+
+      # ========================================================
       # UPLOAD BACKEND
-      # --------------------------------------------------------
+      # ========================================================
 
       - name: Upload Backend Artifact
         uses: appleboy/scp-action@v1.0.0
@@ -169,13 +325,17 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
+
           source: "artifacts/backend/backend.tar.gz"
+
           target: "/tmp/indoseed-deploy/backend"
 
+          overwrite: true
 
-      # --------------------------------------------------------
+
+      # ========================================================
       # UPLOAD FRONTEND
-      # --------------------------------------------------------
+      # ========================================================
 
       - name: Upload Frontend Artifact
         uses: appleboy/scp-action@v1.0.0
@@ -184,34 +344,58 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
+
           source: "artifacts/frontend/frontend.tar.gz"
+
           target: "/tmp/indoseed-deploy/frontend"
+
+          overwrite: true
 
 
       # ========================================================
-      # DEPLOY
+      # DEPLOY TO VPS
       # ========================================================
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
+
         with:
+
           host: ${{ secrets.VPS_HOST }}
+
           username: ${{ secrets.VPS_USER }}
+
           key: ${{ secrets.VPS_SSH_KEY }}
+
           port: 22
+
           command_timeout: 30m
 
           script: |
 
             set -e
 
+
+            # ==================================================
+            # VARIABLES
+            # ==================================================
+
             BACKEND_PATH="/var/www/indoseed-be-express"
+
             FRONTEND_PATH="/var/www/indoseed-fe-next"
 
             DEPLOY_PATH="/tmp/indoseed-deploy"
 
             BACKEND_ARCHIVE="${DEPLOY_PATH}/backend/backend.tar.gz"
+
             FRONTEND_ARCHIVE="${DEPLOY_PATH}/frontend/frontend.tar.gz"
+
+
+            # ==================================================
+            # NODE MEMORY LIMIT
+            # ==================================================
+
+            export NODE_OPTIONS="--max-old-space-size=768"
 
 
             echo ""
@@ -220,14 +404,58 @@ jobs:
             echo "================================================"
             echo ""
 
+
+            # ==================================================
+            # MEMORY
+            # ==================================================
+
             echo "=== MEMORY BEFORE DEPLOYMENT ==="
+
             free -h
 
             echo ""
 
 
             # ==================================================
-            # STOP APPLICATION
+            # CHECK ARCHIVES
+            # ==================================================
+
+            echo "=== CHECK DEPLOYMENT ARCHIVES ==="
+
+            if [ ! -f "${BACKEND_ARCHIVE}" ]; then
+
+              echo "Backend archive tidak ditemukan."
+
+              exit 1
+
+            fi
+
+
+            if [ ! -f "${FRONTEND_ARCHIVE}" ]; then
+
+              echo "Frontend archive tidak ditemukan."
+
+              exit 1
+
+            fi
+
+
+            ls -lh "${BACKEND_ARCHIVE}"
+
+            ls -lh "${FRONTEND_ARCHIVE}"
+
+            echo ""
+
+
+            # ==================================================
+            # CREATE DEPLOY DIRECTORY
+            # ==================================================
+
+            mkdir -p "${DEPLOY_PATH}"
+
+
+            # ==================================================
+            # STOP APPLICATIONS
             # ==================================================
 
             echo "=== STOP BACKEND ==="
@@ -241,7 +469,7 @@ jobs:
 
 
             # ==================================================
-            # PREPARE BACKEND
+            # PREPARE NEW DIRECTORIES
             # ==================================================
 
             echo "=== PREPARE BACKEND ==="
@@ -250,10 +478,6 @@ jobs:
 
             mkdir -p "${BACKEND_PATH}.new"
 
-
-            # ==================================================
-            # PREPARE FRONTEND
-            # ==================================================
 
             echo "=== PREPARE FRONTEND ==="
 
@@ -268,7 +492,8 @@ jobs:
 
             echo "=== EXTRACT BACKEND ==="
 
-            tar -xzf "${BACKEND_ARCHIVE}" \
+            tar \
+              -xzf "${BACKEND_ARCHIVE}" \
               -C "${BACKEND_PATH}.new"
 
 
@@ -278,12 +503,13 @@ jobs:
 
             echo "=== EXTRACT FRONTEND ==="
 
-            tar -xzf "${FRONTEND_ARCHIVE}" \
+            tar \
+              -xzf "${FRONTEND_ARCHIVE}" \
               -C "${FRONTEND_PATH}.new"
 
 
             # ==================================================
-            # PRESERVE BACKEND .ENV
+            # PRESERVE BACKEND ENV
             # ==================================================
 
             echo "=== PRESERVE BACKEND ENV ==="
@@ -298,7 +524,7 @@ jobs:
 
 
             # ==================================================
-            # PRESERVE FRONTEND .ENV
+            # PRESERVE FRONTEND ENV
             # ==================================================
 
             echo "=== PRESERVE FRONTEND ENV ==="
@@ -313,12 +539,13 @@ jobs:
 
 
             # ==================================================
-            # REMOVE OLD BACKUP
+            # REMOVE OLD BACKUPS
             # ==================================================
 
-            echo "=== REMOVE OLD BACKUP ==="
+            echo "=== REMOVE OLD BACKUPS ==="
 
             rm -rf "${BACKEND_PATH}.old"
+
             rm -rf "${FRONTEND_PATH}.old"
 
 
@@ -349,7 +576,7 @@ jobs:
 
 
             # ==================================================
-            # ACTIVATE NEW VERSION
+            # ACTIVATE BACKEND
             # ==================================================
 
             echo "=== ACTIVATE BACKEND ==="
@@ -359,6 +586,10 @@ jobs:
               "${BACKEND_PATH}"
 
 
+            # ==================================================
+            # ACTIVATE FRONTEND
+            # ==================================================
+
             echo "=== ACTIVATE FRONTEND ==="
 
             mv \
@@ -367,7 +598,7 @@ jobs:
 
 
             # ==================================================
-            # DATABASE RESET
+            # PRISMA DATABASE
             # ==================================================
 
             echo ""
@@ -376,18 +607,22 @@ jobs:
             echo "================================================"
             echo ""
 
+
             cd "${BACKEND_PATH}"
 
 
             echo "=== PRISMA MIGRATE RESET ==="
 
-            npx prisma migrate reset --force
+            NODE_OPTIONS="--max-old-space-size=512" \
+              npx prisma migrate reset --force
 
 
             echo ""
+
             echo "=== PRISMA SEED ==="
 
-            npx prisma db seed
+            NODE_OPTIONS="--max-old-space-size=512" \
+              npx prisma db seed
 
 
             # ==================================================
@@ -395,6 +630,7 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "=== REMOVE OLD BACKEND ==="
 
             rm -rf "${BACKEND_PATH}.old"
@@ -406,11 +642,13 @@ jobs:
 
 
             # ==================================================
-            # CHECK FRONTEND PORT
+            # CHECK PORT
             # ==================================================
 
             echo ""
+
             echo "=== CHECK PORT 3000 ==="
+
 
             if ss -ltnp | grep -q ':3000 '; then
 
@@ -428,7 +666,9 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "=== START BACKEND ==="
+
 
             cd "${BACKEND_PATH}"
 
@@ -440,7 +680,8 @@ jobs:
             else
 
               pm2 start dist/server.js \
-                --name indoseed-api
+                --name indoseed-api \
+                --node-args="--max-old-space-size=768"
 
             fi
 
@@ -450,9 +691,11 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "=== START FRONTEND ==="
 
-            cd "${FRONTEND_PATH}"
+
+            cd "${FRONTEND_PATH}/standalone"
 
 
             if pm2 describe indoseed-fe > /dev/null 2>&1; then
@@ -461,9 +704,9 @@ jobs:
 
             else
 
-              pm2 start npm \
+              pm2 start server.js \
                 --name indoseed-fe \
-                -- start
+                --node-args="--max-old-space-size=768"
 
             fi
 
@@ -473,6 +716,7 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "=== SAVE PM2 ==="
 
             pm2 save
@@ -483,6 +727,7 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "=== CLEANUP ==="
 
             rm -rf "${DEPLOY_PATH}"
@@ -493,18 +738,29 @@ jobs:
             # ==================================================
 
             echo ""
+
             echo "================================================"
             echo "              FINAL STATUS"
             echo "================================================"
             echo ""
 
+
             pm2 list
+
 
             echo ""
 
             echo "=== MEMORY AFTER DEPLOYMENT ==="
 
             free -h
+
+
+            echo ""
+
+            echo "=== SWAP ==="
+
+            swapon --show
+
 
             echo ""
 
