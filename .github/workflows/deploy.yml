@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy Development to VPS
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy application to VPS
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -18,56 +18,86 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           command_timeout: 30m
+
           script: |
             set -e
 
-            echo "=== Masuk ke folder project ==="
+            echo "========================================"
+            echo "       DEVELOPMENT DEPLOYMENT"
+            echo "========================================"
+
+            echo "=== Stop Backend ==="
+            pm2 stop indoseed-api || true
+
+            echo "=== Stop Frontend ==="
+            pm2 stop indoseed-fe || true
+
+            echo "=== Backend: Update Source ==="
             cd /var/www/indoseed-be-express
 
-            echo "=== Konfigurasi Memori & Swap ==="
-            export NODE_OPTIONS="--max-old-space-size=1024"
-            if [ $(sudo swapon --show | wc -l) -le 1 ]; then
-              echo "Membuat swap file 2GB dengan dd..."
-              sudo swapoff /swapfile 2>/dev/null || true
-              sudo rm -f /swapfile
-              sudo dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-            fi
-            echo "=== Status Memori Server ==="
-            sudo swapon --show
-            free -m
-
-            echo "=== Hentikan semua proses PM2 sementara untuk mengosongkan RAM ==="
-            pm2 stop all || true
-
-            echo "=== Reset source ke origin/main ==="
             git fetch origin
             git reset --hard origin/main
             git clean -fd
 
-            echo "=== Install dependency (Ringan) ==="
-            rm -rf node_modules/.*-* node_modules/.staging node_modules/esbuild 2>/dev/null || true
-            npm install --omit=dev --prefer-offline --no-audit --no-fund || {
-              echo "Membersihkan node_modules yang corrupt dan mengulang install..."
-              rm -rf node_modules
-              npm install --omit=dev --prefer-offline --no-audit --no-fund
-            }
+            echo "=== Backend: Install Dependencies ==="
+            npm ci --prefer-offline --no-audit --no-fund
 
-            echo "=== Generate Prisma ==="
+            echo "=== Backend: Generate Prisma Client ==="
             npx prisma generate
 
-            echo "=== Update database DEV ==="
+            echo "=== Backend: Reset Development Database ==="
             npx prisma migrate reset --force
-            
-            echo "=== Jalankan Seeder ==="
+
+            echo "=== Backend: Seed Database ==="
             npx prisma db seed
 
-            echo "=== Build Typescript ==="
+            echo "=== Backend: Build ==="
             npm run build
 
-            echo "=== Nyalakan Kembali PM2 ==="
-            pm2 restart all || pm2 start all || true
+            echo "=== Backend: Start ==="
+            if pm2 describe indoseed-api > /dev/null 2>&1; then
+              pm2 restart indoseed-api
+            else
+              pm2 start dist/server.js --name indoseed-api
+            fi
 
-            echo "=== Deploy selesai ==="
+            echo "=== Backend: Save PM2 ==="
+            pm2 save
+
+            echo "=== Frontend: Update Source ==="
+            cd /var/www/indoseed-fe-next
+
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+
+            echo "=== Frontend: Install Dependencies ==="
+            npm ci --prefer-offline --no-audit --no-fund
+
+            echo "=== Frontend: Build ==="
+            npm run build
+
+            echo "=== Frontend: Check Port 3000 ==="
+            if ss -ltnp | grep -q ':3000 '; then
+              echo "Port 3000 masih digunakan. Menghentikan proses lama..."
+              fuser -k 3000/tcp || true
+              sleep 2
+            fi
+
+            echo "=== Frontend: Start ==="
+            if pm2 describe indoseed-fe > /dev/null 2>&1; then
+              pm2 restart indoseed-fe
+            else
+              pm2 start npm --name indoseed-fe -- start
+            fi
+
+            echo "=== Save PM2 ==="
+            pm2 save
+
+            echo "=== Final Status ==="
+            pm2 list
+            free -h
+
+            echo "========================================"
+            echo "       DEPLOYMENT SELESAI"
+            echo "========================================"
