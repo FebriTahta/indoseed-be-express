@@ -126,6 +126,10 @@ jobs:
           echo "Prisma schema:"
           ls -lh prisma/schema.prisma
 
+      - name: Prune Dev Dependencies
+        run: |
+          npm prune --omit=dev --no-audit --no-fund
+
       - name: Package Backend
         run: |
           tar -czf backend.tar.gz \
@@ -333,11 +337,11 @@ jobs:
             -o ServerAliveCountMax=10 \
             root@${{ secrets.VPS_HOST }} \
             "
-              mkdir -p /tmp/indoseed-deploy/backend
-              mkdir -p /tmp/indoseed-deploy/frontend
+              mkdir -p /var/indoseed-deploy/backend
+              mkdir -p /var/indoseed-deploy/frontend
 
-              rm -f /tmp/indoseed-deploy/backend/backend.tar.gz
-              rm -f /tmp/indoseed-deploy/frontend/frontend.tar.gz
+              rm -f /var/indoseed-deploy/backend/backend.tar.gz
+              rm -f /var/indoseed-deploy/frontend/frontend.tar.gz
 
               echo 'Deployment directory ready'
             "
@@ -357,7 +361,7 @@ jobs:
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=10 \
             ./backend/backend.tar.gz \
-            root@${{ secrets.VPS_HOST }}:/tmp/indoseed-deploy/backend/backend.tar.gz
+            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/backend/backend.tar.gz
 
           echo "Backend upload completed."
 
@@ -372,7 +376,7 @@ jobs:
             -o BatchMode=yes \
             root@${{ secrets.VPS_HOST }} \
             "
-              ls -lh /tmp/indoseed-deploy/backend/backend.tar.gz
+              ls -lh /var/indoseed-deploy/backend/backend.tar.gz
             "
 
 
@@ -390,7 +394,7 @@ jobs:
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=10 \
             ./frontend/frontend.tar.gz \
-            root@${{ secrets.VPS_HOST }}:/tmp/indoseed-deploy/frontend/frontend.tar.gz
+            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/frontend/frontend.tar.gz
 
           echo "Frontend upload completed."
 
@@ -405,7 +409,7 @@ jobs:
             -o BatchMode=yes \
             root@${{ secrets.VPS_HOST }} \
             "
-              ls -lh /tmp/indoseed-deploy/frontend/frontend.tar.gz
+              ls -lh /var/indoseed-deploy/frontend/frontend.tar.gz
             "
 
 
@@ -427,10 +431,34 @@ jobs:
           echo "START DEPLOYMENT"
           echo "========================================"
 
-          BACKEND_DIR="/var/www/indoseed-be-express"
-          FRONTEND_DIR="/var/www/indoseed-fe-next"
+          # ======================================================
+          # SWAP CONFIGURATION (ANTI-OOM)
+          # ======================================================
+          echo ""
+          echo "=== CHECK & SETUP SWAP ==="
+          if [ $(swapon --show | wc -l) -le 1 ]; then
+            echo "Membuat Swapfile 2GB di VPS..."
+            swapoff /swapfile 2>/dev/null || true
+            rm -f /swapfile
+            dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            echo "Swap berhasil diaktifkan."
+          fi
 
-          DEPLOY_DIR="/tmp/indoseed-deploy"
+          echo "Status Memori Saat Ini:"
+          swapon --show
+          free -h
+
+          # Bebaskan cache RAM
+          sync; echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+
+          BACKEND_DIR="/var/www/backend/indoseed-be-express"
+          FRONTEND_DIR="/var/www/frontend/indoseed-fe-next"
+
+          DEPLOY_DIR="/var/indoseed-deploy"
 
           BACKEND_ARCHIVE="$DEPLOY_DIR/backend/backend.tar.gz"
           FRONTEND_ARCHIVE="$DEPLOY_DIR/frontend/frontend.tar.gz"
@@ -467,8 +495,8 @@ jobs:
           echo ""
           echo "=== STOP APPLICATIONS ==="
 
-          pm2 stop indoseed-api || true
-          pm2 stop indoseed-fe || true
+          pm2 stop indoseed-be-express || true
+          pm2 stop indoseed-fe-next || true
 
 
           # ======================================================
@@ -558,6 +586,8 @@ jobs:
 
           cd "$BACKEND_DIR"
 
+          export NODE_OPTIONS="--max-old-space-size=512"
+
           npx prisma migrate reset --force
 
           echo "Prisma reset completed."
@@ -586,14 +616,16 @@ jobs:
           echo "START BACKEND"
           echo "========================================"
 
-          if pm2 describe indoseed-api > /dev/null 2>&1; then
+          cd "$BACKEND_DIR"
 
-            pm2 restart indoseed-api
+          if pm2 describe indoseed-be-express > /dev/null 2>&1; then
+
+            pm2 restart indoseed-be-express --update-env
 
           else
 
             pm2 start dist/server.js \
-              --name indoseed-api
+              --name indoseed-be-express
 
           fi
 
@@ -609,14 +641,14 @@ jobs:
 
           cd "$FRONTEND_DIR"
 
-          if pm2 describe indoseed-fe > /dev/null 2>&1; then
+          if pm2 describe indoseed-fe-next > /dev/null 2>&1; then
 
-            pm2 restart indoseed-fe
+            pm2 restart indoseed-fe-next --update-env
 
           else
 
             pm2 start standalone/server.js \
-              --name indoseed-fe
+              --name indoseed-fe-next
 
           fi
 
