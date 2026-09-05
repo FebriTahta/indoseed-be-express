@@ -45,6 +45,15 @@ jobs:
           du -sh prisma
           du -sh node_modules
 
+      - name: Verify Prisma config
+        run: |
+          test -f prisma.config.ts
+          test -f prisma/schema.prisma
+          echo "Prisma config:"
+          ls -lh prisma.config.ts
+          echo "Prisma schema:"
+          ls -lh prisma/schema.prisma
+
       - name: Package Backend
         run: |
           tar -czf backend.tar.gz \
