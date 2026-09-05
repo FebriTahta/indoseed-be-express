@@ -5,12 +5,125 @@ on:
     branches:
       - main
 
+concurrency:
+  group: development-deployment
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build:
+    name: Build Application
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VPS
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            indoseed-be-express/package-lock.json
+            indoseed-fe-next/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: indoseed-be-express
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma Client
+        working-directory: indoseed-be-express
+        run: npx prisma generate
+
+      - name: Build Backend
+        working-directory: indoseed-be-express
+        run: npm run build
+
+      - name: Install Frontend Dependencies
+        working-directory: indoseed-fe-next
+        run: npm ci --no-audit --no-fund
+
+      - name: Build Frontend
+        working-directory: indoseed-fe-next
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Prepare Backend Artifact
+        run: |
+          mkdir -p deploy/backend
+
+          cp -r indoseed-be-express/dist deploy/backend/
+          cp -r indoseed-be-express/prisma deploy/backend/
+          cp -r indoseed-be-express/node_modules deploy/backend/
+          cp indoseed-be-express/package.json deploy/backend/
+          cp indoseed-be-express/package-lock.json deploy/backend/
+
+          tar -czf backend.tar.gz -C deploy/backend .
+
+      - name: Prepare Frontend Artifact
+        run: |
+          mkdir -p deploy/frontend
+
+          cp -r indoseed-fe-next/.next deploy/frontend/
+          cp -r indoseed-fe-next/public deploy/frontend/ 2>/dev/null || true
+          cp -r indoseed-fe-next/node_modules deploy/frontend/
+          cp indoseed-fe-next/package.json deploy/frontend/
+          cp indoseed-fe-next/package-lock.json deploy/frontend/
+
+          tar -czf frontend.tar.gz -C deploy/frontend .
+
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend
+          path: backend.tar.gz
+          retention-days: 1
+
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: frontend.tar.gz
+          retention-days: 1
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend
+
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend
+
+      - name: Upload Backend to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: backend.tar.gz
+          target: /tmp/indoseed-deploy
+
+      - name: Upload Frontend to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: frontend.tar.gz
+          target: /tmp/indoseed-deploy
+
+      - name: Deploy Application
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -22,11 +135,16 @@ jobs:
           script: |
             set -e
 
-            export NODE_OPTIONS="--max-old-space-size=768"
+            BACKEND_PATH="/var/www/indoseed-be-express"
+            FRONTEND_PATH="/var/www/indoseed-fe-next"
+            DEPLOY_PATH="/tmp/indoseed-deploy"
 
             echo "========================================"
             echo "       DEVELOPMENT DEPLOYMENT"
             echo "========================================"
+
+            echo "=== Memory Before Deployment ==="
+            free -h
 
             echo "=== Stop Backend ==="
             pm2 stop indoseed-api || true
@@ -34,82 +152,96 @@ jobs:
             echo "=== Stop Frontend ==="
             pm2 stop indoseed-fe || true
 
-            echo "=== Backend: Update Source ==="
-            cd /var/www/indoseed-be-express
+            echo "=== Prepare Backend ==="
+            mkdir -p "${BACKEND_PATH}.new"
+            rm -rf "${BACKEND_PATH}.new"/*
 
-            git fetch origin
-            git reset --hard origin/main
-            git clean -fd
+            tar -xzf "${DEPLOY_PATH}/backend.tar.gz" \
+              -C "${BACKEND_PATH}.new"
 
-            echo "=== Backend: Remove Old Dependencies ==="
-            rm -rf node_modules
+            echo "=== Preserve Backend Environment ==="
+            if [ -f "${BACKEND_PATH}/.env" ]; then
+              cp "${BACKEND_PATH}/.env" "${BACKEND_PATH}.new/.env"
+            fi
 
-            echo "=== Memory Before npm ci ==="
-            sync
-            echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
-            free -h
+            echo "=== Activate Backend ==="
+            rm -rf "${BACKEND_PATH}.old"
+            mv "${BACKEND_PATH}" "${BACKEND_PATH}.old"
+            mv "${BACKEND_PATH}.new" "${BACKEND_PATH}"
 
-            echo "=== Backend: Install Dependencies ==="
-            npm ci --prefer-offline --no-audit --no-fund
+            echo "=== Reset Development Database ==="
+            cd "${BACKEND_PATH}"
 
-            echo "=== Backend: Generate Prisma Client ==="
-            npx prisma generate
-
-            echo "=== Backend: Reset Development Database ==="
             npx prisma migrate reset --force
 
-            echo "=== Backend: Seed Database ==="
+            echo "=== Seed Development Database ==="
             npx prisma db seed
 
-            echo "=== Backend: Build ==="
-            npm run build
+            echo "=== Remove Old Backend ==="
+            rm -rf "${BACKEND_PATH}.old"
 
-            echo "=== Backend: Start ==="
+            echo "=== Start Backend ==="
             if pm2 describe indoseed-api > /dev/null 2>&1; then
-              pm2 restart indoseed-api
+              pm2 restart indoseed-api --update-env
             else
               pm2 start dist/server.js --name indoseed-api
             fi
 
-            pm2 save
+            echo "=== Prepare Frontend ==="
+            mkdir -p "${FRONTEND_PATH}.new"
+            rm -rf "${FRONTEND_PATH}.new"/*
 
-            echo "=== Frontend: Update Source ==="
-            cd /var/www/indoseed-fe-next
+            tar -xzf "${DEPLOY_PATH}/frontend.tar.gz" \
+              -C "${FRONTEND_PATH}.new"
 
-            pm2 stop indoseed-api || true
-
-            git fetch origin
-            git reset --hard origin/main
-            git clean -fd
-
-            echo "=== Frontend: Remove Old Dependencies ==="
-            rm -rf node_modules
-
-            echo "=== Memory Before Frontend Install ==="
-            sync
-            echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
-            free -h
-
-            echo "=== Frontend: Install Dependencies ==="
-            npm ci --prefer-offline --no-audit --no-fund
-
-            echo "=== Frontend: Build ==="
-            npm run build
-
-            echo "=== Frontend: Check Port 3000 ==="
-            if ss -ltnp | grep -q ':3000 '; then
-              fuser -k 3000/tcp || true
-              sleep 2
+            echo "=== Preserve Frontend Environment ==="
+            if [ -f "${FRONTEND_PATH}/.env" ]; then
+              cp "${FRONTEND_PATH}/.env" "${FRONTEND_PATH}.new/.env"
             fi
 
-            echo "=== Frontend: Start ==="
+            if [ -f "${FRONTEND_PATH}/.env.local" ]; then
+              cp "${FRONTEND_PATH}/.env.local" "${FRONTEND_PATH}.new/.env.local"
+            fi
+
+            if [ -f "${FRONTEND_PATH}/.env.production" ]; then
+              cp "${FRONTEND_PATH}/.env.production" "${FRONTEND_PATH}.new/.env.production"
+            fi
+
+            echo "=== Check Frontend Port ==="
+            if ss -ltnp | grep -q ':3000 '; then
+              echo "Port 3000 masih digunakan."
+
+              pm2 stop indoseed-fe || true
+
+              sleep 2
+
+              if ss -ltnp | grep -q ':3000 '; then
+                fuser -k 3000/tcp || true
+                sleep 2
+              fi
+            fi
+
+            echo "=== Activate Frontend ==="
+            rm -rf "${FRONTEND_PATH}.old"
+            mv "${FRONTEND_PATH}" "${FRONTEND_PATH}.old"
+            mv "${FRONTEND_PATH}.new" "${FRONTEND_PATH}"
+
+            echo "=== Remove Old Frontend ==="
+            rm -rf "${FRONTEND_PATH}.old"
+
+            echo "=== Start Frontend ==="
             if pm2 describe indoseed-fe > /dev/null 2>&1; then
-              pm2 restart indoseed-fe
+              pm2 restart indoseed-fe --update-env
             else
+              cd "${FRONTEND_PATH}"
               pm2 start npm --name indoseed-fe -- start
             fi
 
+            echo "=== Save PM2 ==="
             pm2 save
+
+            echo "=== Cleanup Deployment Files ==="
+            rm -rf "${DEPLOY_PATH}"
 
             echo "=== Final Status ==="
             pm2 list
