@@ -50,6 +50,7 @@ jobs:
           tar -czf backend.tar.gz \
             dist \
             prisma \
+            prisma.config.ts \
             node_modules \
             package.json \
             package-lock.json
