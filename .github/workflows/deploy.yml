@@ -22,6 +22,8 @@ jobs:
           script: |
             set -e
 
+            export NODE_OPTIONS="--max-old-space-size=768"
+
             echo "========================================"
             echo "       DEVELOPMENT DEPLOYMENT"
             echo "========================================"
@@ -38,6 +40,14 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             git clean -fd
+
+            echo "=== Backend: Remove Old Dependencies ==="
+            rm -rf node_modules
+
+            echo "=== Memory Before npm ci ==="
+            sync
+            echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+            free -h
 
             echo "=== Backend: Install Dependencies ==="
             npm ci --prefer-offline --no-audit --no-fund
@@ -61,15 +71,24 @@ jobs:
               pm2 start dist/server.js --name indoseed-api
             fi
 
-            echo "=== Backend: Save PM2 ==="
             pm2 save
 
             echo "=== Frontend: Update Source ==="
             cd /var/www/indoseed-fe-next
 
+            pm2 stop indoseed-api || true
+
             git fetch origin
             git reset --hard origin/main
             git clean -fd
+
+            echo "=== Frontend: Remove Old Dependencies ==="
+            rm -rf node_modules
+
+            echo "=== Memory Before Frontend Install ==="
+            sync
+            echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+            free -h
 
             echo "=== Frontend: Install Dependencies ==="
             npm ci --prefer-offline --no-audit --no-fund
@@ -79,7 +98,6 @@ jobs:
 
             echo "=== Frontend: Check Port 3000 ==="
             if ss -ltnp | grep -q ':3000 '; then
-              echo "Port 3000 masih digunakan. Menghentikan proses lama..."
               fuser -k 3000/tcp || true
               sleep 2
             fi
@@ -91,7 +109,6 @@ jobs:
               pm2 start npm --name indoseed-fe -- start
             fi
 
-            echo "=== Save PM2 ==="
             pm2 save
 
             echo "=== Final Status ==="
