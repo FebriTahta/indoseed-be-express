@@ -118,9 +118,25 @@ jobs:
             -C deploy .
 
 
-          echo "=== BACKEND ARTIFACT SIZE ==="
+          echo ""
+          echo "=============================================="
+          echo "BACKEND ARTIFACT SIZE"
+          echo "=============================================="
 
-          du -h ../backend.tar.gz
+          ls -lh ../backend.tar.gz
+
+          du -sh ../backend.tar.gz
+
+          echo ""
+          echo "Backend node_modules:"
+          du -sh node_modules
+
+          echo ""
+          echo "Backend dist:"
+          du -sh dist
+
+          echo ""
+          echo "=============================================="
 
 
       # --------------------------------------------------------
@@ -209,14 +225,17 @@ jobs:
           echo "=== CHECK NEXT STANDALONE ==="
 
           if [ ! -d ".next/standalone" ]; then
+
             echo ""
             echo "ERROR: .next/standalone tidak ditemukan."
             echo ""
-            echo "Pastikan next.config.js / next.config.ts memiliki:"
+            echo "Pastikan next.config.js memiliki:"
             echo ""
             echo "output: 'standalone'"
             echo ""
+
             exit 1
+
           fi
 
 
@@ -235,10 +254,13 @@ jobs:
           echo "=== COPY PUBLIC ==="
 
           if [ -d "public" ]; then
+
             cp -r public deploy/standalone/public
+
           fi
 
 
+          echo ""
           echo "=== CREATE ARCHIVE ==="
 
           tar \
@@ -246,9 +268,21 @@ jobs:
             -C deploy .
 
 
-          echo "=== FRONTEND ARTIFACT SIZE ==="
+          echo ""
+          echo "=============================================="
+          echo "FRONTEND ARTIFACT SIZE"
+          echo "=============================================="
 
-          du -h ../frontend.tar.gz
+          ls -lh ../frontend.tar.gz
+
+          du -sh ../frontend.tar.gz
+
+          echo ""
+          echo "Frontend standalone:"
+          du -sh deploy/standalone
+
+          echo ""
+          echo "=============================================="
 
 
       # --------------------------------------------------------
@@ -301,17 +335,28 @@ jobs:
       - name: Show Artifact Sizes
         run: |
 
-          echo "=============================================="
-          echo "ARTIFACT SIZE"
-          echo "=============================================="
+          echo ""
+          echo "================================================"
+          echo "             ARTIFACT SIZE"
+          echo "================================================"
+          echo ""
 
-          du -h artifacts/backend/backend.tar.gz
-          du -h artifacts/frontend/frontend.tar.gz
+          echo "=== BACKEND ==="
+
+          ls -lh artifacts/backend/backend.tar.gz
+
+          du -sh artifacts/backend/backend.tar.gz
 
           echo ""
 
-          ls -lh artifacts/backend/backend.tar.gz
+          echo "=== FRONTEND ==="
+
           ls -lh artifacts/frontend/frontend.tar.gz
+
+          du -sh artifacts/frontend/frontend.tar.gz
+
+          echo ""
+          echo "================================================"
 
 
       # ========================================================
@@ -440,9 +485,20 @@ jobs:
             fi
 
 
+            echo ""
+            echo "=== BACKEND ARCHIVE ==="
+
             ls -lh "${BACKEND_ARCHIVE}"
 
+            du -sh "${BACKEND_ARCHIVE}"
+
+
+            echo ""
+            echo "=== FRONTEND ARCHIVE ==="
+
             ls -lh "${FRONTEND_ARCHIVE}"
+
+            du -sh "${FRONTEND_ARCHIVE}"
 
             echo ""
 
