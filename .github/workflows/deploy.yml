@@ -1,4 +1,4 @@
-name: Deploy Development to VPS
+name: Deploy Indoseed Development
 
 on:
   push:
@@ -6,46 +6,62 @@ on:
       - main
 
 concurrency:
-  group: development-deployment
+  group: indoseed-development
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+
+  # ============================================================
+  # BUILD BACKEND
+  # ============================================================
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+
+      - name: Checkout Backend
         uses: actions/checkout@v4
+        with:
+          path: backend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Dependencies
-        working-directory: indoseed-be-express
-        run: npm ci --no-audit --no-fund
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: |
+          npm ci --no-audit --no-fund
 
       - name: Generate Prisma Client
-        working-directory: indoseed-be-express
-        run: npx prisma generate
+        working-directory: backend
+        run: |
+          npx prisma generate
 
       - name: Build Backend
-        working-directory: indoseed-be-express
-        run: npm run build
-
-      - name: Create Backend Artifact
+        working-directory: backend
         run: |
-          mkdir -p deploy/backend
+          npm run build
 
-          cp -r indoseed-be-express/dist deploy/backend/
-          cp -r indoseed-be-express/prisma deploy/backend/
-          cp -r indoseed-be-express/node_modules deploy/backend/
-          cp indoseed-be-express/package.json deploy/backend/
-          cp indoseed-be-express/package-lock.json deploy/backend/
+      - name: Prepare Backend Artifact
+        working-directory: backend
+        run: |
+          rm -rf deploy
+          mkdir -p deploy
 
-          tar -czf backend.tar.gz -C deploy/backend .
+          cp -r dist deploy/
+          cp -r prisma deploy/
+          cp -r node_modules deploy/
+
+          cp package.json deploy/
+          cp package-lock.json deploy/
+
+          tar -czf ../backend.tar.gz -C deploy .
 
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
@@ -54,40 +70,55 @@ jobs:
           path: backend.tar.gz
           retention-days: 1
 
+
+  # ============================================================
+  # BUILD FRONTEND
+  # ============================================================
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+
+      - name: Checkout Private Frontend
         uses: actions/checkout@v4
+        with:
+          repository: FebriTahta/indoseed-fe-next
+          ref: main
+          token: ${{ secrets.FE_REPO_PAT }}
+          path: frontend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Dependencies
-        working-directory: indoseed-fe-next
-        run: npm ci --no-audit --no-fund
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
 
       - name: Build Frontend
-        working-directory: indoseed-fe-next
+        working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-        run: npm run build
-
-      - name: Create Frontend Artifact
         run: |
-          mkdir -p deploy/frontend
+          npm run build
 
-          cp -r indoseed-fe-next/.next deploy/frontend/
-          cp -r indoseed-fe-next/public deploy/frontend/ 2>/dev/null || true
-          cp -r indoseed-fe-next/node_modules deploy/frontend/
-          cp indoseed-fe-next/package.json deploy/frontend/
-          cp indoseed-fe-next/package-lock.json deploy/frontend/
+      - name: Prepare Frontend Artifact
+        working-directory: frontend
+        run: |
+          rm -rf deploy
+          mkdir -p deploy
 
-          tar -czf frontend.tar.gz -C deploy/frontend .
+          cp -r .next deploy/
+          cp -r public deploy/
+          cp -r node_modules deploy/
+
+          cp package.json deploy/
+          cp package-lock.json deploy/
+
+          tar -czf ../frontend.tar.gz -C deploy .
 
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
@@ -96,45 +127,72 @@ jobs:
           path: frontend.tar.gz
           retention-days: 1
 
+
+  # ============================================================
+  # DEPLOY TO VPS
+  # ============================================================
   deploy:
-    name: Deploy to VPS
+    name: Deploy Backend + Frontend
     runs-on: ubuntu-latest
+
     needs:
       - build-backend
       - build-frontend
 
     steps:
+
+      # --------------------------------------------------------
+      # DOWNLOAD ARTIFACT
+      # --------------------------------------------------------
+
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
           name: backend
+          path: artifacts/backend
 
       - name: Download Frontend Artifact
         uses: actions/download-artifact@v4
         with:
           name: frontend
+          path: artifacts/frontend
+
+
+      # --------------------------------------------------------
+      # UPLOAD BACKEND
+      # --------------------------------------------------------
 
       - name: Upload Backend Artifact
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
-          source: backend.tar.gz
-          target: /tmp/indoseed-deploy
+          source: "artifacts/backend/backend.tar.gz"
+          target: "/tmp/indoseed-deploy/backend"
+
+
+      # --------------------------------------------------------
+      # UPLOAD FRONTEND
+      # --------------------------------------------------------
 
       - name: Upload Frontend Artifact
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
-          source: frontend.tar.gz
-          target: /tmp/indoseed-deploy
+          source: "artifacts/frontend/frontend.tar.gz"
+          target: "/tmp/indoseed-deploy/frontend"
 
-      - name: Deploy Application
+
+      # ========================================================
+      # DEPLOY
+      # ========================================================
+
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -144,113 +202,312 @@ jobs:
           command_timeout: 30m
 
           script: |
+
             set -e
 
             BACKEND_PATH="/var/www/indoseed-be-express"
             FRONTEND_PATH="/var/www/indoseed-fe-next"
+
             DEPLOY_PATH="/tmp/indoseed-deploy"
 
-            echo "========================================"
-            echo "       DEVELOPMENT DEPLOYMENT"
-            echo "========================================"
+            BACKEND_ARCHIVE="${DEPLOY_PATH}/backend/backend.tar.gz"
+            FRONTEND_ARCHIVE="${DEPLOY_PATH}/frontend/frontend.tar.gz"
 
-            echo "=== Memory Before Deployment ==="
+
+            echo ""
+            echo "================================================"
+            echo "       INDOSEED DEVELOPMENT DEPLOYMENT"
+            echo "================================================"
+            echo ""
+
+            echo "=== MEMORY BEFORE DEPLOYMENT ==="
             free -h
 
-            echo "=== Stop Backend ==="
+            echo ""
+
+
+            # ==================================================
+            # STOP APPLICATION
+            # ==================================================
+
+            echo "=== STOP BACKEND ==="
+
             pm2 stop indoseed-api || true
 
-            echo "=== Stop Frontend ==="
+
+            echo "=== STOP FRONTEND ==="
+
             pm2 stop indoseed-fe || true
 
-            echo "=== Prepare Backend ==="
+
+            # ==================================================
+            # PREPARE BACKEND
+            # ==================================================
+
+            echo "=== PREPARE BACKEND ==="
+
             rm -rf "${BACKEND_PATH}.new"
+
             mkdir -p "${BACKEND_PATH}.new"
 
-            tar -xzf "${DEPLOY_PATH}/backend.tar.gz" \
+
+            # ==================================================
+            # PREPARE FRONTEND
+            # ==================================================
+
+            echo "=== PREPARE FRONTEND ==="
+
+            rm -rf "${FRONTEND_PATH}.new"
+
+            mkdir -p "${FRONTEND_PATH}.new"
+
+
+            # ==================================================
+            # EXTRACT BACKEND
+            # ==================================================
+
+            echo "=== EXTRACT BACKEND ==="
+
+            tar -xzf "${BACKEND_ARCHIVE}" \
               -C "${BACKEND_PATH}.new"
 
+
+            # ==================================================
+            # EXTRACT FRONTEND
+            # ==================================================
+
+            echo "=== EXTRACT FRONTEND ==="
+
+            tar -xzf "${FRONTEND_ARCHIVE}" \
+              -C "${FRONTEND_PATH}.new"
+
+
+            # ==================================================
+            # PRESERVE BACKEND .ENV
+            # ==================================================
+
+            echo "=== PRESERVE BACKEND ENV ==="
+
             if [ -f "${BACKEND_PATH}/.env" ]; then
-              cp "${BACKEND_PATH}/.env" "${BACKEND_PATH}.new/.env"
+
+              cp \
+                "${BACKEND_PATH}/.env" \
+                "${BACKEND_PATH}.new/.env"
+
             fi
 
-            echo "=== Replace Backend ==="
-            rm -rf "${BACKEND_PATH}.old"
-            mv "${BACKEND_PATH}" "${BACKEND_PATH}.old"
-            mv "${BACKEND_PATH}.new" "${BACKEND_PATH}"
 
-            echo "=== Reset Development Database ==="
+            # ==================================================
+            # PRESERVE FRONTEND .ENV
+            # ==================================================
+
+            echo "=== PRESERVE FRONTEND ENV ==="
+
+            if [ -f "${FRONTEND_PATH}/.env" ]; then
+
+              cp \
+                "${FRONTEND_PATH}/.env" \
+                "${FRONTEND_PATH}.new/.env"
+
+            fi
+
+
+            # ==================================================
+            # REMOVE OLD BACKUP
+            # ==================================================
+
+            echo "=== REMOVE OLD BACKUP ==="
+
+            rm -rf "${BACKEND_PATH}.old"
+            rm -rf "${FRONTEND_PATH}.old"
+
+
+            # ==================================================
+            # BACKUP CURRENT VERSION
+            # ==================================================
+
+            echo "=== BACKUP CURRENT BACKEND ==="
+
+            if [ -d "${BACKEND_PATH}" ]; then
+
+              mv \
+                "${BACKEND_PATH}" \
+                "${BACKEND_PATH}.old"
+
+            fi
+
+
+            echo "=== BACKUP CURRENT FRONTEND ==="
+
+            if [ -d "${FRONTEND_PATH}" ]; then
+
+              mv \
+                "${FRONTEND_PATH}" \
+                "${FRONTEND_PATH}.old"
+
+            fi
+
+
+            # ==================================================
+            # ACTIVATE NEW VERSION
+            # ==================================================
+
+            echo "=== ACTIVATE BACKEND ==="
+
+            mv \
+              "${BACKEND_PATH}.new" \
+              "${BACKEND_PATH}"
+
+
+            echo "=== ACTIVATE FRONTEND ==="
+
+            mv \
+              "${FRONTEND_PATH}.new" \
+              "${FRONTEND_PATH}"
+
+
+            # ==================================================
+            # DATABASE RESET
+            # ==================================================
+
+            echo ""
+            echo "================================================"
+            echo "          RESET DEVELOPMENT DATABASE"
+            echo "================================================"
+            echo ""
+
             cd "${BACKEND_PATH}"
+
+
+            echo "=== PRISMA MIGRATE RESET ==="
 
             npx prisma migrate reset --force
 
-            echo "=== Seed Development Database ==="
+
+            echo ""
+            echo "=== PRISMA SEED ==="
+
             npx prisma db seed
 
-            echo "=== Remove Old Backend ==="
+
+            # ==================================================
+            # REMOVE OLD VERSION
+            # ==================================================
+
+            echo ""
+            echo "=== REMOVE OLD BACKEND ==="
+
             rm -rf "${BACKEND_PATH}.old"
 
-            echo "=== Start Backend ==="
-            if pm2 describe indoseed-api > /dev/null 2>&1; then
-              pm2 restart indoseed-api --update-env
-            else
-              pm2 start dist/server.js --name indoseed-api
-            fi
 
-            echo "=== Prepare Frontend ==="
-            rm -rf "${FRONTEND_PATH}.new"
-            mkdir -p "${FRONTEND_PATH}.new"
+            echo "=== REMOVE OLD FRONTEND ==="
 
-            tar -xzf "${DEPLOY_PATH}/frontend.tar.gz" \
-              -C "${FRONTEND_PATH}.new"
+            rm -rf "${FRONTEND_PATH}.old"
 
-            if [ -f "${FRONTEND_PATH}/.env" ]; then
-              cp "${FRONTEND_PATH}/.env" "${FRONTEND_PATH}.new/.env"
-            fi
 
-            if [ -f "${FRONTEND_PATH}/.env.local" ]; then
-              cp "${FRONTEND_PATH}/.env.local" "${FRONTEND_PATH}.new/.env.local"
-            fi
+            # ==================================================
+            # CHECK FRONTEND PORT
+            # ==================================================
 
-            if [ -f "${FRONTEND_PATH}/.env.production" ]; then
-              cp "${FRONTEND_PATH}/.env.production" "${FRONTEND_PATH}.new/.env.production"
-            fi
-
-            echo "=== Check Port 3000 ==="
-            pm2 stop indoseed-fe || true
+            echo ""
+            echo "=== CHECK PORT 3000 ==="
 
             if ss -ltnp | grep -q ':3000 '; then
+
+              echo "Port 3000 masih digunakan."
+
               fuser -k 3000/tcp || true
+
               sleep 2
+
             fi
 
-            echo "=== Replace Frontend ==="
-            rm -rf "${FRONTEND_PATH}.old"
-            mv "${FRONTEND_PATH}" "${FRONTEND_PATH}.old"
-            mv "${FRONTEND_PATH}.new" "${FRONTEND_PATH}"
 
-            echo "=== Remove Old Frontend ==="
-            rm -rf "${FRONTEND_PATH}.old"
+            # ==================================================
+            # START BACKEND
+            # ==================================================
 
-            echo "=== Start Frontend ==="
+            echo ""
+            echo "=== START BACKEND ==="
+
+            cd "${BACKEND_PATH}"
+
+
+            if pm2 describe indoseed-api > /dev/null 2>&1; then
+
+              pm2 restart indoseed-api --update-env
+
+            else
+
+              pm2 start dist/server.js \
+                --name indoseed-api
+
+            fi
+
+
+            # ==================================================
+            # START FRONTEND
+            # ==================================================
+
+            echo ""
+            echo "=== START FRONTEND ==="
+
             cd "${FRONTEND_PATH}"
 
+
             if pm2 describe indoseed-fe > /dev/null 2>&1; then
+
               pm2 restart indoseed-fe --update-env
+
             else
-              pm2 start npm --name indoseed-fe -- start
+
+              pm2 start npm \
+                --name indoseed-fe \
+                -- start
+
             fi
 
-            echo "=== Save PM2 ==="
+
+            # ==================================================
+            # SAVE PM2
+            # ==================================================
+
+            echo ""
+            echo "=== SAVE PM2 ==="
+
             pm2 save
 
-            echo "=== Cleanup ==="
+
+            # ==================================================
+            # CLEANUP
+            # ==================================================
+
+            echo ""
+            echo "=== CLEANUP ==="
+
             rm -rf "${DEPLOY_PATH}"
 
-            echo "=== Final Status ==="
+
+            # ==================================================
+            # FINAL STATUS
+            # ==================================================
+
+            echo ""
+            echo "================================================"
+            echo "              FINAL STATUS"
+            echo "================================================"
+            echo ""
+
             pm2 list
+
+            echo ""
+
+            echo "=== MEMORY AFTER DEPLOYMENT ==="
+
             free -h
 
-            echo "========================================"
-            echo "       DEPLOYMENT SELESAI"
-            echo "========================================"
+            echo ""
+
+            echo "================================================"
+            echo "       DEPLOYMENT BERHASIL"
+            echo "================================================"
