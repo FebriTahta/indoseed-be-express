@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import * as Minio from 'minio';
 import path from 'path';
 import sharp from 'sharp';
@@ -30,25 +29,25 @@ export const initMinio = async () => {
     if (!exists) {
       await minioClient.makeBucket(bucketName, 'us-east-1');
       console.log(`Bucket '${bucketName}' created successfully.`);
+
+      // Set public read policy for the bucket
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicRead',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${bucketName}/*`],
+          },
+        ],
+      };
+      await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
+      console.log(`Public read policy set for bucket '${bucketName}'.`);
     } else {
       console.log(`Bucket '${bucketName}' already exists.`);
     }
-
-    // Always ensure public read policy for the bucket
-    const policy = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Sid: 'PublicRead',
-          Effect: 'Allow',
-          Principal: '*',
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${bucketName}/*`],
-        },
-      ],
-    };
-    await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
-    console.log(`Public read policy ensured for bucket '${bucketName}'.`);
   } catch (error) {
     console.error('Error initializing Minio bucket:', error);
   }
@@ -98,7 +97,7 @@ export const uploadFile = async (
 export const deleteFile = async (fileUrl: string): Promise<void> => {
   try {
     if (!fileUrl) return;
-    
+
     // Extract object name from public URL
     // e.g. http://145.79.12.74:9000/dev/greenhouses/123-abc.jpg -> greenhouses/123-abc.jpg
     const searchString = `/${bucketName}/`;
