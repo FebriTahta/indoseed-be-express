@@ -136,7 +136,7 @@ export const authService = {
   login: async (data: LoginInput) => {
     const { username, password } = data;
 
-    const user = await userRepository.findByUsername(username);
+    const user = await userRepository.findByUsernameOrEmail(username);
 
     if (!user) {
       throw new Error('Invalid credentials');
