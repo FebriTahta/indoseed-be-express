@@ -203,7 +203,8 @@ jobs:
 
       - name: Build Frontend
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://api.myiamseed.com/api' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.myiamseed.com' }}
         run: |
           npm run build
 

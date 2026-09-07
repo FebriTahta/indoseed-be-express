@@ -17,6 +17,18 @@ export const userRepository = {
     });
   },
 
+  findByUsernameOrEmail: async (identifier: string) => {
+    return prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: identifier },
+          { email: identifier },
+        ],
+      },
+      include: { roles: { include: { role: true } } },
+    });
+  },
+
   findById: async (id: string) => {
     return prisma.user.findUnique({
       where: { id },
