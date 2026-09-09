@@ -29,7 +29,7 @@ import {
   deletePartner
 } from '../controllers/partner.controller';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
-import { uploadSingle } from '../middlewares/upload.middleware';
+import { uploadSingle, uploadNone } from '../middlewares/upload.middleware';
 
 import * as custCont from '../controllers/customer.controller';
 import * as gudangCont from '../controllers/gudang.controller';
@@ -69,33 +69,36 @@ router.put('/partner/:id', uploadSingle('image'), updatePartner);
 router.delete('/partner/:id', deletePartner);
 
 // Customer routes
-router.post('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.createCustomer);
+router.post('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), custCont.createCustomer);
+router.get('/customer/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.getCustomers);
 router.get('/customer', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.getCustomers);
 router.get('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.getCustomerById);
-router.put('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'),  custCont.updateCustomer);
+router.put('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), custCont.updateCustomer);
 router.delete('/customer/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), custCont.deleteCustomer);
 
 // Gudang routes
-router.post('/gudang', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.createGudang);
+router.post('/gudang', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), gudangCont.createGudang);
+router.get('/gudang/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.getGudang);
 router.get('/gudang', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.getGudang);
 router.get('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.getGudangById);
-router.put('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.updateGudang);
+router.put('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), gudangCont.updateGudang);
 router.delete('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.deleteGudang);
 
 // Supplier routes
-router.post('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.createSupplier);
+router.post('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), suppCont.createSupplier);
+router.get('/supplier/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSuppliers);
 router.get('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSuppliers);
 router.get('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSupplierById);
-router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.updateSupplier);
+router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), suppCont.updateSupplier);
 router.delete('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.deleteSupplier);
 
 import * as labCont from '../controllers/laboratorium.controller';
 // Laboratorium routes
-router.post('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.createLaboratorium);
+router.post('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), labCont.createLaboratorium);
 router.get('/laboratorium/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumList);
 router.get('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriums);
 router.get('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumById);
-router.put('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.updateLaboratorium);
+router.put('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), labCont.updateLaboratorium);
 router.delete('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.deleteLaboratorium);
 
 export default router;
