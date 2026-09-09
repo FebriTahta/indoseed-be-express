@@ -597,22 +597,6 @@ jobs:
           echo "Frontend activated."
 
 
-          # ======================================================
-          # BACKEND PRISMA
-          # ======================================================
-
-          echo ""
-          echo "========================================"
-          echo "PRISMA DATABASE RESET"
-          echo "========================================"
-
-          cd "$BACKEND_DIR"
-
-          export NODE_OPTIONS="--max-old-space-size=512"
-
-          npx prisma migrate reset --force
-
-          echo "Prisma reset completed."
 
 
           # ======================================================
@@ -624,9 +608,14 @@ jobs:
           echo "PRISMA SEED"
           echo "========================================"
 
+          cd "$BACKEND_DIR"
+
+          export NODE_OPTIONS="--max-old-space-size=512"
+
           npx prisma db seed
 
           echo "Prisma seed completed."
+
 
 
           # ======================================================
