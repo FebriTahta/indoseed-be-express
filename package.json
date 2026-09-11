@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "tunnel": "ssh -N -L 3306:127.0.0.1:3306 -o ServerAliveInterval=60 root@145.79.12.74",
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
