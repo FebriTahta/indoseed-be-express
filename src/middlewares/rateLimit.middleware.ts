@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 5, // Limit each IP to 5 login requests per 15 minutes
+  limit: process.env.NODE_ENV === 'production' ? 10 : 100, // 100 attempts in development, 10 in production
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
