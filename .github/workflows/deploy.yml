@@ -133,6 +133,7 @@ jobs:
       - name: Package Backend
         run: |
           tar -czf backend.tar.gz \
+            src \
             dist \
             prisma \
             prisma.config.ts \
