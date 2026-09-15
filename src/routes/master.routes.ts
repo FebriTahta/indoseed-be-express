@@ -90,6 +90,9 @@ router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin
 router.delete('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.deleteSupplier);
 
 import * as labCont from '../controllers/laboratorium.controller';
+import * as paramCont from '../controllers/masterParameter.controller';
+import * as varietyParamCont from '../controllers/varietyParameter.controller';
+
 // Laboratorium routes
 router.post('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.createLaboratorium);
 router.get('/laboratorium/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumList);
@@ -98,4 +101,17 @@ router.get('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'a
 router.put('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.updateLaboratorium);
 router.delete('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.deleteLaboratorium);
 
+// Master Parameter routes
+router.get('/parameter/modul-list', paramCont.getModulList);
+router.get('/parameter', paramCont.getMasterParameters);
+router.get('/parameter/:id', paramCont.getMasterParameterById);
+router.post('/parameter', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.createMasterParameter);
+router.put('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.updateMasterParameter);
+router.delete('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.deleteMasterParameter);
+
+// Variety Parameter routes
+router.get('/variety-parameter/:varietyId', varietyParamCont.getVarietyParameters);
+router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRoles('superadmin', 'admin'), varietyParamCont.upsertVarietyParametersBatch);
+
 export default router;
+

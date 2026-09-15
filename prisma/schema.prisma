@@ -148,6 +148,7 @@ model Variety {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
+  varietyParameters VarietyParameter[]
 
   @@map("varieties")
 }
@@ -838,3 +839,62 @@ model PengujiTestMethod {
   @@id([pengujiId, testMethodId])
   @@map("penguji_test_methods")
 }
+
+model MasterParameter {
+  id        String   @id @default(uuid())
+  kode      String   @unique
+  nama      String
+  namaModul  String   @default("UMUM")
+  tipeNilai  String   @default("NUMBER") // NUMBER, TEXT, OPTION, RANGE, BOOLEAN
+  satuan     String?
+  batasLulus Float?
+  deskripsi  String?  @db.Text
+  status     String   @default("Aktif")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options           MasterParameterOption[]
+  varietyParameters VarietyParameter[]
+
+  @@map("master_parameters")
+}
+
+model MasterParameterOption {
+  id          String   @id @default(uuid())
+  parameterId String
+  kode        String
+  nama        String
+  bobot       Float    @default(0)
+  urutan      Int      @default(0)
+  status      String   @default("Aktif")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parameter         MasterParameter    @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  varietyParameters VarietyParameter[]
+
+  @@unique([parameterId, kode])
+  @@map("master_parameter_options")
+}
+
+model VarietyParameter {
+  id          String   @id @default(uuid())
+  varietyId   String
+  parameterId String
+  optionId    String?
+  nilaiNumber Float?
+  nilaiText   String?
+  operator    String?  // =, >, >=, <, <=, BETWEEN
+  nilaiMin    Float?
+  nilaiMax    Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variety   Variety                @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  parameter MasterParameter        @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  option    MasterParameterOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  @@unique([varietyId, parameterId])
+  @@map("variety_parameters")
+}
+
