@@ -91,6 +91,7 @@ model Greenhouse {
   partner        Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
+  perencanaanProduksis PerencanaanProduksi[]
 
   @@map("greenhouses")
 }
@@ -116,6 +117,7 @@ model Commodity {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
+  perencanaanProduksis PerencanaanProduksi[]
 
   @@map("commodities")
 }
@@ -148,6 +150,7 @@ model Variety {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
+  perencanaanProduksis PerencanaanProduksi[]
 
   @@map("varieties")
 }
@@ -174,6 +177,7 @@ model Partner {
   updatedAt      DateTime @updatedAt
 
   greenhouses Greenhouse[]
+  perencanaanProduksis PerencanaanProduksi[]
 
   @@map("partners")
 }
@@ -838,3 +842,43 @@ model PengujiTestMethod {
   @@id([pengujiId, testMethodId])
   @@map("penguji_test_methods")
 }
+
+model PerencanaanProduksi {
+  id                String    @id @default(uuid())
+  noPerencanaan     String    @unique
+  commodityId       String?
+  komoditas         String
+  varietyId         String?
+  varietas          String
+  targetProduksi    Float     @default(0)
+  aktualProduksi    Float     @default(0)
+  produksiTerpenuhi Float     @default(0)
+  targetLuasLahan   Float     @default(0)
+  lahanTersedia     Float     @default(0)
+  realisasiTanam    Float     @default(0)
+  periode           String
+  periodeMulai      DateTime?
+  periodeSelesai    DateTime?
+  metodeTanam       String    @default("Pindah Tanam")
+  kebutuhanBenih    Float     @default(0)
+  estimasiHasilPerHa Float    @default(0)
+  partnerId         String?
+  namaPetani        String?
+  greenhouseId      String?
+  namaLahan         String?
+  status            String    @default("Draft")
+  catatan           String?   @db.Text
+  estimasiPanen     String?
+  dibuatOleh        String?   @default("Admin")
+  diubahOleh        String?   @default("Admin")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  commodity         Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety           Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  partner           Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  greenhouse        Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+
+  @@map("perencanaan_produksi")
+}
+
