@@ -149,6 +149,7 @@ model Variety {
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
   varietyParameters VarietyParameter[]
+  harvestTypes   HarvestType[]
 
   @@map("varieties")
 }
@@ -898,3 +899,30 @@ model VarietyParameter {
   @@map("variety_parameters")
 }
 
+model HarvestType {
+  id          String   @id @default(uuid())
+  kode        String   @unique
+  nama        String   // "Gelondong / Fresh"
+  varietyId   String
+  status      String   @default("Aktif")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variety     Variety  @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  prices      HarvestTypePrice[]
+
+  @@map("harvest_types")
+}
+
+model HarvestTypePrice {
+  id            String   @id @default(uuid())
+  harvestTypeId String
+  harga         Float
+  keterangan    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  harvestType   HarvestType @relation(fields: [harvestTypeId], references: [id], onDelete: Cascade)
+
+  @@map("harvest_type_prices")
+}

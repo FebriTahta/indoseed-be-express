@@ -34,7 +34,7 @@ import { uploadSingle } from '../middlewares/upload.middleware';
 import * as custCont from '../controllers/customer.controller';
 import * as gudangCont from '../controllers/gudang.controller';
 import * as suppCont from '../controllers/supplier.controller';
-
+import * as harvestTypeCont from '../controllers/masterHarvestType.controller';
 
 const router = Router();
 
@@ -109,9 +109,16 @@ router.post('/parameter', authenticateJWT, authorizeRoles('superadmin', 'admin')
 router.put('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.updateMasterParameter);
 router.delete('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.deleteMasterParameter);
 
+// Harvest Type routes
+router.get('/harvest-type', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.getHarvestTypes);
+router.get('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.getHarvestTypeDetail);
+router.post('/harvest-type', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.createHarvestType);
+router.put('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.updateHarvestType);
+router.delete('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.deleteHarvestType);
+router.post('/harvest-type/:id/price', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.addHarvestTypePrice);
+
 // Variety Parameter routes
 router.get('/variety-parameter/:varietyId', varietyParamCont.getVarietyParameters);
 router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRoles('superadmin', 'admin'), varietyParamCont.upsertVarietyParametersBatch);
 
 export default router;
-
