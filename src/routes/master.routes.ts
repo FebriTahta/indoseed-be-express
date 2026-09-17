@@ -34,7 +34,7 @@ import { uploadSingle, uploadNone } from '../middlewares/upload.middleware';
 import * as custCont from '../controllers/customer.controller';
 import * as gudangCont from '../controllers/gudang.controller';
 import * as suppCont from '../controllers/supplier.controller';
-
+import * as harvestTypeCont from '../controllers/masterHarvestType.controller';
 
 const router = Router();
 
@@ -93,6 +93,9 @@ router.put('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin
 router.delete('/supplier/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.deleteSupplier);
 
 import * as labCont from '../controllers/laboratorium.controller';
+import * as paramCont from '../controllers/masterParameter.controller';
+import * as varietyParamCont from '../controllers/varietyParameter.controller';
+
 // Laboratorium routes
 router.post('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), labCont.createLaboratorium);
 router.get('/laboratorium/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumList);
@@ -100,5 +103,25 @@ router.get('/laboratorium', authenticateJWT, authorizeRoles('superadmin', 'admin
 router.get('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.getLaboratoriumById);
 router.put('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), labCont.updateLaboratorium);
 router.delete('/laboratorium/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), labCont.deleteLaboratorium);
+
+// Master Parameter routes
+router.get('/parameter/modul-list', paramCont.getModulList);
+router.get('/parameter', paramCont.getMasterParameters);
+router.get('/parameter/:id', paramCont.getMasterParameterById);
+router.post('/parameter', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.createMasterParameter);
+router.put('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.updateMasterParameter);
+router.delete('/parameter/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), paramCont.deleteMasterParameter);
+
+// Harvest Type routes
+router.get('/harvest-type', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.getHarvestTypes);
+router.get('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.getHarvestTypeDetail);
+router.post('/harvest-type', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.createHarvestType);
+router.put('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.updateHarvestType);
+router.delete('/harvest-type/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.deleteHarvestType);
+router.post('/harvest-type/:id/price', authenticateJWT, authorizeRoles('superadmin', 'admin'), harvestTypeCont.addHarvestTypePrice);
+
+// Variety Parameter routes
+router.get('/variety-parameter/:varietyId', varietyParamCont.getVarietyParameters);
+router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRoles('superadmin', 'admin'), varietyParamCont.upsertVarietyParametersBatch);
 
 export default router;
