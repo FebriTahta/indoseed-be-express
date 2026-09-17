@@ -154,6 +154,7 @@ model Variety {
   panens         Panen[]
   perencanaanProduksis PerencanaanProduksi[]
   varietyParameters    VarietyParameter[]
+  harvestTypes   HarvestType[]
 
   @@map("varieties")
 }
@@ -912,20 +913,40 @@ model PerencanaanProduksiPetani {
 }
 
 model MasterParameter {
+  id        String   @id @default(uuid())
+  kode      String   @unique
+  nama      String
+  namaModul  String   @default("UMUM")
+  tipeNilai  String   @default("NUMBER") // NUMBER, TEXT, OPTION, RANGE, BOOLEAN
+  satuan     String?
+  batasLulus Float?
+  deskripsi  String?  @db.Text
+  status     String   @default("Aktif")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options           MasterParameterOption[]
+  varietyParameters VarietyParameter[]
+
+  @@map("master_parameters")
+}
+
+model MasterParameterOption {
   id          String   @id @default(uuid())
-  kode        String   @unique
+  parameterId String
+  kode        String
   nama        String
-  namaModul   String   @default("UMUM")
-  tipeNilai   String   @default("NUMBER")
-  satuan      String?
-  deskripsi   String?  @db.Text
+  bobot       Float    @default(0)
+  urutan      Int      @default(0)
   status      String   @default("Aktif")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  parameter         MasterParameter    @relation(fields: [parameterId], references: [id], onDelete: Cascade)
   varietyParameters VarietyParameter[]
 
-  @@map("master_parameters")
+  @@unique([parameterId, kode])
+  @@map("master_parameter_options")
 }
 
 model VarietyParameter {
@@ -935,17 +956,44 @@ model VarietyParameter {
   optionId    String?
   nilaiNumber Float?
   nilaiText   String?
-  operator    String?
+  operator    String?  // =, >, >=, <, <=, BETWEEN
   nilaiMin    Float?
   nilaiMax    Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  variety   Variety         @relation(fields: [varietyId], references: [id], onDelete: Cascade)
-  parameter MasterParameter @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  variety   Variety                @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  parameter MasterParameter        @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  option    MasterParameterOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
 
+  @@unique([varietyId, parameterId])
   @@map("variety_parameters")
 }
 
+model HarvestType {
+  id          String   @id @default(uuid())
+  kode        String   @unique
+  nama        String   // "Gelondong / Fresh"
+  varietyId   String
+  status      String   @default("Aktif")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  variety     Variety  @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  prices      HarvestTypePrice[]
 
+  @@map("harvest_types")
+}
+
+model HarvestTypePrice {
+  id            String   @id @default(uuid())
+  harvestTypeId String
+  harga         Float
+  keterangan    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  harvestType   HarvestType @relation(fields: [harvestTypeId], references: [id], onDelete: Cascade)
+
+  @@map("harvest_type_prices")
+}
