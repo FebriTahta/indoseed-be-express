@@ -57,7 +57,7 @@ export const getPerencanaanProduksiStats = async (req: Request, res: Response) =
 export const getPerencanaanProduksiById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const item = await perencanaanProduksiRepository.findById(id);
+    const item = await perencanaanProduksiRepository.findById(id as string);
     if (!item) {
       return res.status(404).json({ success: false, message: 'Data rencana produksi tidak ditemukan' });
     }
@@ -90,7 +90,7 @@ export const updatePerencanaanProduksi = async (req: Request, res: Response) => 
   try {
     const { id } = req.params;
     const data = req.body;
-    const updated = await perencanaanProduksiRepository.update(id, data);
+    const updated = await perencanaanProduksiRepository.update(id as string, data);
     res.json({ success: true, data: updated, message: 'Rencana produksi berhasil diperbarui' });
   } catch (error: any) {
     console.error('Error updating perencanaan produksi:', error);
@@ -101,7 +101,7 @@ export const updatePerencanaanProduksi = async (req: Request, res: Response) => 
 export const deletePerencanaanProduksi = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await perencanaanProduksiRepository.delete(id);
+    await perencanaanProduksiRepository.delete(id as string);
     res.json({ success: true, message: 'Rencana produksi berhasil dihapus' });
   } catch (error: any) {
     console.error('Error deleting perencanaan produksi:', error);

@@ -64,7 +64,12 @@ export const perencanaanProduksiRepository = {
         where,
         skip,
         take,
-        orderBy: { noPerencanaan: 'asc' }
+        orderBy: { noPerencanaan: 'asc' },
+        include: {
+          petaniDistribusi: true,
+          commodity: true,
+          variety: true,
+        }
       }),
       prisma.perencanaanProduksi.count({ where })
     ]);
@@ -82,52 +87,156 @@ export const perencanaanProduksiRepository = {
     return prisma.perencanaanProduksi.findFirst({
       where: {
         OR: [{ id }, { noPerencanaan: id }]
+      },
+      include: {
+        petaniDistribusi: true,
+        commodity: true,
+        variety: true,
       }
     });
   },
 
   async create(data: any) {
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      commodity: _commodity,
+      variety: _variety,
+      partner: _partner,
+      greenhouse: _greenhouse,
+      petaniDistribusi,
+      produk: _produk,
+      ...restData
+    } = data;
+
     // calculate produksiTerpenuhi if target & aktual provided
-    const target = Number(data.targetProduksi) || 0;
-    const aktual = Number(data.aktualProduksi) || 0;
+    const target = Number(restData.targetProduksi) || 0;
+    const aktual = Number(restData.aktualProduksi) || 0;
     const terpenuhi = target > 0 ? Number(((aktual / target) * 100).toFixed(1)) : 0;
 
+    const createPayload: any = {
+      ...restData,
+      targetProduksi: target,
+      aktualProduksi: aktual,
+      produksiTerpenuhi: restData.produksiTerpenuhi !== undefined ? Number(restData.produksiTerpenuhi) : terpenuhi,
+      targetLuasLahan: Number(restData.targetLuasLahan) || 0,
+      lahanTersedia: Number(restData.lahanTersedia) || 0,
+      realisasiTanam: Number(restData.realisasiTanam) || 0,
+      kebutuhanBenih: Number(restData.kebutuhanBenih) || 0,
+      estimasiHasilPerHa: Number(restData.estimasiHasilPerHa) || 0,
+      periodeMulai: restData.periodeMulai ? new Date(restData.periodeMulai) : null,
+      periodeSelesai: restData.periodeSelesai ? new Date(restData.periodeSelesai) : null,
+    };
+
+    if (Array.isArray(petaniDistribusi) && petaniDistribusi.length > 0) {
+      createPayload.petaniDistribusi = {
+        create: petaniDistribusi.map((p: any) => ({
+          partnerId: p.partnerId || null,
+          namaPetani: p.namaPetani,
+          greenhouseId: p.greenhouseId || null,
+          namaLahan: p.namaLahan || null,
+          luasLahan: Number(p.luasLahan) || 0,
+          targetProduksi: Number(p.targetProduksi) || 0,
+          tanggalTanam: p.tanggalTanam ? new Date(p.tanggalTanam) : null,
+          tanggalPanen: p.tanggalPanen ? new Date(p.tanggalPanen) : null,
+          keterangan: p.keterangan || null,
+        }))
+      };
+    }
+
     return prisma.perencanaanProduksi.create({
-      data: {
-        ...data,
-        targetProduksi: target,
-        aktualProduksi: aktual,
-        produksiTerpenuhi: data.produksiTerpenuhi !== undefined ? Number(data.produksiTerpenuhi) : terpenuhi,
-        targetLuasLahan: Number(data.targetLuasLahan) || 0,
-        lahanTersedia: Number(data.lahanTersedia) || 0,
-        realisasiTanam: Number(data.realisasiTanam) || 0,
-        kebutuhanBenih: Number(data.kebutuhanBenih) || 0,
-        estimasiHasilPerHa: Number(data.estimasiHasilPerHa) || 0,
+      data: createPayload,
+      include: {
+        petaniDistribusi: true,
+        commodity: true,
+        variety: true,
       }
     });
   },
 
   async update(id: string, data: any) {
-    const target = data.targetProduksi !== undefined ? Number(data.targetProduksi) : undefined;
-    const aktual = data.aktualProduksi !== undefined ? Number(data.aktualProduksi) : undefined;
+    const existing = await prisma.perencanaanProduksi.findFirst({
+      where: {
+        OR: [{ id }, { noPerencanaan: id }]
+      }
+    });
 
-    let terpenuhi = data.produksiTerpenuhi !== undefined ? Number(data.produksiTerpenuhi) : undefined;
+    if (!existing) {
+      throw new Error(`Data perencanaan produksi '${id}' tidak ditemukan`);
+    }
+
+    const targetId = existing.id;
+
+    const {
+      id: _id,
+      noPerencanaan: _noPerencanaan,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      commodity: _commodity,
+      variety: _variety,
+      partner: _partner,
+      greenhouse: _greenhouse,
+      petaniDistribusi,
+      produk: _produk,
+      ...restData
+    } = data;
+
+    const target = restData.targetProduksi !== undefined ? Number(restData.targetProduksi) : undefined;
+    const aktual = restData.aktualProduksi !== undefined ? Number(restData.aktualProduksi) : undefined;
+
+    let terpenuhi = restData.produksiTerpenuhi !== undefined ? Number(restData.produksiTerpenuhi) : undefined;
     if (terpenuhi === undefined && target !== undefined && aktual !== undefined && target > 0) {
       terpenuhi = Number(((aktual / target) * 100).toFixed(1));
     }
 
+    if (Array.isArray(petaniDistribusi)) {
+      await prisma.perencanaanProduksiPetani.deleteMany({
+        where: { perencanaanProduksiId: targetId }
+      });
+      if (petaniDistribusi.length > 0) {
+        await prisma.perencanaanProduksiPetani.createMany({
+          data: petaniDistribusi.map((p: any) => ({
+            perencanaanProduksiId: targetId,
+            partnerId: p.partnerId || null,
+            namaPetani: p.namaPetani,
+            greenhouseId: p.greenhouseId || null,
+            namaLahan: p.namaLahan || null,
+            luasLahan: Number(p.luasLahan) || 0,
+            targetProduksi: Number(p.targetProduksi) || 0,
+            tanggalTanam: p.tanggalTanam ? new Date(p.tanggalTanam) : null,
+            tanggalPanen: p.tanggalPanen ? new Date(p.tanggalPanen) : null,
+            keterangan: p.keterangan || null,
+          }))
+        });
+      }
+    }
+
+    const updatePayload: any = {
+      ...restData,
+      ...(target !== undefined ? { targetProduksi: target } : {}),
+      ...(aktual !== undefined ? { aktualProduksi: aktual } : {}),
+      ...(terpenuhi !== undefined ? { produksiTerpenuhi: terpenuhi } : {}),
+      ...(restData.targetLuasLahan !== undefined ? { targetLuasLahan: Number(restData.targetLuasLahan) } : {}),
+      ...(restData.lahanTersedia !== undefined ? { lahanTersedia: Number(restData.lahanTersedia) } : {}),
+      ...(restData.realisasiTanam !== undefined ? { realisasiTanam: Number(restData.realisasiTanam) } : {}),
+      ...(restData.kebutuhanBenih !== undefined ? { kebutuhanBenih: Number(restData.kebutuhanBenih) } : {}),
+      ...(restData.estimasiHasilPerHa !== undefined ? { estimasiHasilPerHa: Number(restData.estimasiHasilPerHa) } : {}),
+      ...(restData.periodeMulai !== undefined
+        ? { periodeMulai: restData.periodeMulai ? new Date(restData.periodeMulai) : null }
+        : {}),
+      ...(restData.periodeSelesai !== undefined
+        ? { periodeSelesai: restData.periodeSelesai ? new Date(restData.periodeSelesai) : null }
+        : {}),
+    };
+
     return prisma.perencanaanProduksi.update({
-      where: { id },
-      data: {
-        ...data,
-        ...(target !== undefined ? { targetProduksi: target } : {}),
-        ...(aktual !== undefined ? { aktualProduksi: aktual } : {}),
-        ...(terpenuhi !== undefined ? { produksiTerpenuhi: terpenuhi } : {}),
-        ...(data.targetLuasLahan !== undefined ? { targetLuasLahan: Number(data.targetLuasLahan) } : {}),
-        ...(data.lahanTersedia !== undefined ? { lahanTersedia: Number(data.lahanTersedia) } : {}),
-        ...(data.realisasiTanam !== undefined ? { realisasiTanam: Number(data.realisasiTanam) } : {}),
-        ...(data.kebutuhanBenih !== undefined ? { kebutuhanBenih: Number(data.kebutuhanBenih) } : {}),
-        ...(data.estimasiHasilPerHa !== undefined ? { estimasiHasilPerHa: Number(data.estimasiHasilPerHa) } : {}),
+      where: { id: targetId },
+      data: updatePayload,
+      include: {
+        petaniDistribusi: true,
+        commodity: true,
+        variety: true,
       }
     });
   },

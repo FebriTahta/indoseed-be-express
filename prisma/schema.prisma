@@ -92,6 +92,7 @@ model Greenhouse {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   perencanaanProduksis PerencanaanProduksi[]
+  perencanaanPetanis   PerencanaanProduksiPetani[]
 
   @@map("greenhouses")
 }
@@ -118,6 +119,7 @@ model Commodity {
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
   perencanaanProduksis PerencanaanProduksi[]
+  partners             Partner[]
 
   @@map("commodities")
 }
@@ -151,6 +153,7 @@ model Variety {
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
   perencanaanProduksis PerencanaanProduksi[]
+  varietyParameters    VarietyParameter[]
 
   @@map("varieties")
 }
@@ -169,6 +172,7 @@ model Partner {
   tglBergabung   DateTime @default(now())
   status         String   @default("Aktif")
   image          String?  @db.Text
+  commodityId    String?
   tglDibuat      DateTime @default(now())
   dibuatOleh     String?  @default("Admin")
   tglDiubah      DateTime @default(now()) @updatedAt
@@ -176,8 +180,10 @@ model Partner {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  greenhouses Greenhouse[]
+  commodity            Commodity?                  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  greenhouses          Greenhouse[]
   perencanaanProduksis PerencanaanProduksi[]
+  perencanaanPetanis   PerencanaanProduksiPetani[]
 
   @@map("partners")
 }
@@ -878,7 +884,68 @@ model PerencanaanProduksi {
   variety           Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   partner           Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   greenhouse        Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+  petaniDistribusi  PerencanaanProduksiPetani[]
 
   @@map("perencanaan_produksi")
 }
+
+model PerencanaanProduksiPetani {
+  id                    String              @id @default(uuid())
+  perencanaanProduksiId String
+  partnerId             String?
+  namaPetani            String
+  greenhouseId          String?
+  namaLahan             String?
+  luasLahan             Float               @default(0)
+  targetProduksi        Float               @default(0)
+  tanggalTanam          DateTime?
+  tanggalPanen          DateTime?
+  keterangan            String?             @db.Text
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  perencanaanProduksi   PerencanaanProduksi @relation(fields: [perencanaanProduksiId], references: [id], onDelete: Cascade, map: "fk_dist_perencanaan")
+  partner               Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull, map: "fk_dist_partner")
+  greenhouse            Greenhouse?         @relation(fields: [greenhouseId], references: [id], onDelete: SetNull, map: "fk_dist_greenhouse")
+
+  @@map("perencanaan_produksi_petani")
+}
+
+model MasterParameter {
+  id          String   @id @default(uuid())
+  kode        String   @unique
+  nama        String
+  namaModul   String   @default("UMUM")
+  tipeNilai   String   @default("NUMBER")
+  satuan      String?
+  deskripsi   String?  @db.Text
+  status      String   @default("Aktif")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  varietyParameters VarietyParameter[]
+
+  @@map("master_parameters")
+}
+
+model VarietyParameter {
+  id          String   @id @default(uuid())
+  varietyId   String
+  parameterId String
+  optionId    String?
+  nilaiNumber Float?
+  nilaiText   String?
+  operator    String?
+  nilaiMin    Float?
+  nilaiMax    Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variety   Variety         @relation(fields: [varietyId], references: [id], onDelete: Cascade)
+  parameter MasterParameter @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+
+  @@map("variety_parameters")
+}
+
+
 
