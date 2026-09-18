@@ -482,6 +482,7 @@ model JadwalTanam {
   dokumen     JadwalTanamDokumen[]
   persetujuanProduksi PersetujuanProduksi?
   pemeriksaanLahan    PemeriksaanLahan[]
+  panen               Panen[]
 
   @@map("jadwal_tanam")
 }
@@ -550,33 +551,47 @@ model JadwalTanamDokumen {
 }
 
 model Panen {
-  id              String   @id @default(uuid())
-  kodePanen       String   @unique
-  jadwalTanamId   String?
-  kesiapanPanenId String?
-  commodityId     String?
-  varietyId       String?
-  kesiapanLahanId String?
-  komoditas       String
-  varietas        String
-  lahan           String
-  tanggalPanen    DateTime
-  luasHa          Float    @default(0)
-  produksiKg      Float    @default(0)
-  hasilKgHa       Float    @default(0)
-  status          String   @default("Selesai")
-  penanggungJawab String?
-  metodePanen     String?  @default("Combine Harvester")
-  produksiKotorKg Float?   @default(0)
-  kadarAir        Float?   @default(14)
-  kebersihan      Float?   @default(98)
-  catatan         String?  @db.Text
-  dokumen         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id               String    @id @default(uuid())
+  kodePanen        String    @unique
+  jadwalTanamId    String?
+  kodeJadwalTanam  String?
+  kesiapanPanenId  String?
+  commodityId      String?
+  varietyId        String?
+  kesiapanLahanId  String?
+  jenisHasil       String?   @default("Glondong / Buah")
+  komoditas        String
+  varietas         String
+  petani           String?
+  petaniKode       String?
+  lahan            String
+  blokLahan        String?
+  rencanaPanen     DateTime?
+  tanggalPanen     DateTime
+  luasHa           Float     @default(0)
+  perkiraanHasil   Float?    @default(0)
+  produksiKg       Float     @default(0)
+  hasilKgHa        Float     @default(0)
+  jumlahBuah       Int?      @default(0)
+  beratBruto       Float?    @default(0)
+  beratNetto       Float?    @default(0)
+  kondisiHasil     String?   @default("Baik")
+  statusPengolahan String?   @default("Menunggu Pengolahan")
+  status           String    @default("Selesai")
+  penanggungJawab  String?
+  metodePanen      String?   @default("Combine Harvester")
+  produksiKotorKg  Float?    @default(0)
+  kadarAir         Float?    @default(14)
+  kebersihan       Float?    @default(98)
+  catatan          String?   @db.Text
+  dokumen          String?   @db.Text
+  dokumentasi      Json?
+  dibuatOleh       String?   @default("Admin Produksi")
+  diubahOleh       String?   @default("Admin Produksi")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
 
+  jadwalTanam   JadwalTanam?   @relation(fields: [jadwalTanamId], references: [id], onDelete: SetNull)
   commodity     Commodity?     @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   variety       Variety?       @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   kesiapanPanen KesiapanPanen? @relation(fields: [kesiapanPanenId], references: [id], onDelete: SetNull)

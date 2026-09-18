@@ -37,6 +37,11 @@ import {
 import {
   getPanens,
   getPanenById,
+  getPanenStats,
+  getRingkasanKomoditas,
+  getChartHasilPanen,
+  getEligibleJadwalTanam,
+  getNextPanenCode,
   createPanen,
   updatePanen,
   deletePanen,
@@ -135,6 +140,11 @@ router.patch('/jadwal-tanam/:id/status', updateJadwalTanamStatus);
 router.delete('/jadwal-tanam/:id', deleteJadwalTanam);
 
 // Panen Sub-routes (/api/produksi/panen)
+router.get('/panen/stats', getPanenStats);
+router.get('/panen/ringkasan-komoditas', getRingkasanKomoditas);
+router.get('/panen/chart-data', getChartHasilPanen);
+router.get('/panen/referensi-jadwal-tanam', getEligibleJadwalTanam);
+router.get('/panen/next-code', getNextPanenCode);
 router.get('/panen', getPanens);
 router.get('/panen/:id', getPanenById);
 router.post('/panen', createPanen);
