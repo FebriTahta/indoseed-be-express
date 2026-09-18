@@ -66,7 +66,14 @@ export const perencanaanProduksiRepository = {
         take,
         orderBy: { noPerencanaan: 'asc' },
         include: {
-          petaniDistribusi: true,
+          petaniDistribusi: {
+            include: {
+              partner: true,
+              greenhouse: true,
+            },
+          },
+          partner: true,
+          greenhouse: true,
           commodity: true,
           variety: true,
         }
@@ -89,7 +96,14 @@ export const perencanaanProduksiRepository = {
         OR: [{ id }, { noPerencanaan: id }]
       },
       include: {
-        petaniDistribusi: true,
+        petaniDistribusi: {
+          include: {
+            partner: true,
+            greenhouse: true,
+          },
+        },
+        partner: true,
+        greenhouse: true,
         commodity: true,
         variety: true,
       }
@@ -148,7 +162,14 @@ export const perencanaanProduksiRepository = {
     return prisma.perencanaanProduksi.create({
       data: createPayload,
       include: {
-        petaniDistribusi: true,
+        petaniDistribusi: {
+          include: {
+            partner: true,
+            greenhouse: true,
+          },
+        },
+        partner: true,
+        greenhouse: true,
         commodity: true,
         variety: true,
       }
@@ -234,7 +255,14 @@ export const perencanaanProduksiRepository = {
       where: { id: targetId },
       data: updatePayload,
       include: {
-        petaniDistribusi: true,
+        petaniDistribusi: {
+          include: {
+            partner: true,
+            greenhouse: true,
+          },
+        },
+        partner: true,
+        greenhouse: true,
         commodity: true,
         variety: true,
       }
