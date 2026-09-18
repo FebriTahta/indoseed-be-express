@@ -10,6 +10,7 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       namaPetani,
       kelompokTani,
       komoditasUtama,
+      commodityId,
       noKtp,
       noTelepon,
       alamat,
@@ -85,6 +86,7 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       namaPetani,
       kelompokTani,
       komoditasUtama,
+      commodityId: commodityId || null,
       noKtp: noKtp || null,
       noTelepon: noTelepon || null,
       alamat: alamat || null,
@@ -118,6 +120,7 @@ export const getPartners = async (req: Request, res: Response) => {
       kelompokTani,
       status,
       komoditasUtama,
+      commodityId,
       page,
       pageSize,
     } = req.query;
@@ -130,6 +133,7 @@ export const getPartners = async (req: Request, res: Response) => {
       kelompokTani: kelompokTani as string,
       status: status as string,
       komoditasUtama: komoditasUtama as string,
+      commodityId: commodityId as string,
       page: isNaN(parsedPage) ? 1 : parsedPage,
       pageSize: isNaN(parsedPageSize) ? 10 : parsedPageSize,
     });
@@ -198,6 +202,7 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
       namaPetani,
       kelompokTani,
       komoditasUtama,
+      commodityId,
       noKtp,
       noTelepon,
       alamat,
@@ -224,6 +229,7 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
     if (namaPetani !== undefined) updateData.namaPetani = namaPetani;
     if (kelompokTani !== undefined) updateData.kelompokTani = kelompokTani;
     if (komoditasUtama !== undefined) updateData.komoditasUtama = komoditasUtama;
+    if (commodityId !== undefined) updateData.commodityId = commodityId || null;
     if (noKtp !== undefined) updateData.noKtp = noKtp || null;
     if (noTelepon !== undefined) updateData.noTelepon = noTelepon || null;
     if (alamat !== undefined) updateData.alamat = alamat || null;

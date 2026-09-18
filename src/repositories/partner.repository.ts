@@ -6,6 +6,7 @@ export interface PartnerFilter {
   kelompokTani?: string;
   status?: string;
   komoditasUtama?: string;
+  commodityId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -17,6 +18,14 @@ export const partnerRepository = {
   create: async (data: CreatePartnerInput) => {
     return prisma.partner.create({
       data,
+      include: {
+        commodity: true,
+        greenhouses: {
+          include: {
+            commodity: true
+          }
+        }
+      }
     });
   },
 
@@ -24,6 +33,7 @@ export const partnerRepository = {
     return prisma.partner.findUnique({
       where: { id },
       include: {
+        commodity: true,
         greenhouses: {
           include: {
             commodity: true
@@ -43,6 +53,14 @@ export const partnerRepository = {
     return prisma.partner.update({
       where: { id },
       data,
+      include: {
+        commodity: true,
+        greenhouses: {
+          include: {
+            commodity: true
+          }
+        }
+      }
     });
   },
 
@@ -58,6 +76,7 @@ export const partnerRepository = {
       kelompokTani,
       status,
       komoditasUtama,
+      commodityId,
       page = 1,
       pageSize = 10,
     } = filters;
@@ -70,7 +89,9 @@ export const partnerRepository = {
     if (status) {
       where.status = status;
     }
-    if (komoditasUtama) {
+    if (commodityId) {
+      where.commodityId = commodityId;
+    } else if (komoditasUtama) {
       where.komoditasUtama = komoditasUtama;
     }
 
@@ -91,6 +112,7 @@ export const partnerRepository = {
         take: pageSize,
         orderBy: { createdAt: 'desc' },
         include: {
+          commodity: true,
           greenhouses: {
             include: {
               commodity: true
