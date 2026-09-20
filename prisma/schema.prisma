@@ -1038,6 +1038,7 @@ model VarietyParameter {
   parameter MasterParameter        @relation(fields: [parameterId], references: [id], onDelete: Cascade)
   option    MasterParameterOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
 
+  @@unique([varietyId, parameterId])
   @@index([parameterId], map: "variety_parameters_parameterId_fkey")
   @@index([varietyId], map: "variety_parameters_varietyId_fkey")
   @@map("variety_parameters")
