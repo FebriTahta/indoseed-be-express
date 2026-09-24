@@ -9,6 +9,7 @@ export const createCommodity = async (req: AuthRequest, res: Response) => {
       kodeKomoditas,
       namaKomoditas,
       kategori,
+      satuanHasil = 'Kg',
       deskripsi,
       status = 'Aktif',
     } = req.body;
@@ -42,6 +43,7 @@ export const createCommodity = async (req: AuthRequest, res: Response) => {
       kodeKomoditas,
       namaKomoditas,
       kategori,
+      satuanHasil: satuanHasil || 'Kg',
       deskripsi,
       status,
       dibuatOleh: createdBy,
@@ -146,6 +148,7 @@ export const updateCommodity = async (req: AuthRequest, res: Response) => {
       kodeKomoditas,
       namaKomoditas,
       kategori,
+      satuanHasil,
       deskripsi,
       status,
     } = req.body;
@@ -166,6 +169,7 @@ export const updateCommodity = async (req: AuthRequest, res: Response) => {
 
     if (namaKomoditas !== undefined) updateData.namaKomoditas = namaKomoditas;
     if (kategori !== undefined) updateData.kategori = kategori;
+    if (satuanHasil !== undefined) updateData.satuanHasil = satuanHasil;
     if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
     if (status !== undefined) updateData.status = status;
 

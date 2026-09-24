@@ -69,7 +69,7 @@ model Greenhouse {
   kodeLahan      String   @unique
   namaLahan      String
   jenisLahan     String   @default("Greenhouse")
-  komoditasUtama String
+  komoditasUtama String?
   komoditasColor String   @default("emerald")
   komoditasIcon  String   @default("ri-leaf-line")
   lokasi         String
@@ -80,6 +80,8 @@ model Greenhouse {
   petaniMitra    String?
   commodityId    String?
   partnerId      String?
+  varietas       String?
+  varietyId      String?
   tglDibuat      DateTime @default(now())
   dibuatOleh     String?  @default("Admin")
   keterangan     String?  @db.Text
@@ -89,6 +91,7 @@ model Greenhouse {
 
   commodity      Commodity?      @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   partner        Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  variety        Variety?        @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   perencanaanProduksis PerencanaanProduksi[]
@@ -102,6 +105,7 @@ model Commodity {
   kodeKomoditas String   @unique
   namaKomoditas String
   kategori      String
+  satuanHasil   String?  @default("Kg")
   deskripsi     String?  @db.Text
   status        String   @default("Aktif")
   image         String?  @db.Text
@@ -157,6 +161,7 @@ model Variety {
   varietyParameters    VarietyParameter[]
   harvestTypes   HarvestType[]
   kontrakPanens  KontrakPanen[]
+  greenhouses    Greenhouse[]
 
   @@map("varieties")
 }
@@ -169,6 +174,7 @@ model Partner {
   komoditasUtama String
   noKtp          String?
   noTelepon      String?
+  email          String?
   alamat         String?  @db.Text
   luasLahan      Float    @default(0.0) // Luas Lahan (Ha)
   pengalaman     Int      @default(0) // Pengalaman Bertani (tahun)
@@ -176,6 +182,11 @@ model Partner {
   status         String   @default("Aktif")
   image          String?  @db.Text
   commodityId    String?
+  namaBank       String?
+  noRekening     String?
+  atasNama       String?
+  catatan        String?  @db.Text
+  dokumen        String?  @db.Text
   tglDibuat      DateTime @default(now())
   dibuatOleh     String?  @default("Admin")
   tglDiubah      DateTime @default(now()) @updatedAt
@@ -1081,6 +1092,7 @@ model KontrakPanen {
   varietas       String
   tipePanenan    String    @default("Glondong / Fresh") // "Glondong / Fresh" | "OC / Benih"
   nilaiKontrak   Float     @default(0)
+  feeKelompok    Float?    @default(0)
   satuan         String    @default("Kg")
   umurPanen      Int       @default(0) // HST
   periodeMulai   DateTime?
@@ -1124,4 +1136,14 @@ model PersetujuanProduksi {
   updatedAt          DateTime  @updatedAt
 
   @@map("persetujuan_produksi")
+}
+
+model PenanggungJawab {
+  id        String   @id @default(uuid())
+  nama      String
+  status    String   @default("Aktif")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("penanggung_jawab")
 }

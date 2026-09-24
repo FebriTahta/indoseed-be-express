@@ -10,6 +10,7 @@ export interface JadwalTanamFilter {
   greenhouseId?: string;
   periodeTanam?: string;
   musimTanam?: string;
+  penanggungJawab?: string;
   page?: number;
   pageSize?: number;
 }
@@ -338,12 +339,16 @@ export const jadwalTanamRepository = {
       greenhouseId,
       periodeTanam,
       musimTanam,
+      penanggungJawab,
       page = 1,
       pageSize = 10,
     } = filters;
 
     const where: any = {};
 
+    if (penanggungJawab && penanggungJawab !== 'all' && penanggungJawab !== 'Semua Penanggung Jawab') {
+      where.penanggungJawab = { contains: penanggungJawab };
+    }
     if (statusJadwal && statusJadwal !== 'all' && statusJadwal !== 'Semua Status' && statusJadwal !== 'Semua status') {
       where.statusJadwal = statusJadwal;
     }
@@ -391,7 +396,7 @@ export const jadwalTanamRepository = {
       where,
       skip: (Number(page) - 1) * Number(pageSize),
       take: Number(pageSize),
-      orderBy: { kodeJadwalTanam: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       include: {
         greenhouse: true,
         commodity: true,

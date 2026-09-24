@@ -99,7 +99,7 @@ export const panenRepository = {
         where,
         skip: filters.skip || 0,
         take: filters.take || 10,
-        orderBy: { kodePanen: 'desc' },
+        orderBy: { updatedAt: 'desc' },
       }),
       getModel().count({ where }),
     ]);

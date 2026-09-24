@@ -58,7 +58,7 @@ export const kontrakPanenRepository = {
         where,
         skip,
         take,
-        orderBy: { noKontrak: 'asc' },
+        orderBy: { updatedAt: 'desc' },
         include: {
           commodity: true,
           variety: true,
@@ -123,6 +123,9 @@ export const kontrakPanenRepository = {
       varietas: data.varietas || '',
       tipePanenan: data.tipePanenan || 'Glondong / Fresh',
       nilaiKontrak: Number(data.nilaiKontrak) || 0,
+      feeKelompok: data.feeKelompok !== undefined && data.feeKelompok !== null && data.feeKelompok !== ''
+        ? Number(data.feeKelompok)
+        : 0,
       satuan: data.satuan || 'Kg',
       umurPanen: Number(data.umurPanen) || 0,
       periodeMulai: data.periodeMulai ? new Date(data.periodeMulai) : null,
@@ -156,6 +159,9 @@ export const kontrakPanenRepository = {
       ...(data.varietas !== undefined && { varietas: data.varietas }),
       ...(data.tipePanenan !== undefined && { tipePanenan: data.tipePanenan }),
       ...(data.nilaiKontrak !== undefined && { nilaiKontrak: Number(data.nilaiKontrak) || 0 }),
+      ...(data.feeKelompok !== undefined && {
+        feeKelompok: data.feeKelompok !== null && data.feeKelompok !== '' ? Number(data.feeKelompok) : 0,
+      }),
       ...(data.satuan !== undefined && { satuan: data.satuan }),
       ...(data.umurPanen !== undefined && { umurPanen: Number(data.umurPanen) || 0 }),
       ...(data.periodeMulai !== undefined && {
