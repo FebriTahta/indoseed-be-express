@@ -77,6 +77,7 @@ export const getJadwalTanams = async (req: Request, res: Response) => {
       greenhouseId,
       periodeTanam,
       musimTanam,
+      penanggungJawab,
       page,
       pageSize,
     } = req.query;
@@ -94,6 +95,7 @@ export const getJadwalTanams = async (req: Request, res: Response) => {
       greenhouseId: greenhouseId as string,
       periodeTanam: periodeTanam as string,
       musimTanam: musimTanam as string,
+      penanggungJawab: penanggungJawab as string,
       page: isNaN(parsedPage) ? 1 : parsedPage,
       pageSize: isNaN(parsedPageSize) ? 10 : parsedPageSize,
     });

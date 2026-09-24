@@ -198,7 +198,7 @@ export class PersetujuanProduksiRepository {
       where,
       skip,
       take: pageSize,
-      orderBy: { tanggalPengajuan: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       include: {
         jadwalTanam: {
           include: {

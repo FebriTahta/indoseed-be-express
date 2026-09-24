@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { partnerRepository } from '../repositories/partner.repository';
 import { uploadFile, deleteFile } from '../utils/minio';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { prisma } from '../utils/prisma';
 
 export const createPartner = async (req: AuthRequest, res: Response) => {
   try {
@@ -13,11 +14,18 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       commodityId,
       noKtp,
       noTelepon,
+      email,
       alamat,
       luasLahan,
       pengalaman,
       tglBergabung,
       status = 'Aktif',
+      namaBank,
+      noRekening,
+      atasNama,
+      catatan,
+      dokumen,
+      lahanList,
     } = req.body;
 
     // Validate required fields
@@ -89,15 +97,55 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       commodityId: commodityId || null,
       noKtp: noKtp || null,
       noTelepon: noTelepon || null,
+      email: email || null,
       alamat: alamat || null,
       luasLahan: parsedLuas,
       pengalaman: parsedPengalaman,
       tglBergabung: dateBergabung,
       status,
+      namaBank: namaBank || null,
+      noRekening: noRekening || null,
+      atasNama: atasNama || null,
+      catatan: catatan || null,
+      dokumen: typeof dokumen === 'object' ? JSON.stringify(dokumen) : (dokumen || null),
       dibuatOleh: createdBy,
       diubahOleh: createdBy,
       image: imageUrl,
     });
+
+    // If lahanList is provided, insert them linked to this partner
+    if (lahanList) {
+      try {
+        const parsedLahan = typeof lahanList === 'string' ? JSON.parse(lahanList) : lahanList;
+        if (Array.isArray(parsedLahan)) {
+          for (let i = 0; i < parsedLahan.length; i++) {
+            const item = parsedLahan[i];
+            const kodeLahan = item.kodeLahan || `${newPartner.kodePetani}-L${String(i + 1).padStart(2, '0')}`;
+            await prisma.greenhouse.create({
+              data: {
+                kodeLahan,
+                namaLahan: item.namaLahan || `Lahan ${i + 1}`,
+                jenisLahan: item.jenisLahan || 'Lahan Terbuka',
+                komoditasUtama: item.komoditas || item.komoditasUtama || null,
+                commodityId: item.commodityId || null,
+                varietas: item.varietas || null,
+                varietyId: item.varietyId || null,
+                lokasi: item.lokasi || newPartner.alamat || 'Lahan Mitra',
+                luas: parseFloat(item.luas || 0),
+                status: item.status || 'Aktif',
+                koordinat: item.koordinat || null,
+                detailLokasi: item.detailLokasi || null,
+                petaniMitra: newPartner.namaPetani,
+                partnerId: newPartner.id,
+                dibuatOleh: createdBy,
+              }
+            });
+          }
+        }
+      } catch (lahanErr) {
+        console.error('Error inserting linked lahan:', lahanErr);
+      }
+    }
 
     return res.status(201).json({
       status: 'success',
@@ -205,11 +253,17 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
       commodityId,
       noKtp,
       noTelepon,
+      email,
       alamat,
       luasLahan,
       pengalaman,
       tglBergabung,
       status,
+      namaBank,
+      noRekening,
+      atasNama,
+      catatan,
+      dokumen,
     } = req.body;
 
     const updateData: any = {};
@@ -232,8 +286,14 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
     if (commodityId !== undefined) updateData.commodityId = commodityId || null;
     if (noKtp !== undefined) updateData.noKtp = noKtp || null;
     if (noTelepon !== undefined) updateData.noTelepon = noTelepon || null;
+    if (email !== undefined) updateData.email = email || null;
     if (alamat !== undefined) updateData.alamat = alamat || null;
     if (status !== undefined) updateData.status = status;
+    if (namaBank !== undefined) updateData.namaBank = namaBank || null;
+    if (noRekening !== undefined) updateData.noRekening = noRekening || null;
+    if (atasNama !== undefined) updateData.atasNama = atasNama || null;
+    if (catatan !== undefined) updateData.catatan = catatan || null;
+    if (dokumen !== undefined) updateData.dokumen = typeof dokumen === 'object' ? JSON.stringify(dokumen) : (dokumen || null);
 
     if (luasLahan !== undefined) {
       const parsedLuas = parseFloat(luasLahan);

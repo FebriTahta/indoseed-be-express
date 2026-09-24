@@ -64,7 +64,7 @@ export const perencanaanProduksiRepository = {
         where,
         skip,
         take,
-        orderBy: { noPerencanaan: 'asc' },
+        orderBy: { updatedAt: 'desc' },
         include: {
           petaniDistribusi: {
             include: {

@@ -750,7 +750,7 @@ export class PemeriksaanLahanRepository {
         where,
         skip,
         take,
-        orderBy: { tanggalPemeriksaan: 'desc' },
+        orderBy: { updatedAt: 'desc' },
         include: {
           jadwalTanam: {
             include: {
