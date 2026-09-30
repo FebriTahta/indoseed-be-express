@@ -43,3 +43,20 @@ export const uploadSingle = (fieldName: string) => {
     });
   };
 };
+
+export const uploadNone = () => {
+  const multerUpload = upload.none();
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    multerUpload(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          status: 'error',
+          message: err.message || 'Form parse error',
+        });
+      }
+      next();
+    });
+  };
+};
+

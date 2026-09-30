@@ -33,192 +33,31 @@ const parseJsonSafely = (val: any) => {
   return Array.isArray(val) ? val : [];
 };
 
-const resolveGreenhouseId = async (idOrCode: any): Promise<string | null> => {
-  if (!idOrCode || typeof idOrCode !== 'string') return null;
-  const trimmed = idOrCode.trim();
-  if (!trimmed) return null;
-
+export const getJadwalTanamStats = async (req: Request, res: Response) => {
   try {
-    const byId = await prisma.greenhouse.findUnique({ where: { id: trimmed } });
-    if (byId) return byId.id;
-  } catch (e) {}
-
-  try {
-    const byKode = await prisma.greenhouse.findUnique({ where: { kodeLahan: trimmed } });
-    if (byKode) return byKode.id;
-  } catch (e) {}
-
-  try {
-    const byNama = await prisma.greenhouse.findFirst({ where: { namaLahan: trimmed } });
-    if (byNama) return byNama.id;
-  } catch (e) {}
-
-  return null;
-};
-
-const resolveCommodityId = async (idOrCode: any): Promise<string | null> => {
-  if (!idOrCode || typeof idOrCode !== 'string') return null;
-  const trimmed = idOrCode.trim();
-  if (!trimmed) return null;
-
-  try {
-    const byId = await prisma.commodity.findUnique({ where: { id: trimmed } });
-    if (byId) return byId.id;
-  } catch (e) {}
-
-  try {
-    const byKode = await prisma.commodity.findUnique({ where: { kodeKomoditas: trimmed } });
-    if (byKode) return byKode.id;
-  } catch (e) {}
-
-  try {
-    const byNama = await prisma.commodity.findFirst({ where: { namaKomoditas: trimmed } });
-    if (byNama) return byNama.id;
-  } catch (e) {}
-
-  return null;
-};
-
-const resolveVarietyId = async (idOrCode: any): Promise<string | null> => {
-  if (!idOrCode || typeof idOrCode !== 'string') return null;
-  const trimmed = idOrCode.trim();
-  if (!trimmed) return null;
-
-  try {
-    const byId = await prisma.variety.findUnique({ where: { id: trimmed } });
-    if (byId) return byId.id;
-  } catch (e) {}
-
-  try {
-    const byKode = await prisma.variety.findUnique({ where: { kodeVarietas: trimmed } });
-    if (byKode) return byKode.id;
-  } catch (e) {}
-
-  try {
-    const byNama = await prisma.variety.findFirst({ where: { namaVarietas: trimmed } });
-    if (byNama) return byNama.id;
-  } catch (e) {}
-
-  return null;
-};
-
-export const createJadwalTanam = async (req: AuthRequest, res: Response) => {
-  try {
-    const body = req.body || {};
-
-    let kodeJadwalTanam = body.kodeJadwalTanam;
-    if (!kodeJadwalTanam || kodeJadwalTanam.includes('Auto')) {
-      const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
-      const randomNum = Math.floor(1000 + Math.random() * 9000);
-      kodeJadwalTanam = `JT-${dateStr}-${randomNum}`;
-    }
-
-    // Check duplicate code
-    const existing = await jadwalTanamRepository.findByKode(kodeJadwalTanam);
-    if (existing) {
-      const randomNum = Math.floor(1000 + Math.random() * 9000);
-      kodeJadwalTanam = `${kodeJadwalTanam}-${randomNum}`;
-    }
-
-    const createdBy = req.user?.username || body.dibuatOleh || 'Admin';
-
-    // Resolve FK IDs
-    const greenhouseId = await resolveGreenhouseId(body.greenhouseId || body.idLahan || body.namaLahan);
-    const commodityId = await resolveCommodityId(body.commodityId || body.komoditas || body.namaKomoditas);
-    const varietyId = await resolveVarietyId(body.varietyId || body.varietas || body.namaVarietas);
-
-    // Extract detail arrays if passed as stringified JSON or array
-    const detailLahanRaw = parseJsonSafely(body.detailLahan || body.detailRencanaTanam);
-    const personilRaw = parseJsonSafely(body.personil || body.personilList);
-    const peralatanRaw = parseJsonSafely(body.peralatan || body.peralatanList);
-    const dokumenRaw = parseJsonSafely(body.dokumen || body.dokumenList);
-
-    const detailLahan = await Promise.all(
-      detailLahanRaw.map(async (item: any) => {
-        const ghId = await resolveGreenhouseId(item.greenhouseId || item.idLahan || item.lahan || item.namaLahan);
-        return {
-          greenhouseId: ghId,
-          namaLahan: item.lahan || item.namaLahan || 'Lahan',
-          luas: parseFloat(String(item.luas || '0').replace(',', '.')) || 0,
-          tipeLahan: item.tipe || item.tipeLahan || 'Lahan Terbuka',
-          irigasi: item.irigasi || null,
-          sumberAir: item.sumberAir || null,
-        };
-      })
-    );
-
-    const personil = personilRaw.map((p: any) => ({
-      nama: p.nama || p.namaPersonil || '',
-      peran: p.peran || p.jabatan || 'Personil',
-      kontak: p.kontak || p.noHp || null,
-      tugas: p.tugas || p.keterangan || null,
-    }));
-
-    const peralatan = peralatanRaw.map((eq: any) => ({
-      nama: eq.nama || eq.namaAlat || '',
-      jenis: eq.jenis || eq.kategori || 'Peralatan',
-      jumlah: parseInt(eq.jumlah, 10) || 1,
-      satuan: eq.satuan || 'Unit',
-      kondisi: eq.kondisi || 'Baik',
-    }));
-
-    const dokumen = dokumenRaw.map((doc: any) => ({
-      nama: doc.name || doc.nama || 'Dokumen',
-      fileUrl: doc.url || doc.fileUrl || '',
-      fileSize: null,
-      fileType: doc.type || doc.fileType || null,
-    }));
-
-    const newJadwalTanam = await jadwalTanamRepository.create({
-      kodeJadwalTanam,
-      periodeTanam: body.periodeTanam,
-      periodeTanamMulai: parseDate(body.periodeTanamMulai || body.tanggalMulaiTanam),
-      periodeTanamSelesai: parseDate(body.periodeTanamSelesai || body.perkiraanTanggalSelesai),
-      musimTanam: body.musimTanam || 'Musim Kemarau',
-      tujuanProduksi: body.tujuanProduksi || 'Benih Bersertifikat',
-      tipeProduksi: body.tipeProduksi || 'FS (Foundation Seed)',
-      statusJadwal: body.statusJadwal || 'Draft',
-      penanggungJawab: body.penanggungJawab,
-      deskripsi: body.deskripsi,
-
-      greenhouseId,
-      commodityId,
-      varietyId,
-      luasTanam: parseFloat(String(body.luasTanam || body.luasTotal || '0').replace(',', '.')) || 0,
-      asalBenih: body.asalBenih,
-      jumlahBenihDiperlukan: parseFloat(String(body.jumlahBenihDiperlukan || '0').replace(',', '.')) || 0,
-      jarakTanam: body.jarakTanam || '25 cm x 25 cm',
-      sistemTanam: body.sistemTanam || 'Jajar Legowo 4:1',
-      targetProduksi: parseFloat(String(body.targetProduksi || '0').replace(',', '.')) || 0,
-      standarKualitas: body.standarKualitas,
-      perkecambahanMin: parseFloat(String(body.perkecambahan || body.perkecambahanMin || '0').replace(',', '.')) || 0,
-
-      tanggalPersemaian: parseDate(body.tanggalPersemaian),
-      tanggalTanam: parseDate(body.tanggalTanam),
-      perkiraanPanen: parseDate(body.perkiraanPanen),
-      siklusTanamHari: parseInt(body.siklusTanamHari, 10) || 0,
-      metodeTanam: body.metodeTanam,
-      kepadatanTanam: body.kepadatanTanam ? String(body.kepadatanTanam) : null,
-      irigasi: body.irigasi || body.sistemIrigasi,
-      sumberAir: body.sumberAir,
-      catatan: body.catatan,
-
-      dibuatOleh: createdBy,
-      diubahOleh: createdBy,
-
-      detailLahan,
-      personil,
-      peralatan,
-      dokumen,
-    });
-
-    return res.status(201).json({
+    const stats = await jadwalTanamRepository.getStats();
+    return res.status(200).json({
       status: 'success',
-      message: 'Jadwal Tanam berhasil dibuat',
-      data: newJadwalTanam,
+      data: stats,
     });
   } catch (error: any) {
-    console.error('Error creating Jadwal Tanam:', error);
+    console.error('Error fetching Jadwal Tanam stats:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+export const getNextKodeJadwalTanam = async (req: Request, res: Response) => {
+  try {
+    const nextCode = await jadwalTanamRepository.getNextKodeJadwalTanam();
+    return res.status(200).json({
+      status: 'success',
+      data: { nextKodeJadwalTanam: nextCode },
+    });
+  } catch (error: any) {
+    console.error('Error getting next kode jadwal tanam:', error);
     return res.status(500).json({
       status: 'error',
       message: error.message || 'Internal server error',
@@ -233,8 +72,12 @@ export const getJadwalTanams = async (req: Request, res: Response) => {
       statusJadwal,
       commodityId,
       varietyId,
+      partnerId,
+      namaPetani,
       greenhouseId,
+      periodeTanam,
       musimTanam,
+      penanggungJawab,
       page,
       pageSize,
     } = req.query;
@@ -247,8 +90,12 @@ export const getJadwalTanams = async (req: Request, res: Response) => {
       statusJadwal: statusJadwal as string,
       commodityId: commodityId as string,
       varietyId: varietyId as string,
+      partnerId: partnerId as string,
+      namaPetani: namaPetani as string,
       greenhouseId: greenhouseId as string,
+      periodeTanam: periodeTanam as string,
       musimTanam: musimTanam as string,
+      penanggungJawab: penanggungJawab as string,
       page: isNaN(parsedPage) ? 1 : parsedPage,
       pageSize: isNaN(parsedPageSize) ? 10 : parsedPageSize,
     });
@@ -295,6 +142,175 @@ export const getJadwalTanamById = async (req: Request, res: Response) => {
   }
 };
 
+export const createJadwalTanam = async (req: AuthRequest, res: Response) => {
+  try {
+    const body = req.body || {};
+
+    let kodeJadwalTanam = body.kodeJadwalTanam;
+    if (!kodeJadwalTanam || kodeJadwalTanam.includes('Auto') || kodeJadwalTanam.trim() === '') {
+      kodeJadwalTanam = await jadwalTanamRepository.getNextKodeJadwalTanam();
+    } else {
+      const existing = await jadwalTanamRepository.findByKode(kodeJadwalTanam);
+      if (existing) {
+        kodeJadwalTanam = await jadwalTanamRepository.getNextKodeJadwalTanam();
+      }
+    }
+
+    const createdBy = req.user?.username || body.dibuatOleh || 'Admin';
+
+    // Auto resolve relations
+    let partnerId = body.partnerId || null;
+    let namaPetani = body.namaPetani || null;
+    let kodePetani = body.kodePetani || null;
+
+    if (partnerId) {
+      const p = await prisma.partner.findUnique({ where: { id: partnerId } });
+      if (p) {
+        namaPetani = p.namaPetani;
+        kodePetani = p.kodePetani;
+      }
+    } else if (namaPetani) {
+      const p = await prisma.partner.findFirst({
+        where: { namaPetani: { contains: namaPetani } },
+      });
+      if (p) {
+        partnerId = p.id;
+        kodePetani = p.kodePetani;
+      }
+    }
+
+    let commodityId = body.commodityId || null;
+    let komoditas = body.komoditas || null;
+    if (commodityId) {
+      const c = await prisma.commodity.findUnique({ where: { id: commodityId } });
+      if (c) komoditas = c.namaKomoditas;
+    } else if (komoditas) {
+      const c = await prisma.commodity.findFirst({
+        where: { namaKomoditas: { contains: komoditas } },
+      });
+      if (c) commodityId = c.id;
+    }
+
+    let varietyId = body.varietyId || null;
+    let varietas = body.varietas || null;
+    if (varietyId) {
+      const v = await prisma.variety.findUnique({ where: { id: varietyId } });
+      if (v) varietas = v.namaVarietas;
+    } else if (varietas) {
+      const v = await prisma.variety.findFirst({
+        where: { namaVarietas: { contains: varietas } },
+      });
+      if (v) varietyId = v.id;
+    }
+
+    // Detail Lahan Array
+    const detailLahanRaw = parseJsonSafely(body.detailLahan || body.detailRencanaTanam);
+    const detailLahan = detailLahanRaw.map((dl: any) => ({
+      namaLahan: dl.namaLahan || dl.lahan || 'Lahan',
+      kodeLahan: dl.kodeLahan || null,
+      greenhouseId: dl.greenhouseId || null,
+      luas: parseFloat(String(dl.luas || '0').replace(',', '.')) || 0,
+      tipeLahan: dl.tipeLahan || dl.tipe || 'Lahan Terbuka',
+      irigasi: dl.irigasi || null,
+      sumberAir: dl.sumberAir || null,
+      komoditasVarietas: dl.komoditasVarietas || `${komoditas || ''} / ${varietas || ''}`.trim(),
+      rencanaTanam: parseDate(dl.rencanaTanam || body.tanggalTanam),
+      estimasiPanen: parseDate(dl.estimasiPanen || body.perkiraanPanen),
+      targetProduksi: parseFloat(String(dl.targetProduksi || '0').replace(',', '.')) || 0,
+      statusLahan: dl.statusLahan || 'Siap Tanam',
+      keterangan: dl.keterangan || null,
+    }));
+
+    const personilRaw = parseJsonSafely(body.personil || body.personilList);
+    const personil = personilRaw.map((p: any) => ({
+      nama: p.nama || p.namaPersonil || '',
+      peran: p.peran || p.jabatan || 'Personil',
+      kontak: p.kontak || p.noHp || null,
+      tugas: p.tugas || p.keterangan || null,
+    }));
+
+    const peralatanRaw = parseJsonSafely(body.peralatan || body.peralatanList);
+    const peralatan = peralatanRaw.map((eq: any) => ({
+      nama: eq.nama || eq.namaAlat || '',
+      jenis: eq.jenis || eq.kategori || 'Peralatan',
+      jumlah: parseInt(eq.jumlah, 10) || 1,
+      satuan: eq.satuan || 'Unit',
+      kondisi: eq.kondisi || 'Baik',
+    }));
+
+    const dokumenRaw = parseJsonSafely(body.dokumen || body.dokumenList);
+    const dokumen = dokumenRaw.map((doc: any) => ({
+      nama: doc.name || doc.nama || 'Dokumen',
+      fileUrl: doc.url || doc.fileUrl || '',
+      fileSize: null,
+      fileType: doc.type || doc.fileType || null,
+    }));
+
+    const newJadwalTanam = await jadwalTanamRepository.create({
+      kodeJadwalTanam,
+      perencanaanProduksiId: body.perencanaanProduksiId || null,
+      partnerId,
+      namaPetani,
+      kodePetani,
+      komoditas,
+      varietas,
+      periodeTanam: body.periodeTanam,
+      periodeTanamMulai: parseDate(body.periodeTanamMulai || body.tanggalTanam),
+      periodeTanamSelesai: parseDate(body.periodeTanamSelesai || body.perkiraanPanen),
+      musimTanam: body.musimTanam || 'Musim Kemarau',
+      tujuanProduksi: body.tujuanProduksi || 'Benih Bersertifikat',
+      tipeProduksi: body.tipeProduksi || 'FS (Foundation Seed)',
+      statusJadwal: body.statusJadwal || 'Dalam Proses',
+      penanggungJawab: body.penanggungJawab || createdBy,
+      deskripsi: body.deskripsi || null,
+      keterangan: body.keterangan || '-',
+
+      greenhouseId: body.greenhouseId || null,
+      commodityId,
+      varietyId,
+      luasTanam: parseFloat(String(body.luasTanam || '0').replace(',', '.')) || 0,
+      asalBenih: body.asalBenih || null,
+      jumlahBenihDiperlukan: parseFloat(String(body.jumlahBenihDiperlukan || '0').replace(',', '.')) || 0,
+      jarakTanam: body.jarakTanam || '25 cm x 25 cm',
+      sistemTanam: body.sistemTanam || 'Jajar Legowo 4:1',
+      targetProduksi: parseFloat(String(body.targetProduksi || '0').replace(',', '.')) || 0,
+      estimasiHasilPerHa: parseFloat(String(body.estimasiHasilPerHa || '0').replace(',', '.')) || 0,
+      standarKualitas: body.standarKualitas || null,
+      perkecambahanMin: parseFloat(String(body.perkecambahanMin || '0').replace(',', '.')) || 0,
+
+      tanggalPersemaian: parseDate(body.tanggalPersemaian),
+      tanggalTanam: parseDate(body.tanggalTanam),
+      perkiraanPanen: parseDate(body.perkiraanPanen),
+      siklusTanamHari: parseInt(body.siklusTanamHari, 10) || 0,
+      metodeTanam: body.metodeTanam || 'Pindah Tanam',
+      kepadatanTanam: body.kepadatanTanam ? String(body.kepadatanTanam) : null,
+      irigasi: body.irigasi || body.sistemIrigasi,
+      sumberAir: body.sumberAir,
+      catatan: body.catatan,
+
+      dibuatOleh: createdBy,
+      diubahOleh: createdBy,
+
+      detailLahan,
+      personil,
+      peralatan,
+      dokumen,
+    });
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'Jadwal Tanam berhasil dibuat',
+      data: newJadwalTanam,
+    });
+  } catch (error: any) {
+    console.error('Error creating Jadwal Tanam:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
 export const updateJadwalTanam = async (req: AuthRequest, res: Response) => {
   try {
     const id = String(req.params.id || '');
@@ -317,87 +333,72 @@ export const updateJadwalTanam = async (req: AuthRequest, res: Response) => {
     };
 
     if (body.kodeJadwalTanam) updatePayload.kodeJadwalTanam = body.kodeJadwalTanam;
-    if (body.periodeTanam) updatePayload.periodeTanam = body.periodeTanam;
-    if (body.periodeTanamMulai) updatePayload.periodeTanamMulai = parseDate(body.periodeTanamMulai);
-    if (body.periodeTanamSelesai) updatePayload.periodeTanamSelesai = parseDate(body.periodeTanamSelesai);
-    if (body.musimTanam) updatePayload.musimTanam = body.musimTanam;
-    if (body.tujuanProduksi) updatePayload.tujuanProduksi = body.tujuanProduksi;
-    if (body.tipeProduksi) updatePayload.tipeProduksi = body.tipeProduksi;
-    if (body.statusJadwal) updatePayload.statusJadwal = body.statusJadwal;
+    if (body.perencanaanProduksiId !== undefined) updatePayload.perencanaanProduksiId = body.perencanaanProduksiId || null;
+    if (body.partnerId !== undefined) {
+      updatePayload.partnerId = body.partnerId || null;
+      if (body.partnerId) {
+        const p = await prisma.partner.findUnique({ where: { id: body.partnerId } });
+        if (p) {
+          updatePayload.namaPetani = p.namaPetani;
+          updatePayload.kodePetani = p.kodePetani;
+        }
+      }
+    }
+    if (body.namaPetani !== undefined) updatePayload.namaPetani = body.namaPetani;
+    if (body.kodePetani !== undefined) updatePayload.kodePetani = body.kodePetani;
+    if (body.komoditas !== undefined) updatePayload.komoditas = body.komoditas;
+    if (body.varietas !== undefined) updatePayload.varietas = body.varietas;
+    if (body.commodityId !== undefined) updatePayload.commodityId = body.commodityId || null;
+    if (body.varietyId !== undefined) updatePayload.varietyId = body.varietyId || null;
+    if (body.greenhouseId !== undefined) updatePayload.greenhouseId = body.greenhouseId || null;
+
+    if (body.periodeTanam !== undefined) updatePayload.periodeTanam = body.periodeTanam;
+    if (body.periodeTanamMulai !== undefined) updatePayload.periodeTanamMulai = parseDate(body.periodeTanamMulai);
+    if (body.periodeTanamSelesai !== undefined) updatePayload.periodeTanamSelesai = parseDate(body.periodeTanamSelesai);
+    if (body.musimTanam !== undefined) updatePayload.musimTanam = body.musimTanam;
+    if (body.tujuanProduksi !== undefined) updatePayload.tujuanProduksi = body.tujuanProduksi;
+    if (body.tipeProduksi !== undefined) updatePayload.tipeProduksi = body.tipeProduksi;
+    if (body.statusJadwal !== undefined) updatePayload.statusJadwal = body.statusJadwal;
     if (body.penanggungJawab !== undefined) updatePayload.penanggungJawab = body.penanggungJawab;
     if (body.deskripsi !== undefined) updatePayload.deskripsi = body.deskripsi;
-
-    if (body.greenhouseId || body.idLahan || body.namaLahan) {
-      updatePayload.greenhouseId = await resolveGreenhouseId(body.greenhouseId || body.idLahan || body.namaLahan);
-    }
-    if (body.commodityId || body.komoditas || body.namaKomoditas) {
-      updatePayload.commodityId = await resolveCommodityId(body.commodityId || body.komoditas || body.namaKomoditas);
-    }
-    if (body.varietyId || body.varietas || body.namaVarietas) {
-      updatePayload.varietyId = await resolveVarietyId(body.varietyId || body.varietas || body.namaVarietas);
-    }
+    if (body.keterangan !== undefined) updatePayload.keterangan = body.keterangan;
 
     if (body.luasTanam !== undefined) updatePayload.luasTanam = parseFloat(String(body.luasTanam || '0').replace(',', '.')) || 0;
     if (body.asalBenih !== undefined) updatePayload.asalBenih = body.asalBenih;
     if (body.jumlahBenihDiperlukan !== undefined) updatePayload.jumlahBenihDiperlukan = parseFloat(String(body.jumlahBenihDiperlukan || '0').replace(',', '.')) || 0;
     if (body.jarakTanam !== undefined) updatePayload.jarakTanam = body.jarakTanam;
     if (body.sistemTanam !== undefined) updatePayload.sistemTanam = body.sistemTanam;
+    if (body.targetProduksi !== undefined) updatePayload.targetProduksi = parseFloat(String(body.targetProduksi || '0').replace(',', '.')) || 0;
+    if (body.estimasiHasilPerHa !== undefined) updatePayload.estimasiHasilPerHa = parseFloat(String(body.estimasiHasilPerHa || '0').replace(',', '.')) || 0;
+    if (body.standarKualitas !== undefined) updatePayload.standarKualitas = body.standarKualitas;
+    if (body.perkecambahanMin !== undefined) updatePayload.perkecambahanMin = parseFloat(String(body.perkecambahanMin || '0').replace(',', '.')) || 0;
 
-    if (body.tanggalPersemaian) updatePayload.tanggalPersemaian = parseDate(body.tanggalPersemaian);
-    if (body.tanggalTanam) updatePayload.tanggalTanam = parseDate(body.tanggalTanam);
-    if (body.perkiraanPanen) updatePayload.perkiraanPanen = parseDate(body.perkiraanPanen);
+    if (body.tanggalPersemaian !== undefined) updatePayload.tanggalPersemaian = parseDate(body.tanggalPersemaian);
+    if (body.tanggalTanam !== undefined) updatePayload.tanggalTanam = parseDate(body.tanggalTanam);
+    if (body.perkiraanPanen !== undefined) updatePayload.perkiraanPanen = parseDate(body.perkiraanPanen);
     if (body.siklusTanamHari !== undefined) updatePayload.siklusTanamHari = parseInt(body.siklusTanamHari, 10) || 0;
     if (body.metodeTanam !== undefined) updatePayload.metodeTanam = body.metodeTanam;
-    if (body.kepadatanTanam !== undefined) updatePayload.kepadatanTanam = String(body.kepadatanTanam);
-    if (body.irigasi !== undefined || body.sistemIrigasi !== undefined) updatePayload.irigasi = body.irigasi || body.sistemIrigasi;
+    if (body.kepadatanTanam !== undefined) updatePayload.kepadatanTanam = body.kepadatanTanam ? String(body.kepadatanTanam) : null;
+    if (body.irigasi !== undefined) updatePayload.irigasi = body.irigasi;
     if (body.sumberAir !== undefined) updatePayload.sumberAir = body.sumberAir;
     if (body.catatan !== undefined) updatePayload.catatan = body.catatan;
 
-    if (body.detailLahan || body.detailRencanaTanam) {
+    if (body.detailLahan !== undefined || body.detailRencanaTanam !== undefined) {
       const detailLahanRaw = parseJsonSafely(body.detailLahan || body.detailRencanaTanam);
-      updatePayload.detailLahan = await Promise.all(
-        detailLahanRaw.map(async (item: any) => {
-          const ghId = await resolveGreenhouseId(item.greenhouseId || item.idLahan || item.lahan || item.namaLahan);
-          return {
-            greenhouseId: ghId,
-            namaLahan: item.lahan || item.namaLahan || 'Lahan',
-            luas: parseFloat(String(item.luas || '0').replace(',', '.')) || 0,
-            tipeLahan: item.tipe || item.tipeLahan || 'Lahan Terbuka',
-            irigasi: item.irigasi || null,
-            sumberAir: item.sumberAir || null,
-          };
-        })
-      );
-    }
-
-    if (body.personil || body.personilList) {
-      const personilRaw = parseJsonSafely(body.personil || body.personilList);
-      updatePayload.personil = personilRaw.map((p: any) => ({
-        nama: p.nama || p.namaPersonil || '',
-        peran: p.peran || p.jabatan || 'Personil',
-        kontak: p.kontak || p.noHp || null,
-        tugas: p.tugas || p.keterangan || null,
-      }));
-    }
-
-    if (body.peralatan || body.peralatanList) {
-      const peralatanRaw = parseJsonSafely(body.peralatan || body.peralatanList);
-      updatePayload.peralatan = peralatanRaw.map((eq: any) => ({
-        nama: eq.nama || eq.namaAlat || '',
-        jenis: eq.jenis || eq.kategori || 'Peralatan',
-        jumlah: parseInt(eq.jumlah, 10) || 1,
-        satuan: eq.satuan || 'Unit',
-        kondisi: eq.kondisi || 'Baik',
-      }));
-    }
-
-    if (body.dokumen || body.dokumenList) {
-      const dokumenRaw = parseJsonSafely(body.dokumen || body.dokumenList);
-      updatePayload.dokumen = dokumenRaw.map((doc: any) => ({
-        nama: doc.name || doc.nama || 'Dokumen',
-        fileUrl: doc.url || doc.fileUrl || '',
-        fileSize: null,
-        fileType: doc.type || doc.fileType || null,
+      updatePayload.detailLahan = detailLahanRaw.map((dl: any) => ({
+        namaLahan: dl.namaLahan || dl.lahan || 'Lahan',
+        kodeLahan: dl.kodeLahan || null,
+        greenhouseId: dl.greenhouseId || null,
+        luas: parseFloat(String(dl.luas || '0').replace(',', '.')) || 0,
+        tipeLahan: dl.tipeLahan || dl.tipe || 'Lahan Terbuka',
+        irigasi: dl.irigasi || null,
+        sumberAir: dl.sumberAir || null,
+        komoditasVarietas: dl.komoditasVarietas || `${body.komoditas || existing.komoditas || ''} / ${body.varietas || existing.varietas || ''}`.trim(),
+        rencanaTanam: parseDate(dl.rencanaTanam || body.tanggalTanam || existing.tanggalTanam),
+        estimasiPanen: parseDate(dl.estimasiPanen || body.perkiraanPanen || existing.perkiraanPanen),
+        targetProduksi: parseFloat(String(dl.targetProduksi || '0').replace(',', '.')) || 0,
+        statusLahan: dl.statusLahan || 'Siap Tanam',
+        keterangan: dl.keterangan || null,
       }));
     }
 
@@ -410,6 +411,46 @@ export const updateJadwalTanam = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error updating Jadwal Tanam:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+export const updateJadwalTanamStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = String(req.params.id || '');
+    const { statusJadwal, keterangan } = req.body;
+
+    if (!statusJadwal) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Status jadwal wajib diisi',
+      });
+    }
+
+    let existing = await jadwalTanamRepository.findById(id);
+    if (!existing) {
+      existing = await jadwalTanamRepository.findByKode(id);
+    }
+    if (!existing) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Jadwal Tanam tidak ditemukan',
+      });
+    }
+
+    const updatedBy = req.user?.username || 'Admin';
+    const updated = await jadwalTanamRepository.updateStatus(existing.id, statusJadwal, keterangan, updatedBy);
+
+    return res.status(200).json({
+      status: 'success',
+      message: `Status jadwal tanam berhasil diubah menjadi ${statusJadwal}`,
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating status Jadwal Tanam:', error);
     return res.status(500).json({
       status: 'error',
       message: error.message || 'Internal server error',
@@ -441,7 +482,7 @@ export const deleteJadwalTanam = async (req: Request, res: Response) => {
     console.error('Error deleting Jadwal Tanam:', error);
     return res.status(500).json({
       status: 'error',
-      message: 'Internal server error',
+      message: error.message || 'Internal server error',
     });
   }
 };

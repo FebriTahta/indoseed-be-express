@@ -22,6 +22,21 @@ export const commodityRepository = {
   findById: async (id: string) => {
     return prisma.commodity.findUnique({
       where: { id },
+      include: {
+        _count: {
+          select: { varieties: true },
+        },
+        varieties: {
+          select: {
+            id: true,
+            kodeVarietas: true,
+            namaVarietas: true,
+            umurTanam: true,
+            status: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
   },
 
@@ -35,6 +50,21 @@ export const commodityRepository = {
     return prisma.commodity.update({
       where: { id },
       data,
+      include: {
+        _count: {
+          select: { varieties: true },
+        },
+        varieties: {
+          select: {
+            id: true,
+            kodeVarietas: true,
+            namaVarietas: true,
+            umurTanam: true,
+            status: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
   },
 
@@ -55,11 +85,15 @@ export const commodityRepository = {
 
     const where: any = {};
 
-    if (kategori) {
+    if (kategori && kategori !== 'Semua') {
       where.kategori = kategori;
     }
-    if (status) {
-      where.status = status;
+    if (status && status !== 'Semua') {
+      if (status === 'Nonaktif' || status === 'Tidak Aktif') {
+        where.status = { in: ['Nonaktif', 'Tidak Aktif'] };
+      } else {
+        where.status = status;
+      }
     }
 
     if (search) {
@@ -78,6 +112,21 @@ export const commodityRepository = {
         skip,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: { varieties: true },
+          },
+          varieties: {
+            select: {
+              id: true,
+              kodeVarietas: true,
+              namaVarietas: true,
+              umurTanam: true,
+              status: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       }),
       prisma.commodity.count({ where }),
     ]);

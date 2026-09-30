@@ -69,7 +69,7 @@ model Greenhouse {
   kodeLahan      String   @unique
   namaLahan      String
   jenisLahan     String   @default("Greenhouse")
-  komoditasUtama String
+  komoditasUtama String?
   komoditasColor String   @default("emerald")
   komoditasIcon  String   @default("ri-leaf-line")
   lokasi         String
@@ -80,6 +80,8 @@ model Greenhouse {
   petaniMitra    String?
   commodityId    String?
   partnerId      String?
+  varietas       String?
+  varietyId      String?
   tglDibuat      DateTime @default(now())
   dibuatOleh     String?  @default("Admin")
   keterangan     String?  @db.Text
@@ -89,8 +91,11 @@ model Greenhouse {
 
   commodity      Commodity?      @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   partner        Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  variety        Variety?        @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
+  perencanaanProduksis PerencanaanProduksi[]
+  perencanaanPetanis   PerencanaanProduksiPetani[]
 
   @@map("greenhouses")
 }
@@ -100,6 +105,7 @@ model Commodity {
   kodeKomoditas String   @unique
   namaKomoditas String
   kategori      String
+  satuanHasil   String?  @default("Kg")
   deskripsi     String?  @db.Text
   status        String   @default("Aktif")
   image         String?  @db.Text
@@ -116,6 +122,9 @@ model Commodity {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
+  perencanaanProduksis PerencanaanProduksi[]
+  partners             Partner[]
+  kontrakPanens        KontrakPanen[]
 
   @@map("commodities")
 }
@@ -148,8 +157,11 @@ model Variety {
   jadwalTanams   JadwalTanam[]
   kesiapanPanens KesiapanPanen[]
   panens         Panen[]
-  varietyParameters VarietyParameter[]
+  perencanaanProduksis PerencanaanProduksi[]
+  varietyParameters    VarietyParameter[]
   harvestTypes   HarvestType[]
+  kontrakPanens  KontrakPanen[]
+  greenhouses    Greenhouse[]
 
   @@map("varieties")
 }
@@ -162,12 +174,19 @@ model Partner {
   komoditasUtama String
   noKtp          String?
   noTelepon      String?
+  email          String?
   alamat         String?  @db.Text
   luasLahan      Float    @default(0.0) // Luas Lahan (Ha)
   pengalaman     Int      @default(0) // Pengalaman Bertani (tahun)
   tglBergabung   DateTime @default(now())
   status         String   @default("Aktif")
   image          String?  @db.Text
+  commodityId    String?
+  namaBank       String?
+  noRekening     String?
+  atasNama       String?
+  catatan        String?  @db.Text
+  dokumen        String?  @db.Text
   tglDibuat      DateTime @default(now())
   dibuatOleh     String?  @default("Admin")
   tglDiubah      DateTime @default(now()) @updatedAt
@@ -175,7 +194,11 @@ model Partner {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  greenhouses Greenhouse[]
+  commodity            Commodity?                  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  greenhouses          Greenhouse[]
+  perencanaanProduksis PerencanaanProduksi[]
+  perencanaanPetanis   PerencanaanProduksiPetani[]
+  jadwalTanams         JadwalTanam[]
 
   @@map("partners")
 }
@@ -414,26 +437,34 @@ model Setting {
 model JadwalTanam {
   id                  String    @id @default(uuid())
   kodeJadwalTanam     String    @unique
+  perencanaanProduksiId String?
+  partnerId           String?
+  namaPetani          String?
+  kodePetani          String?
   periodeTanam        String?
   periodeTanamMulai   DateTime?
   periodeTanamSelesai DateTime?
   musimTanam          String?
   tujuanProduksi      String?
   tipeProduksi        String?
-  statusJadwal        String    @default("Draft")
+  statusJadwal        String    @default("Dalam Proses") // Disetujui | Dalam Proses | Revisi | Ditolak
   penanggungJawab     String?
   deskripsi           String?   @db.Text
+  keterangan          String?   @db.Text
 
   // Lahan & Komoditas
   greenhouseId          String?
   commodityId           String?
+  komoditas             String?
   varietyId             String?
+  varietas              String?
   luasTanam             Float   @default(0)
   asalBenih             String?
   jumlahBenihDiperlukan Float?  @default(0)
   jarakTanam            String?
   sistemTanam           String?
   targetProduksi        Float?  @default(0)
+  estimasiHasilPerHa    Float?  @default(0)
   standarKualitas       String?
   perkecambahanMin      Float?
 
@@ -456,27 +487,39 @@ model JadwalTanam {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  greenhouse Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
-  commodity  Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  variety    Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  perencanaanProduksi PerencanaanProduksi? @relation(fields: [perencanaanProduksiId], references: [id], onDelete: SetNull)
+  partner             Partner?             @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  greenhouse          Greenhouse?          @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+  commodity           Commodity?           @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety             Variety?             @relation(fields: [varietyId], references: [id], onDelete: SetNull)
 
   detailLahan JadwalTanamDetail[]
   personil    JadwalTanamPersonil[]
   peralatan   JadwalTanamPeralatan[]
   dokumen     JadwalTanamDokumen[]
+  persetujuanProduksi PersetujuanProduksi?
+  pemeriksaanLahan    PemeriksaanLahan[]
+  panen               Panen[]
 
   @@map("jadwal_tanam")
 }
 
 model JadwalTanamDetail {
-  id            String  @id @default(uuid())
-  jadwalTanamId String
-  greenhouseId  String?
-  namaLahan     String
-  luas          Float   @default(0)
-  tipeLahan     String? @default("Lahan Terbuka")
-  irigasi       String?
-  sumberAir     String?
+  id                String    @id @default(uuid())
+  jadwalTanamId     String
+  greenhouseId      String?
+  namaLahan         String
+  kodeLahan         String?
+  luas              Float     @default(0)
+  tipeLahan         String?   @default("Lahan Terbuka")
+  irigasi           String?
+  sumberAir         String?
+  komoditasVarietas String?
+  rencanaTanam      DateTime?
+  estimasiPanen     DateTime?
+  targetProduksi    Float?    @default(0)
+  statusLahan       String?   @default("Siap Tanam")
+  keterangan        String?   @db.Text
 
   jadwalTanam JadwalTanam @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
 
@@ -525,33 +568,47 @@ model JadwalTanamDokumen {
 }
 
 model Panen {
-  id              String   @id @default(uuid())
-  kodePanen       String   @unique
-  jadwalTanamId   String?
-  kesiapanPanenId String?
-  commodityId     String?
-  varietyId       String?
-  kesiapanLahanId String?
-  komoditas       String
-  varietas        String
-  lahan           String
-  tanggalPanen    DateTime
-  luasHa          Float    @default(0)
-  produksiKg      Float    @default(0)
-  hasilKgHa       Float    @default(0)
-  status          String   @default("Selesai")
-  penanggungJawab String?
-  metodePanen     String?  @default("Combine Harvester")
-  produksiKotorKg Float?   @default(0)
-  kadarAir        Float?   @default(14)
-  kebersihan      Float?   @default(98)
-  catatan         String?  @db.Text
-  dokumen         String?  @db.Text
-  dibuatOleh      String?  @default("Admin")
-  diubahOleh      String?  @default("Admin")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id               String    @id @default(uuid())
+  kodePanen        String    @unique
+  jadwalTanamId    String?
+  kodeJadwalTanam  String?
+  kesiapanPanenId  String?
+  commodityId      String?
+  varietyId        String?
+  kesiapanLahanId  String?
+  jenisHasil       String?   @default("Glondong / Buah")
+  komoditas        String
+  varietas         String
+  petani           String?
+  petaniKode       String?
+  lahan            String
+  blokLahan        String?
+  rencanaPanen     DateTime?
+  tanggalPanen     DateTime
+  luasHa           Float     @default(0)
+  perkiraanHasil   Float?    @default(0)
+  produksiKg       Float     @default(0)
+  hasilKgHa        Float     @default(0)
+  jumlahBuah       Int?      @default(0)
+  beratBruto       Float?    @default(0)
+  beratNetto       Float?    @default(0)
+  kondisiHasil     String?   @default("Baik")
+  statusPengolahan String?   @default("Menunggu Pengolahan")
+  status           String    @default("Selesai")
+  penanggungJawab  String?
+  metodePanen      String?   @default("Combine Harvester")
+  produksiKotorKg  Float?    @default(0)
+  kadarAir         Float?    @default(14)
+  kebersihan       Float?    @default(98)
+  catatan          String?   @db.Text
+  dokumen          String?   @db.Text
+  dokumentasi      Json?
+  dibuatOleh       String?   @default("Admin Produksi")
+  diubahOleh       String?   @default("Admin Produksi")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
 
+  jadwalTanam   JadwalTanam?   @relation(fields: [jadwalTanamId], references: [id], onDelete: SetNull)
   commodity     Commodity?     @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   variety       Variety?       @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   kesiapanPanen KesiapanPanen? @relation(fields: [kesiapanPanenId], references: [id], onDelete: SetNull)
@@ -583,6 +640,40 @@ model MonitoringLahan {
   updatedAt    DateTime @default(now()) @updatedAt
 
   @@map("monitoring_lahan")
+}
+
+model PemeriksaanLahan {
+  id                    String    @id @default(uuid())
+  noPemeriksaan         String    @unique
+  pemeriksaanKe         Int       @default(1)
+  jadwalTanamId         String?
+  kodeJadwalTanam       String
+  tanggalPemeriksaan    DateTime  @default(now())
+  komoditas             String
+  varietas              String
+  petani                String
+  lahan                 String
+  fase                  String    @default("Vegetatif") // Vegetatif | Berbunga | Generatif
+  petugasQc             String
+  persentaseKemurnian   Float     @default(100.0)
+  status                String    @default("Memenuhi") // Memenuhi | Perlu Roguing | Tidak Memenuhi
+  jumlahTanamanDiamati  Int       @default(1000)
+  tanamanSesuai         Int       @default(1000)
+  tanamanOffType        Int       @default(0)
+  keterangan            String?   @default("Memenuhi standar")
+  catatan               String?   @db.Text
+  temuanOffType         Json?
+  dokumentasi           Json?
+  roguingData           Json?
+  riwayatData           Json?
+  dibuatOleh            String?   @default("Admin")
+  diubahOleh            String?   @default("Admin")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  jadwalTanam           JadwalTanam? @relation(fields: [jadwalTanamId], references: [id], onDelete: SetNull)
+
+  @@map("pemeriksaan_lahan")
 }
 
 model MonitoringGreenhouse {
@@ -847,6 +938,69 @@ model PengujiTestMethod {
   @@map("penguji_test_methods")
 }
 
+model PerencanaanProduksi {
+  id                String    @id @default(uuid())
+  noPerencanaan     String    @unique
+  commodityId       String?
+  komoditas         String
+  varietyId         String?
+  varietas          String
+  targetProduksi    Float     @default(0)
+  aktualProduksi    Float     @default(0)
+  produksiTerpenuhi Float     @default(0)
+  targetLuasLahan   Float     @default(0)
+  lahanTersedia     Float     @default(0)
+  realisasiTanam    Float     @default(0)
+  periode           String
+  periodeMulai      DateTime?
+  periodeSelesai    DateTime?
+  metodeTanam       String    @default("Pindah Tanam")
+  kebutuhanBenih    Float     @default(0)
+  estimasiHasilPerHa Float    @default(0)
+  partnerId         String?
+  namaPetani        String?
+  greenhouseId      String?
+  namaLahan         String?
+  status            String    @default("Draft")
+  catatan           String?   @db.Text
+  estimasiPanen     String?
+  dibuatOleh        String?   @default("Admin")
+  diubahOleh        String?   @default("Admin")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  commodity         Commodity?  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety           Variety?    @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+  partner           Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  greenhouse        Greenhouse? @relation(fields: [greenhouseId], references: [id], onDelete: SetNull)
+  petaniDistribusi  PerencanaanProduksiPetani[]
+  jadwalTanams      JadwalTanam[]
+
+  @@map("perencanaan_produksi")
+}
+
+model PerencanaanProduksiPetani {
+  id                    String              @id @default(uuid())
+  perencanaanProduksiId String
+  partnerId             String?
+  namaPetani            String
+  greenhouseId          String?
+  namaLahan             String?
+  luasLahan             Float               @default(0)
+  targetProduksi        Float               @default(0)
+  tanggalTanam          DateTime?
+  tanggalPanen          DateTime?
+  keterangan            String?             @db.Text
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  perencanaanProduksi   PerencanaanProduksi @relation(fields: [perencanaanProduksiId], references: [id], onDelete: Cascade, map: "fk_dist_perencanaan")
+  partner               Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull, map: "fk_dist_partner")
+  greenhouse            Greenhouse?         @relation(fields: [greenhouseId], references: [id], onDelete: SetNull, map: "fk_dist_greenhouse")
+
+  @@map("perencanaan_produksi_petani")
+}
+
 model MasterParameter {
   id        String   @id @default(uuid())
   kode      String   @unique
@@ -902,6 +1056,8 @@ model VarietyParameter {
   option    MasterParameterOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
 
   @@unique([varietyId, parameterId])
+  @@index([parameterId], map: "variety_parameters_parameterId_fkey")
+  @@index([varietyId], map: "variety_parameters_varietyId_fkey")
   @@map("variety_parameters")
 }
 
@@ -931,4 +1087,69 @@ model HarvestTypePrice {
   harvestType   HarvestType @relation(fields: [harvestTypeId], references: [id], onDelete: Cascade)
 
   @@map("harvest_type_prices")
+}
+
+model KontrakPanen {
+  id             String    @id @default(uuid())
+  noKontrak      String    @unique
+  commodityId    String?
+  komoditas      String
+  varietyId      String?
+  varietas       String
+  tipePanenan    String    @default("Glondong / Fresh") // "Glondong / Fresh" | "OC / Benih"
+  nilaiKontrak   Float     @default(0)
+  feeKelompok    Float?    @default(0)
+  satuan         String    @default("Kg")
+  umurPanen      Int       @default(0) // HST
+  periodeMulai   DateTime?
+  periodeSelesai DateTime?
+  status         String    @default("Aktif") // "Aktif" | "Tidak Aktif" | "Draft"
+  keterangan     String?   @db.Text
+  dibuatOleh     String?   @default("Admin")
+  diubahOleh     String?   @default("Admin")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  commodity      Commodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  variety        Variety?   @relation(fields: [varietyId], references: [id], onDelete: SetNull)
+
+  @@map("kontrak_panens")
+}
+
+model PersetujuanProduksi {
+  id                 String    @id @default(uuid())
+  noPengajuan        String    @unique
+  jenis              String    @default("Jadwal Tanam") // "Jadwal Tanam" | "Revisi Jadwal Tanam" | "Perubahan Target Produksi" | "Batch Produksi"
+  judul              String
+  pengaju            String    @default("Petugas Produksi")
+  tanggalPengajuan   DateTime  @default(now())
+  status             String    @default("Proses") // "Proses" | "Disetujui" | "Ditolak"
+  alasanRevisi       String?   @db.Text
+  catatanReview      String?   @db.Text
+  disetujuiOleh      String?
+  tanggalPersetujuan DateTime?
+  lampiranFile       String?   @db.Text
+  lampiranSize       String?
+
+  jadwalTanamId      String?   @unique
+  jadwalTanam        JadwalTanam? @relation(fields: [jadwalTanamId], references: [id], onDelete: Cascade)
+
+  dataSebelumnya     Json?
+  dataPengajuan      Json?
+  riwayatFlow        Json?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("persetujuan_produksi")
+}
+
+model PenanggungJawab {
+  id        String   @id @default(uuid())
+  nama      String
+  status    String   @default("Aktif")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("penanggung_jawab")
 }

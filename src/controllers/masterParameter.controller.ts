@@ -114,7 +114,7 @@ export const createMasterParameter = async (req: AuthRequest, res: Response) => 
     const {
       kode,
       nama,
-      namaModul = 'UMUM',
+      namaModul = 'OFF_TYPE',
       tipeNilai = 'NUMBER',
       satuan,
       batasLulus,
@@ -146,7 +146,7 @@ export const createMasterParameter = async (req: AuthRequest, res: Response) => 
       data: {
         kode: kode.trim().toUpperCase(),
         nama: nama.trim(),
-        namaModul: (namaModul || 'UMUM').trim().toUpperCase(),
+        namaModul: (namaModul || 'OFF_TYPE').trim().toUpperCase(),
         tipeNilai,
         satuan: satuan ? satuan.trim() : null,
         batasLulus: batasLulus !== undefined && batasLulus !== null && batasLulus !== '' ? parseFloat(batasLulus) : null,
@@ -328,13 +328,11 @@ export const getModulList = async (_req: Request, res: Response) => {
       distinct: ['namaModul'],
     });
 
+    const defaultModuls = ['OFF_TYPE', 'QC', 'VARIETAS', 'MONITORING_LAHAN'];
+
     const moduls = Array.from(
       new Set([
-        'QC',
-        'PERTANIAN',
-        'MONITORING',
-        'PANEN',
-        'UMUM',
+        ...defaultModuls,
         ...distinctModuls.map((m) => m.namaModul),
       ])
     );

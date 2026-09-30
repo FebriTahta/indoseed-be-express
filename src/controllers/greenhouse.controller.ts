@@ -12,6 +12,8 @@ export const createGreenhouse = async (req: AuthRequest, res: Response) => {
       jenisLahan = 'Greenhouse',
       commodityId,
       partnerId,
+      varietas,
+      varietyId,
       komoditasColor = 'emerald',
       komoditasIcon = 'ri-leaf-line',
       lokasi,
@@ -22,11 +24,11 @@ export const createGreenhouse = async (req: AuthRequest, res: Response) => {
       keterangan,
     } = req.body;
 
-    // Validate required fields
-    if (!kodeLahan || !namaLahan || !commodityId || !lokasi || luas === undefined) {
+    // Validate required fields (commodityId is optional)
+    if (!kodeLahan || !namaLahan || luas === undefined) {
       return res.status(400).json({
         status: 'error',
-        message: 'kodeLahan, namaLahan, commodityId, lokasi, and luas are required fields',
+        message: 'kodeLahan, namaLahan, and luas are required fields',
       });
     }
 
@@ -48,16 +50,14 @@ export const createGreenhouse = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Validate relations
-    const commodity = await prisma.commodity.findUnique({ where: { id: commodityId } });
-    if (!commodity) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Komoditas tidak ditemukan',
-      });
+    // Validate commodity relation if provided
+    let komoditasName: string | null = null;
+    if (commodityId) {
+      const commodity = await prisma.commodity.findUnique({ where: { id: commodityId } });
+      if (commodity) {
+        komoditasName = commodity.namaKomoditas;
+      }
     }
-
-
 
     let partnerName = '';
     if (partnerId) {
@@ -83,12 +83,14 @@ export const createGreenhouse = async (req: AuthRequest, res: Response) => {
       kodeLahan,
       namaLahan,
       jenisLahan,
-      commodityId,
+      commodityId: commodityId || null,
       partnerId: partnerId || null,
-      komoditasUtama: commodity.namaKomoditas,
+      komoditasUtama: komoditasName || null,
       komoditasColor,
       komoditasIcon,
-      lokasi,
+      varietas: varietas || null,
+      varietyId: varietyId || null,
+      lokasi: lokasi || detailLokasi || 'Lahan Mitra',
       luas: parsedLuas,
       status,
       detailLokasi,
@@ -218,6 +220,8 @@ export const updateGreenhouse = async (req: AuthRequest, res: Response) => {
       detailLokasi,
       koordinat,
       keterangan,
+      varietas,
+      varietyId,
     } = req.body;
 
     const updateData: any = {};
@@ -243,6 +247,8 @@ export const updateGreenhouse = async (req: AuthRequest, res: Response) => {
     if (detailLokasi !== undefined) updateData.detailLokasi = detailLokasi;
     if (koordinat !== undefined) updateData.koordinat = koordinat;
     if (keterangan !== undefined) updateData.keterangan = keterangan;
+    if (varietas !== undefined) updateData.varietas = varietas || null;
+    if (varietyId !== undefined) updateData.varietyId = varietyId || null;
 
     // Validate relations if updated
     if (commodityId !== undefined) {
