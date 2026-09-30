@@ -63,11 +63,27 @@ import {
   deleteTreatment,
 } from '../controllers/treatment.controller';
 import { getDashboardProduksiData } from '../controllers/dashboardProduksi.controller';
+import {
+  getPerencanaanProduksis,
+  getPerencanaanProduksiById,
+  getPerencanaanStats,
+  createPerencanaanProduksi,
+  updatePerencanaanProduksi,
+  deletePerencanaanProduksi
+} from '../controllers/perencanaanProduksi.controller';
 
 const router = Router();
 
 // Dashboard Produksi (/api/produksi/dashboard)
 router.get('/dashboard', getDashboardProduksiData);
+
+// Perencanaan Produksi Sub-routes (/api/produksi/perencanaan-produksi)
+router.get('/perencanaan-produksi/stats', getPerencanaanStats);
+router.post('/perencanaan-produksi', createPerencanaanProduksi);
+router.get('/perencanaan-produksi', getPerencanaanProduksis);
+router.get('/perencanaan-produksi/:id', getPerencanaanProduksiById);
+router.put('/perencanaan-produksi/:id', updatePerencanaanProduksi);
+router.delete('/perencanaan-produksi/:id', deletePerencanaanProduksi);
 
 // Jadwal Tanam Sub-routes (/api/produksi/jadwal-tanam)
 router.post('/jadwal-tanam', createJadwalTanam);

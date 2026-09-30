@@ -450,14 +450,18 @@ async function seedQC(prisma: any) {
   console.log('Seeding QC Reference Standards, Test Methods, and Test Parameters...');
 
   const standards = [
-    { kode: 'ISTA 2023', nama: 'ISTA International Rules for Seed Testing', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Aturan internasional untuk pengujian kualitas benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
-    { kode: 'SNI 01-2891-1992', nama: 'Cara Uji Benih Hortikultura', organisasi: 'BSN', versiTahun: '1992', deskripsi: 'Metode pengujian benih hortikultura', jenis: 'Standar Nasional', bahasa: 'Indonesia', status: 'Aktif' },
-    { kode: 'ISO 9001:2015', nama: 'Sistem Manajemen Mutu', organisasi: 'ISO', versiTahun: '2015', deskripsi: 'Persyaratan sistem manajemen mutu', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
-    { kode: 'ISO 17025:2017', nama: 'Persyaratan Umum Laboratorium Pengujian', organisasi: 'ISO', versiTahun: '2017', deskripsi: 'Persyaratan kompetensi laboratorium pengujian', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
-    { kode: 'SNI 7883:2013', nama: 'Benih Sayuran', organisasi: 'BSN', versiTahun: '2013', deskripsi: 'Persyaratan mutu benih sayuran', jenis: 'Standar Nasional', bahasa: 'Indonesia', status: 'Aktif' },
-    { kode: 'SNI 8272:2016', nama: 'Benih Tanaman Pangan', organisasi: 'BSN', versiTahun: '2016', deskripsi: 'Persyaratan mutu benih tanaman pangan', jenis: 'Standar Nasional', bahasa: 'Indonesia', status: 'Aktif' },
-    { kode: 'ISTA 6.2', nama: 'Purity Determination', organisasi: 'ISTA', versiTahun: '2020', deskripsi: 'Metode penentuan kemurnian benih', jenis: 'Metode Uji Internasional', bahasa: 'Inggris', status: 'Aktif' },
-    { kode: 'ISTA 5.2.1', nama: 'Germination Test', organisasi: 'ISTA', versiTahun: '2021', deskripsi: 'Metode pengujian daya tumbuh benih', jenis: 'Metode Uji Internasional', bahasa: 'Inggris', status: 'Aktif' }
+    { kode: 'ISTA 2-001', nama: 'ISTA 2-001 Kadar Air', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode penentuan kadar air', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-106', nama: 'ISTA 2-106 Kemurnian Benih', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode penentuan kemurnian benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-007', nama: 'ISTA 2-007 Daya Berkecambah', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian daya tumbuh benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-004', nama: 'ISTA 2-004 Vigor', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian vigor benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-103', nama: 'ISTA 2-103 Benih Murni', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian benih murni', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-105', nama: 'ISTA 2-105 Benih Tanaman Lain', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian benih tanaman lain', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-107', nama: 'ISTA 2-107 Kotoran Benih', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian kotoran benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-101', nama: 'ISTA 2-101 Berat 1.000 Butir', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengukuran berat 1000 butir', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'ISTA 2-032', nama: 'ISTA 2-032 Kesehatan Benih', organisasi: 'ISTA', versiTahun: '2023', deskripsi: 'Metode pengujian kesehatan benih', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'AOAC 942.05', nama: 'AOAC 942.05 Kadar Abu', organisasi: 'AOAC', versiTahun: '2020', deskripsi: 'Metode pengujian kadar abu', jenis: 'Standar Internasional', bahasa: 'Inggris', status: 'Aktif' },
+    { kode: 'SNI 06-6989.11-2004', nama: 'SNI pH', organisasi: 'BSN', versiTahun: '2004', deskripsi: 'Metode pengujian pH', jenis: 'Standar Nasional', bahasa: 'Indonesia', status: 'Aktif' },
+    { kode: 'SNI 6989.84-2019', nama: 'SNI Logam Berat', organisasi: 'BSN', versiTahun: '2019', deskripsi: 'Metode pengujian logam berat', jenis: 'Standar Nasional', bahasa: 'Indonesia', status: 'Aktif' }
   ];
 
   const createdStandards: Record<string, any> = {};
@@ -466,16 +470,18 @@ async function seedQC(prisma: any) {
   }
 
   const methods = [
-    { kode: 'ISTA 5.2.1', nama: 'Germination Test', deskripsi: 'Metode antara kertas merang untuk uji perkecambahan', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 2.2', nama: 'Moisture Content', deskripsi: 'Metode oven 103°C ± 2°C selama 17 ± 1 jam', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 2.10', nama: 'Purity Analysis', deskripsi: 'Metode pemisahan fisik berdasarkan bentuk dan ukuran', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 7.3', nama: 'Vigor Test', deskripsi: 'Metode penuaan cepat (accelerated aging)', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 7.4', nama: 'Pathogen Test', deskripsi: 'Metode blotter test untuk deteksi patogen', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 2.3', nama: 'Weight Determination', deskripsi: 'Pengukuran berat 1000 biji', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 2.7', nama: 'Other Seed Test', deskripsi: 'Pengujian benih lain (other seed)', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 2.9', nama: 'Inert Matter Test', deskripsi: 'Pengujian kotoran (inert matter)', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 5.1.1', nama: 'Normal & Abnormal Seed', deskripsi: 'Pengujian kecambah normal dan abnormal', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
-    { kode: 'ISTA 5.2.2', nama: 'Viability Test', deskripsi: 'Uji viabilitas benih', standarId: createdStandards['ISTA 2023'].id, status: 'Aktif' },
+    { kode: 'MT-001', nama: 'Kadar Air', jenisUji: 'Fisik', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-001'].id, status: 'Aktif' },
+    { kode: 'MT-002', nama: 'Kemurnian Benih', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-106'].id, status: 'Aktif' },
+    { kode: 'MT-003', nama: 'Daya Berkecambah', jenisUji: 'Fisiologi', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-007'].id, status: 'Aktif' },
+    { kode: 'MT-004', nama: 'Vigor', jenisUji: 'Fisiologi', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-004'].id, status: 'Aktif' },
+    { kode: 'MT-005', nama: 'Benih Murni', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-103'].id, status: 'Aktif' },
+    { kode: 'MT-006', nama: 'Benih Tanaman Lain', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-105'].id, status: 'Aktif' },
+    { kode: 'MT-007', nama: 'Kotoran Benih', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-107'].id, status: 'Aktif' },
+    { kode: 'MT-008', nama: 'Berat 1.000 Butir', jenisUji: 'Fisik', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-101'].id, status: 'Aktif' },
+    { kode: 'MT-009', nama: 'Kesehatan Benih', jenisUji: 'Biologis', komoditas: 'Sayuran, Padi, Jagung', standarId: createdStandards['ISTA 2-032'].id, status: 'Aktif' },
+    { kode: 'MT-010', nama: 'Kadar Abu', jenisUji: 'Kimia', komoditas: 'Padi, Jagung', standarId: createdStandards['AOAC 942.05'].id, status: 'Aktif' },
+    { kode: 'MT-011', nama: 'pH', jenisUji: 'Kimia', komoditas: 'Cabai, Tomat', standarId: createdStandards['SNI 06-6989.11-2004'].id, status: 'Aktif' },
+    { kode: 'MT-012', nama: 'Logam Berat (Pb, Cd, Hg)', jenisUji: 'Kimia', komoditas: 'Semua Komoditas', standarId: createdStandards['SNI 6989.84-2019'].id, status: 'Nonaktif' }
   ];
 
   const createdMethods: Record<string, any> = {};
@@ -484,18 +490,18 @@ async function seedQC(prisma: any) {
   }
 
   const parameters = [
-    { kode: 'P001', nama: 'Daya Tumbuh', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal pada periode waktu tertentu.', keterangan: 'Pengujian dilakukan dengan media kertas merang pada suhu 25°C ± 2°C selama 7 hari.', metodeId: createdMethods['ISTA 5.2.1'].id, status: 'Aktif' },
-    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '<= 12', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method', metodeId: createdMethods['ISTA 2.2'].id, status: 'Aktif' },
-    { kode: 'P003', nama: 'Kemurnian', kategori: 'Fisik', batasAcuan: '>= 98', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan manual', metodeId: createdMethods['ISTA 2.10'].id, status: 'Aktif' },
-    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test', metodeId: createdMethods['ISTA 7.3'].id, status: 'Aktif' },
-    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test', metodeId: createdMethods['ISTA 7.4'].id, status: 'Aktif' },
-    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '<= 2', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, status: 'Aktif' },
-    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '-', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: '-', metodeId: createdMethods['ISTA 2.3'].id, status: 'Aktif' },
-    { kode: 'P008', nama: 'Benih Lain (Other Seed)', kategori: 'Fisik', batasAcuan: '<= 0,5', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['ISTA 2.7'].id, status: 'Aktif' },
-    { kode: 'P009', nama: 'Kotoran (Inert Matter)', kategori: 'Fisik', batasAcuan: '<= 2', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: '-', metodeId: createdMethods['ISTA 2.9'].id, status: 'Aktif' },
-    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, status: 'Aktif' },
-    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '<= 20', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['ISTA 5.1.1'].id, status: 'Aktif' },
-    { kode: 'P012', nama: 'Uji Viabilitas', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Potensi hidup benih', keterangan: '-', metodeId: createdMethods['ISTA 5.2.2'].id, status: 'Aktif' }
+    { kode: 'P001', nama: 'Daya Tumbuh', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal pada periode waktu tertentu.', keterangan: 'Pengujian dilakukan dengan media kertas merang pada suhu 25°C ± 2°C selama 7 hari.', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '<= 12', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method', metodeId: createdMethods['MT-001'].id, status: 'Aktif' },
+    { kode: 'P003', nama: 'Kemurnian', kategori: 'Fisik', batasAcuan: '>= 98', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan manual', metodeId: createdMethods['MT-002'].id, status: 'Aktif' },
+    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test', metodeId: createdMethods['MT-004'].id, status: 'Aktif' },
+    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test', metodeId: createdMethods['MT-009'].id, status: 'Aktif' },
+    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '<= 2', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '-', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: '-', metodeId: createdMethods['MT-008'].id, status: 'Aktif' },
+    { kode: 'P008', nama: 'Benih Lain (Other Seed)', kategori: 'Fisik', batasAcuan: '<= 0,5', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['MT-006'].id, status: 'Aktif' },
+    { kode: 'P009', nama: 'Kotoran (Inert Matter)', kategori: 'Fisik', batasAcuan: '<= 2', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: '-', metodeId: createdMethods['MT-007'].id, status: 'Aktif' },
+    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '<= 20', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P012', nama: 'Uji Viabilitas', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Potensi hidup benih', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' }
   ];
 
   for (const p of parameters) {

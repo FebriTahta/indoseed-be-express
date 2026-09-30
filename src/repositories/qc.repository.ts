@@ -24,11 +24,43 @@ export const qcRepository = {
   findMethodById: (id: string) => prisma.testMethod.findUnique({ where: { id }, include: { standar: true, testParameters: true, document: true } }),
   createMethod: (data: any) => {
     if (data.documentId === '') data.documentId = null;
-    return prisma.testMethod.create({ data });
+    const { testParameters, ...methodData } = data;
+    return prisma.testMethod.create({ 
+      data: {
+        ...methodData,
+        testParameters: testParameters && testParameters.length > 0 ? {
+          create: testParameters.map((p: any) => ({
+            kode: p.kode || `PRM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            nama: p.parameter || p.nama || 'Untitled',
+            satuan: p.satuan,
+            batasAcuan: p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasAcuan || ''),
+            status: 'Aktif'
+          }))
+        } : undefined
+      } 
+    });
   },
   updateMethod: (id: string, data: any) => {
     if (data.documentId === '') data.documentId = null;
-    return prisma.testMethod.update({ where: { id }, data });
+    const { testParameters, ...methodData } = data;
+    return prisma.testMethod.update({ 
+      where: { id }, 
+      data: {
+        ...methodData,
+        ...(testParameters ? {
+          testParameters: {
+            deleteMany: {},
+            create: testParameters.map((p: any) => ({
+              kode: p.kode || `PRM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              nama: p.parameter || p.nama || 'Untitled',
+              satuan: p.satuan,
+              batasAcuan: p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasAcuan || ''),
+              status: 'Aktif'
+            }))
+          }
+        } : {})
+      } 
+    });
   },
   deleteMethod: (id: string) => prisma.testMethod.delete({ where: { id } }),
 
