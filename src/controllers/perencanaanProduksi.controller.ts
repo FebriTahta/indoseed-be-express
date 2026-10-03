@@ -98,3 +98,7 @@ export const deletePerencanaanProduksi = async (req: Request, res: Response) => 
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getPerencanaanProduksiList = getPerencanaanProduksis;
+export const getPerencanaanProduksiStats = getPerencanaanStats;
+

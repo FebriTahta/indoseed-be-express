@@ -74,7 +74,15 @@ export const createMethod = async (req: Request, res: Response) => {
     const data = await qcRepository.createMethod(req.body);
     res.status(201).json({ status: 'success', data });
   } catch (error: any) {
-    res.status(400).json({ status: 'error', message: error.message });
+    console.error('Error in createMethod:', error);
+    if (error.code === 'P2002') {
+      const field = error.meta?.target || 'Kode';
+      return res.status(400).json({ status: 'error', message: `Data dengan ${field} ini sudah terdaftar.` });
+    }
+    if (error.code === 'P2003') {
+      return res.status(400).json({ status: 'error', message: 'Referensi standar acuan atau dokumen tidak valid.' });
+    }
+    res.status(400).json({ status: 'error', message: error.message || 'Gagal menambahkan metode uji' });
   }
 };
 
@@ -83,7 +91,15 @@ export const updateMethod = async (req: Request, res: Response) => {
     const data = await qcRepository.updateMethod(req.params.id as string, req.body);
     res.json({ status: 'success', data });
   } catch (error: any) {
-    res.status(400).json({ status: 'error', message: error.message });
+    console.error('Error in updateMethod:', error);
+    if (error.code === 'P2002') {
+      const field = error.meta?.target || 'Kode';
+      return res.status(400).json({ status: 'error', message: `Data dengan ${field} ini sudah terdaftar.` });
+    }
+    if (error.code === 'P2003') {
+      return res.status(400).json({ status: 'error', message: 'Referensi standar acuan atau dokumen tidak valid.' });
+    }
+    res.status(400).json({ status: 'error', message: error.message || 'Gagal memperbarui metode uji' });
   }
 };
 
@@ -91,6 +107,16 @@ export const deleteMethod = async (req: Request, res: Response) => {
   try {
     await qcRepository.deleteMethod(req.params.id as string);
     res.json({ status: 'success', message: 'Deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ status: 'error', message: error.message });
+  }
+};
+
+export const deleteMethodDocument = async (req: Request, res: Response) => {
+  try {
+    const result = await qcRepository.deleteMethodDocument(req.params.documentId as string);
+    if (!result) return res.status(404).json({ status: 'error', message: 'Document not found' });
+    res.json({ status: 'success', message: 'Document deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ status: 'error', message: error.message });
   }

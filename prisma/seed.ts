@@ -469,19 +469,197 @@ async function seedQC(prisma: any) {
     createdStandards[s.kode] = await prisma.referenceStandard.upsert({ where: { kode: s.kode }, update: s, create: s });
   }
 
+  // Clean up legacy test methods that used 'ISTA ' as kode
+  const legacyIsta = await prisma.testMethod.findMany({ where: { kode: { startsWith: 'ISTA ' } } });
+  if (legacyIsta.length > 0) {
+    const istaIds = legacyIsta.map((m: any) => m.id);
+    await prisma.qcTest.deleteMany({ where: { testMethodId: { in: istaIds } } });
+    await prisma.pengujiTestMethod.deleteMany({ where: { testMethodId: { in: istaIds } } });
+    await prisma.testParameter.deleteMany({ where: { metodeId: { in: istaIds } } });
+    await prisma.testMethod.deleteMany({ where: { id: { in: istaIds } } });
+  }
+
   const methods = [
-    { kode: 'MT-001', nama: 'Kadar Air', jenisUji: 'Fisik', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-001'].id, status: 'Aktif' },
-    { kode: 'MT-002', nama: 'Kemurnian Benih', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-106'].id, status: 'Aktif' },
-    { kode: 'MT-003', nama: 'Daya Berkecambah', jenisUji: 'Fisiologi', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-007'].id, status: 'Aktif' },
-    { kode: 'MT-004', nama: 'Vigor', jenisUji: 'Fisiologi', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-004'].id, status: 'Aktif' },
-    { kode: 'MT-005', nama: 'Benih Murni', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-103'].id, status: 'Aktif' },
-    { kode: 'MT-006', nama: 'Benih Tanaman Lain', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-105'].id, status: 'Aktif' },
-    { kode: 'MT-007', nama: 'Kotoran Benih', jenisUji: 'Visual', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-107'].id, status: 'Aktif' },
-    { kode: 'MT-008', nama: 'Berat 1.000 Butir', jenisUji: 'Fisik', komoditas: 'Semua Komoditas', standarId: createdStandards['ISTA 2-101'].id, status: 'Aktif' },
-    { kode: 'MT-009', nama: 'Kesehatan Benih', jenisUji: 'Biologis', komoditas: 'Sayuran, Padi, Jagung', standarId: createdStandards['ISTA 2-032'].id, status: 'Aktif' },
-    { kode: 'MT-010', nama: 'Kadar Abu', jenisUji: 'Kimia', komoditas: 'Padi, Jagung', standarId: createdStandards['AOAC 942.05'].id, status: 'Aktif' },
-    { kode: 'MT-011', nama: 'pH', jenisUji: 'Kimia', komoditas: 'Cabai, Tomat', standarId: createdStandards['SNI 06-6989.11-2004'].id, status: 'Aktif' },
-    { kode: 'MT-012', nama: 'Logam Berat (Pb, Cd, Hg)', jenisUji: 'Kimia', komoditas: 'Semua Komoditas', standarId: createdStandards['SNI 6989.84-2019'].id, status: 'Nonaktif' }
+    {
+      kode: 'MT-001',
+      nama: 'Kadar Air',
+      jenisUji: 'Fisik',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-001'].id,
+      alatDigunakan: 'Oven, Timbangan analitik, Desikator',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Penentuan kadar air dilakukan dengan metode oven (103 ± 2°C) selama 17 ± 1 jam atau hingga berat konstan.',
+      catatan: 'Metode ini dapat digunakan untuk semua komoditas benih.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-002',
+      nama: 'Kemurnian Benih',
+      jenisUji: 'Visual',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-106'].id,
+      alatDigunakan: 'Meja Kemurnian, Lensa Pembesar, Pinset, Timbangan Analitik',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Pemisahan contoh kerja menjadi tiga komponen utama: benih murni, benih tanaman lain, dan kotoran benih menggunakan meja kemurnian.',
+      catatan: 'Pengujian kemurnian fisik benih mengacu pada standar ISTA Chapter 3.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-003',
+      nama: 'Daya Berkecambah',
+      jenisUji: 'Fisiologi',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-007'].id,
+      alatDigunakan: 'Germinator Cabinet, Kertas Merang / Kertas Stensil, Pinset, Nampan Perkecambahan',
+      versiMetode: '2.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Pengujian viabilitas benih dengan metode uji di atas kertas (UDK) atau uji antar kertas (UAK) pada suhu 25°C ± 2°C selama 7-14 hari.',
+      catatan: 'Evaluasi kecambah normal, kecambah abnormal, benih keras, benih segar tidak tumbuh, dan benih mati.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-004',
+      nama: 'Vigor',
+      jenisUji: 'Fisiologi',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-004'].id,
+      alatDigunakan: 'Chamber Accelerated Aging, Germinator, Thermohigrometer',
+      versiMetode: '1.2',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Uji pengusangan cepat (Accelerated Aging Test) pada suhu 41°C dan kelembaban relatif 100% selama 72 jam sebelum dikecambahkan.',
+      catatan: 'Menentukan potensi daya simpan benih dan vigor lapangan pada kondisi suboptimal.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-005',
+      nama: 'Benih Murni',
+      jenisUji: 'Visual',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-103'].id,
+      alatDigunakan: 'Meja Kemurnian, Timbangan Presisi, Loupe',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Penentuan persentase fraksi benih murni dari spesies yang bersangkutan sesuai definisi ISTA.',
+      catatan: 'Fraksi benih murni harus bebas dari pecahan benih berukuran kurang dari setengah ukuran utuh.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-006',
+      nama: 'Benih Tanaman Lain',
+      jenisUji: 'Visual',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-105'].id,
+      alatDigunakan: 'Mikroskop Stereo, Meja Kemurnian, Pinset',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Pemeriksaan dan identifikasi keberadaan biji tanaman lain maupun biji gulma berbahaya dalam contoh kerja.',
+      catatan: 'Dihitung berdasarkan persentase berat atau jumlah butir per bobot contoh kerja.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-007',
+      nama: 'Kotoran Benih',
+      jenisUji: 'Visual',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-107'].id,
+      alatDigunakan: 'Ayakan Benih (Seed Blower), Timbangan Analitik, Pinset',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Pemisahan materi inert (benda mati seperti tanah, pasir, serpihan batang, dan serpihan benih rusak) dari contoh uji.',
+      catatan: 'Maksimal kadar kotoran benih ditetapkan sesuai regulasi sertifikasi benih.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-008',
+      nama: 'Berat 1.000 Butir',
+      jenisUji: 'Fisik',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['ISTA 2-101'].id,
+      alatDigunakan: 'Seed Counter Otomatis, Timbangan Analitik (ketelitian 0.001g)',
+      versiMetode: '1.1',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Penghitungan dan penimbangan 8 ulangan masing-masing 100 butir benih murni untuk mendapatkan bobot 1.000 butir benih.',
+      catatan: 'Varians antara ulangan tidak boleh melebihi batas toleransi koefisien variasi ISTA.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-009',
+      nama: 'Kesehatan Benih',
+      jenisUji: 'Biologis',
+      komoditas: 'Sayuran, Padi, Jagung',
+      varietas: 'Inpari 32, Pioneer 21, Bisi 18, Mekongga',
+      tipe: 'Inbred, Hibrida',
+      standarId: createdStandards['ISTA 2-032'].id,
+      alatDigunakan: 'Laminar Air Flow, Inkubator NUV, Mikroskop Compound',
+      versiMetode: '1.5',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Deteksi cendawan tular benih menggunakan metode kertas hisap terinkubasi (Blotter Test) di bawah siklus 12 jam terang / 12 jam gelap.',
+      catatan: 'Contoh uji diperiksa dari kontaminasi patogen jamur dan bakteri tular benih.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-010',
+      nama: 'Kadar Abu',
+      jenisUji: 'Kimia',
+      komoditas: 'Padi, Jagung',
+      varietas: 'Inpari 32, Pioneer 21',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['AOAC 942.05'].id,
+      alatDigunakan: 'Muffle Furnace (550°C), Krus Porselen, Desikator, Timbangan Analitik',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Destruksi bahan organik benih dalam tanur bersuhu 550°C hingga terbentuk abu putih bebas karbon.',
+      catatan: 'Digunakan untuk parameter proksimat dan kemurnian mineral benih.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-011',
+      nama: 'pH',
+      jenisUji: 'Kimia',
+      komoditas: 'Cabai, Tomat',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['SNI 06-6989.11-2004'].id,
+      alatDigunakan: 'pH Meter Digital Terkalibrasi, Magnetic Stirrer, Beaker Glass',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Pengukuran konsentrasi ion hidrogen dari larutan ekstrak suspensi benih atau media perlakuan benih.',
+      catatan: 'Kalibrasi pH meter menggunakan larutan buffer standar pH 4.01, 7.00, dan 10.01 sebelum pengukuran.',
+      status: 'Aktif'
+    },
+    {
+      kode: 'MT-012',
+      nama: 'Logam Berat (Pb, Cd, Hg)',
+      jenisUji: 'Kimia',
+      komoditas: 'Semua Komoditas',
+      varietas: 'Semua Varietas',
+      tipe: 'Semua Tipe',
+      standarId: createdStandards['SNI 6989.84-2019'].id,
+      alatDigunakan: 'AAS (Atomic Absorption Spectrophotometer), Microwave Digester, Labu Takar',
+      versiMetode: '1.0',
+      tanggalBerlaku: new Date('2024-01-01'),
+      deskripsi: 'Analisis residu cemaran logam berat Timbal (Pb), Kadmium (Cd), dan Merkuri (Hg) pada jaringan benih pascapanen.',
+      catatan: 'Metode uji ini dinonaktifkan sementara karena proses kalibrasi berkala spektrofotometer AAS.',
+      status: 'Nonaktif'
+    }
   ];
 
   const createdMethods: Record<string, any> = {};
@@ -490,18 +668,21 @@ async function seedQC(prisma: any) {
   }
 
   const parameters = [
-    { kode: 'P001', nama: 'Daya Tumbuh', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal pada periode waktu tertentu.', keterangan: 'Pengujian dilakukan dengan media kertas merang pada suhu 25°C ± 2°C selama 7 hari.', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
-    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '<= 12', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method', metodeId: createdMethods['MT-001'].id, status: 'Aktif' },
-    { kode: 'P003', nama: 'Kemurnian', kategori: 'Fisik', batasAcuan: '>= 98', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan manual', metodeId: createdMethods['MT-002'].id, status: 'Aktif' },
-    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test', metodeId: createdMethods['MT-004'].id, status: 'Aktif' },
-    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test', metodeId: createdMethods['MT-009'].id, status: 'Aktif' },
-    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '<= 2', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
-    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '-', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: '-', metodeId: createdMethods['MT-008'].id, status: 'Aktif' },
-    { kode: 'P008', nama: 'Benih Lain (Other Seed)', kategori: 'Fisik', batasAcuan: '<= 0,5', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['MT-006'].id, status: 'Aktif' },
-    { kode: 'P009', nama: 'Kotoran (Inert Matter)', kategori: 'Fisik', batasAcuan: '<= 2', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: '-', metodeId: createdMethods['MT-007'].id, status: 'Aktif' },
-    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '>= 80', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
-    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '<= 20', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
-    { kode: 'P012', nama: 'Uji Viabilitas', kategori: 'Fisiologis', batasAcuan: '>= 70', satuan: '%', definisi: 'Potensi hidup benih', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' }
+    { kode: 'P001', nama: 'Daya Berkecambah', kategori: 'Fisiologis', batasAcuan: '≥ 80.0', satuan: '%', definisi: 'Persentase kecambah normal yang dihasilkan dari benih murni dalam kondisi optimal.', keterangan: 'Uji kertas merang suhu 25°C ± 2°C selama 7-14 hari.', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P002', nama: 'Kadar Air', kategori: 'Fisik', batasAcuan: '≤ 8.0', satuan: '%', definisi: 'Kandungan air dalam benih', keterangan: 'Oven method (103°C, 17 jam)', metodeId: createdMethods['MT-001'].id, status: 'Aktif' },
+    { kode: 'P003', nama: 'Kemurnian Benih', kategori: 'Fisik', batasAcuan: '≥ 98.0', satuan: '%', definisi: 'Persentase berat benih murni dari spesies yang diuji dalam suatu contoh uji', keterangan: 'Pemisahan meja kemurnian manual', metodeId: createdMethods['MT-002'].id, status: 'Aktif' },
+    { kode: 'P004', nama: 'Vigor', kategori: 'Fisiologis', batasAcuan: '≥ 70.0', satuan: '%', definisi: 'Kemampuan benih untuk tumbuh normal pada kondisi suboptimal', keterangan: 'Accelerated aging test (41°C, 72 jam)', metodeId: createdMethods['MT-004'].id, status: 'Aktif' },
+    { kode: 'P005', nama: 'Uji Patogen', kategori: 'Kesehatan', batasAcuan: 'Bebas', satuan: '-', definisi: 'Pemeriksaan keberadaan patogen (jamur, bakteri, virus) pada benih', keterangan: 'Blotter test siklus 12 jam NUV', metodeId: createdMethods['MT-009'].id, status: 'Aktif' },
+    { kode: 'P006', nama: 'Benih Mati', kategori: 'Fisiologis', batasAcuan: '≤ 5.0', satuan: '%', definisi: 'Benih yang tidak dapat berkecambah atau membusuk', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P007', nama: 'Berat 1000 Biji', kategori: 'Fisik', batasAcuan: '25.0 - 32.0', satuan: 'gram', definisi: 'Berat dari 1000 butir benih murni yang dihitung secara acak', keterangan: 'Rata-rata 8 ulangan x 100 butir', metodeId: createdMethods['MT-008'].id, status: 'Aktif' },
+    { kode: 'P008', nama: 'Benih Tanaman Lain', kategori: 'Fisik', batasAcuan: '≤ 0.2', satuan: '%', definisi: 'Benih dari spesies tanaman lain atau gulma yang terdapat dalam contoh', keterangan: '-', metodeId: createdMethods['MT-006'].id, status: 'Aktif' },
+    { kode: 'P009', nama: 'Kotoran Benih', kategori: 'Fisik', batasAcuan: '≤ 1.5', satuan: '%', definisi: 'Benda mati, potongan benih, atau materi lain yang bukan benih murni', keterangan: 'Peniup benih dan pemisahan manual', metodeId: createdMethods['MT-007'].id, status: 'Aktif' },
+    { kode: 'P010', nama: 'Kecambah Normal', kategori: 'Fisiologis', batasAcuan: '≥ 80.0', satuan: '%', definisi: 'Kecambah yang menunjukkan potensi untuk berkembang menjadi tanaman normal', keterangan: 'Evaluasi hitungan ke-1 dan ke-2', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P011', nama: 'Kecambah Abnormal', kategori: 'Fisiologis', batasAcuan: '≤ 10.0', satuan: '%', definisi: 'Kecambah yang cacat, tidak lengkap, atau terinfeksi yang tidak dapat tumbuh normal', keterangan: '-', metodeId: createdMethods['MT-003'].id, status: 'Aktif' },
+    { kode: 'P012', nama: 'Benih Murni', kategori: 'Visual', batasAcuan: '≥ 98.0', satuan: '%', definisi: 'Fraksi benih murni spesies yang diuji', keterangan: 'Pemisahan meja kemurnian', metodeId: createdMethods['MT-005'].id, status: 'Aktif' },
+    { kode: 'P013', nama: 'Kadar Abu', kategori: 'Kimia', batasAcuan: '≤ 2.0', satuan: '%', definisi: 'Kadar abu total benih setelah pengabuan 550°C', keterangan: 'Metode muffle furnace', metodeId: createdMethods['MT-010'].id, status: 'Aktif' },
+    { kode: 'P014', nama: 'pH', kategori: 'Kimia', batasAcuan: '6.0 - 7.5', satuan: '-', definisi: 'Derajat keasaman ekstrak larutan benih', keterangan: 'pH meter terkalibrasi', metodeId: createdMethods['MT-011'].id, status: 'Aktif' },
+    { kode: 'P015', nama: 'Logam Berat (Pb, Cd, Hg)', kategori: 'Kimia', batasAcuan: '≤ 0.25', satuan: 'mg/kg', definisi: 'Kandungan residu cemaran logam berat', keterangan: 'AAS spektrofotometri', metodeId: createdMethods['MT-012'].id, status: 'Aktif' }
   ];
 
   for (const p of parameters) {
@@ -556,55 +737,55 @@ async function seedQcTests(prisma: any) {
     // --- Daya Tumbuh ---
     { 
       kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-05-12'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-05-12'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 75.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 300, jumlahTidakBerkecambah: 100, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0002', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-05-16'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-05-16'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 82.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 328, jumlahTidakBerkecambah: 72, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0003', komoditas: 'Padi', varietas: 'IR 64', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-05-20'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-05-20'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 70.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 280, jumlahTidakBerkecambah: 120, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0004', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-05-24'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-05-24'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 78.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 312, jumlahTidakBerkecambah: 88, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0005', komoditas: 'Jagung', varietas: 'Pioneer 21', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-05-28'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-05-28'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 65.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 260, jumlahTidakBerkecambah: 140, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0006', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-06-01'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-06-01'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 85.0, batasAcuan: 85, status: 'Lulus', sertifikat: 'CT-DT-001',
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 340, jumlahTidakBerkecambah: 60, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0007', komoditas: 'Kedelai', varietas: 'Grobogan', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-06-05'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-06-05'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 75.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 300, jumlahTidakBerkecambah: 100, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0008', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-06-09'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-06-09'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 70.0, batasAcuan: 85, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 280, jumlahTidakBerkecambah: 120, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
     { 
       kodeBatch: 'BP-2606-0009', komoditas: 'Padi', varietas: 'Ciherang', jenisUji: 'Daya Tumbuh', 
-      tanggalUji: new Date('2026-06-11'), petugasUjiId: dewiId, testMethodName: 'Germination Test', 
+      tanggalUji: new Date('2026-06-11'), petugasUjiId: dewiId, testMethodName: 'Daya Berkecambah', 
       jumlahSampel: 400, nilaiHasil: 96.5, batasAcuan: 85, status: 'Lulus', sertifikat: 'CT-DT-002',
       detailUji: { jumlahBenihDitanam: 400, jumlahBerkecambah: 386, jumlahTidakBerkecambah: 14, waktuUjiHari: 7, suhuUji: '25 ± 2°C', mediaUji: 'Kertas Merang' }
     },
@@ -612,25 +793,25 @@ async function seedQcTests(prisma: any) {
     // --- Kadar Air ---
     { 
       kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kadar Air', 
-      tanggalUji: new Date('2026-05-15'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      tanggalUji: new Date('2026-05-15'), petugasUjiId: dewiId, testMethodName: 'Kadar Air', 
       jumlahSampel: 100, nilaiHasil: 11.2, batasAcuan: 13.0, status: 'Lulus', sertifikat: 'CT-KA-001',
       detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.4 }
     },
     { 
       kodeBatch: 'BP-2606-0002', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kadar Air', 
-      tanggalUji: new Date('2026-05-18'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      tanggalUji: new Date('2026-05-18'), petugasUjiId: dewiId, testMethodName: 'Kadar Air', 
       jumlahSampel: 100, nilaiHasil: 12.5, batasAcuan: 13.0, status: 'Lulus', sertifikat: null,
       detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.37 }
     },
     { 
       kodeBatch: 'BP-2606-0003', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Kadar Air', 
-      tanggalUji: new Date('2026-05-22'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      tanggalUji: new Date('2026-05-22'), petugasUjiId: dewiId, testMethodName: 'Kadar Air', 
       jumlahSampel: 100, nilaiHasil: 14.1, batasAcuan: 12.0, status: 'Tidak Lulus', sertifikat: null,
       detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.29 }
     },
     { 
       kodeBatch: 'BP-2606-0004', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Kadar Air', 
-      tanggalUji: new Date('2026-06-02'), petugasUjiId: dewiId, testMethodName: 'Moisture Content', 
+      tanggalUji: new Date('2026-06-02'), petugasUjiId: dewiId, testMethodName: 'Kadar Air', 
       jumlahSampel: 100, nilaiHasil: 10.5, batasAcuan: 11.0, status: 'Lulus', sertifikat: 'CT-KA-002',
       detailUji: { alat: 'Oven Memmert UN55', suhuUji: '105 ± 3', waktuPengeringan: '17 jam', beratAwal: 5.0, beratAkhir: 4.47 }
     },
@@ -638,19 +819,19 @@ async function seedQcTests(prisma: any) {
     // --- Kemurnian ---
     { 
       kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Kemurnian', 
-      tanggalUji: new Date('2026-05-13'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      tanggalUji: new Date('2026-05-13'), petugasUjiId: budiId, testMethodName: 'Kemurnian Benih', 
       jumlahSampel: 500, nilaiHasil: 99.2, batasAcuan: 98.0, status: 'Memenuhi', sertifikat: 'CT-KM-001',
       detailUji: { beratBenihMurni: 496, beratTanamanLain: 1, beratGulma: 1, beratBahanAsing: 2, alatInstrumen: 'Timbangan Digital' }
     },
     { 
       kodeBatch: 'BP-2606-0002', komoditas: 'Jagung', varietas: 'Bisi 2', jenisUji: 'Kemurnian', 
-      tanggalUji: new Date('2026-05-25'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      tanggalUji: new Date('2026-05-25'), petugasUjiId: budiId, testMethodName: 'Kemurnian Benih', 
       jumlahSampel: 900, nilaiHasil: 97.5, batasAcuan: 98.0, status: 'Mendekati', sertifikat: null,
       detailUji: { beratBenihMurni: 877.5, beratTanamanLain: 10, beratGulma: 2.5, beratBahanAsing: 10, alatInstrumen: 'Timbangan Digital' }
     },
     { 
       kodeBatch: 'BP-2606-0003', komoditas: 'Kedelai', varietas: 'Grobogan', jenisUji: 'Kemurnian', 
-      tanggalUji: new Date('2026-06-06'), petugasUjiId: budiId, testMethodName: 'Purity Analysis', 
+      tanggalUji: new Date('2026-06-06'), petugasUjiId: budiId, testMethodName: 'Kemurnian Benih', 
       jumlahSampel: 1000, nilaiHasil: 94.8, batasAcuan: 98.0, status: 'Tidak Memenuhi', sertifikat: null,
       detailUji: { beratBenihMurni: 948, beratTanamanLain: 20, beratGulma: 10, beratBahanAsing: 22, alatInstrumen: 'Timbangan Digital' }
     },
@@ -658,19 +839,19 @@ async function seedQcTests(prisma: any) {
     // --- Vigor ---
     { 
       kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', jenisUji: 'Vigor', 
-      tanggalUji: new Date('2026-05-14'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      tanggalUji: new Date('2026-05-14'), petugasUjiId: ratnaId, testMethodName: 'Vigor', 
       jumlahSampel: 400, nilaiHasil: 880, batasAcuan: 800, status: 'Memenuhi', sertifikat: 'CT-VG-001',
       detailUji: { kategori: 'Tinggi', alatInstrumen: 'Germinator', suhuRuangan: '26°C' }
     },
     { 
       kodeBatch: 'BP-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', jenisUji: 'Vigor', 
-      tanggalUji: new Date('2026-05-29'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      tanggalUji: new Date('2026-05-29'), petugasUjiId: ratnaId, testMethodName: 'Vigor', 
       jumlahSampel: 400, nilaiHasil: 750, batasAcuan: 800, status: 'Mendekati', sertifikat: null,
       detailUji: { kategori: 'Sedang', alatInstrumen: 'Germinator', suhuRuangan: '27°C' }
     },
     { 
       kodeBatch: 'BP-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', jenisUji: 'Vigor', 
-      tanggalUji: new Date('2026-06-03'), petugasUjiId: ratnaId, testMethodName: 'Vigor Test', 
+      tanggalUji: new Date('2026-06-03'), petugasUjiId: ratnaId, testMethodName: 'Vigor', 
       jumlahSampel: 400, nilaiHasil: 590, batasAcuan: 800, status: 'Tidak Memenuhi', sertifikat: null,
       detailUji: { kategori: 'Rendah', alatInstrumen: 'Germinator', suhuRuangan: '26°C' }
     }
@@ -679,7 +860,14 @@ async function seedQcTests(prisma: any) {
   for (const test of tests) {
     const commodity = await prisma.commodity.findFirst({ where: { namaKomoditas: test.komoditas } });
     const variety = await prisma.variety.findFirst({ where: { namaVarietas: test.varietas } });
-    const testMethod = await prisma.testMethod.findFirst({ where: { nama: test.testMethodName } });
+    const testMethod = await prisma.testMethod.findFirst({
+      where: {
+        OR: [
+          { nama: test.testMethodName },
+          { kode: test.testMethodName }
+        ]
+      }
+    });
 
     const { komoditas, varietas, testMethodName, ...testData } = test;
 
@@ -1504,63 +1692,63 @@ async function seedPenguji(prisma: any) {
       email: 'dewi.lestari@example.com',
       kodePenguji: 'PENG-001',
       nama: 'Dewi Lestari',
-      methods: ['ISTA 5.2.1', 'ISTA 2.2'] // Daya Tumbuh, Kadar Air
+      methods: ['MT-003', 'MT-001'] // Daya Berkecambah, Kadar Air
     },
     {
       username: 'budi',
       email: 'budi.santoso@example.com',
       kodePenguji: 'PENG-002',
       nama: 'Budi Santoso',
-      methods: ['ISTA 2.10'] // Kemurnian
+      methods: ['MT-002'] // Kemurnian Benih
     },
     {
       username: 'ratna',
       email: 'ratna.sari@example.com',
       kodePenguji: 'PENG-003',
       nama: 'Ratna Sari',
-      methods: ['ISTA 7.3'] // Vigor
+      methods: ['MT-004'] // Vigor
     },
     {
       username: 'andi',
       email: 'andi.pratama@example.com',
       kodePenguji: 'PENG-004',
       nama: 'Andi Pratama',
-      methods: ['ISTA 7.4'] // Pathogen Test
+      methods: ['MT-009'] // Kesehatan Benih
     },
     {
       username: 'siti',
       email: 'siti.nurhaliza@example.com',
       kodePenguji: 'PENG-005',
       nama: 'Siti Nurhaliza',
-      methods: ['ISTA 2.3', 'ISTA 2.7'] // Weight Determination, Other Seed Test
+      methods: ['MT-008', 'MT-006'] // Berat 1.000 Butir, Benih Tanaman Lain
     },
     {
       username: 'rina',
       email: 'rina.wulandari@example.com',
       kodePenguji: 'PENG-006',
       nama: 'Rina Wulandari',
-      methods: ['ISTA 2.9'] // Inert Matter Test
+      methods: ['MT-007'] // Kotoran Benih
     },
     {
       username: 'dedi',
       email: 'dedi.kurniawan@example.com',
       kodePenguji: 'PENG-007',
       nama: 'Dedi Kurniawan',
-      methods: ['ISTA 5.1.1'] // Normal & Abnormal Seed
+      methods: ['MT-005'] // Benih Murni
     },
     {
       username: 'maya',
       email: 'maya.lestari@example.com',
       kodePenguji: 'PENG-008',
       nama: 'Maya Lestari',
-      methods: ['ISTA 5.2.2'] // Viability Test
+      methods: ['MT-010', 'MT-011'] // Kadar Abu, pH
     },
     {
       username: 'fajar',
       email: 'fajar.nugroho@example.com',
       kodePenguji: 'PENG-009',
       nama: 'Fajar Nugroho',
-      methods: ['ISTA 5.2.1', 'ISTA 2.10'] // Germination Test, Purity Analysis
+      methods: ['MT-003', 'MT-002'] // Daya Berkecambah, Kemurnian Benih
     }
   ];
 
