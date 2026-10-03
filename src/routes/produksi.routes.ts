@@ -105,14 +105,6 @@ import {
   deleteTreatment,
 } from '../controllers/treatment.controller';
 import { getDashboardProduksiData } from '../controllers/dashboardProduksi.controller';
-import {
-  getPerencanaanProduksis,
-  getPerencanaanProduksiById,
-  getPerencanaanStats,
-  createPerencanaanProduksi,
-  updatePerencanaanProduksi,
-  deletePerencanaanProduksi
-} from '../controllers/perencanaanProduksi.controller';
 
 const router = Router();
 

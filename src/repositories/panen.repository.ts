@@ -304,69 +304,71 @@ export const panenRepository = {
         orderBy: { kodeJadwalTanam: 'desc' },
       });
 
-      // Format response
-      return eligibleJadwals.map((j: any) => ({
-        id: j.id,
-        kodeJadwalTanam: j.kodeJadwalTanam,
-        komoditas: j.komoditas || j.commodity?.namaKomoditas || 'Komoditas',
-        varietas: j.varietas || j.variety?.namaVarietas || 'Varietas',
-        namaPetani: j.namaPetani || j.partner?.namaPetani || 'Petani Mitra',
-        kodePetani: j.partner?.kodePetani || 'BTN-001',
-        lahan: j.detailLahan?.[0]?.namaLahan ? `${j.detailLahan[0].namaLahan} / ${j.detailLahan[0].kodeLahan || 'Blok 01'}` : (j.lahan || 'Lahan A / Blok 01'),
-        luasLahan: j.luasTanam || j.detailLahan?.[0]?.luas || 1.0,
-        targetProduksi: j.targetProduksi || 1500,
-        perkiraanPanen: j.perkiraanPanen || j.periodeTanamSelesai || '2026-09-30',
-        statusJadwal: j.statusJadwal,
-        statusPersetujuan: j.persetujuanProduksi?.status || 'Disetujui',
-      }));
+      if (eligibleJadwals.length > 0) {
+        return eligibleJadwals.map((j: any) => ({
+          id: j.id,
+          kodeJadwalTanam: j.kodeJadwalTanam,
+          komoditas: j.komoditas || j.commodity?.namaKomoditas || 'Komoditas',
+          varietas: j.varietas || j.variety?.namaVarietas || 'Varietas',
+          namaPetani: j.namaPetani || j.partner?.namaPetani || 'Petani Mitra',
+          kodePetani: j.partner?.kodePetani || 'BTN-001',
+          lahan: j.detailLahan?.[0]?.namaLahan ? `${j.detailLahan[0].namaLahan} / ${j.detailLahan[0].kodeLahan || 'Blok 01'}` : (j.lahan || 'Lahan A / Blok 01'),
+          luasLahan: j.luasTanam || j.detailLahan?.[0]?.luas || 1.0,
+          targetProduksi: j.targetProduksi || 1500,
+          perkiraanPanen: j.perkiraanPanen || j.periodeTanamSelesai || '2026-09-30',
+          statusJadwal: j.statusJadwal,
+          statusPersetujuan: j.persetujuanProduksi?.status || 'Disetujui',
+        }));
+      }
     } catch (e) {
       console.warn('Fallback eligible jadwal tanam:', e);
-      // Fallback
-      return [
-        {
-          id: 'jt-ref-1',
-          kodeJadwalTanam: 'JT-2026-009',
-          komoditas: 'Tomat',
-          varietas: 'Melisa',
-          namaPetani: 'Siti Rahayu',
-          kodePetani: 'SRN-002',
-          lahan: 'Lahan B / Blok 02',
-          luasLahan: 1.5,
-          targetProduksi: 2000,
-          perkiraanPanen: '2026-10-01',
-          statusJadwal: 'Disetujui',
-          statusPersetujuan: 'Disetujui',
-        },
-        {
-          id: 'jt-ref-2',
-          kodeJadwalTanam: 'JT-2026-011',
-          komoditas: 'Kangkung',
-          varietas: 'Super Sempit',
-          namaPetani: 'Budi Santoso',
-          kodePetani: 'BTN-001',
-          lahan: 'Lahan A / Blok 01',
-          luasLahan: 1.0,
-          targetProduksi: 1500,
-          perkiraanPanen: '2026-09-30',
-          statusJadwal: 'Disetujui',
-          statusPersetujuan: 'Disetujui',
-        },
-        {
-          id: 'jt-ref-3',
-          kodeJadwalTanam: 'JT-2026-012',
-          komoditas: 'Melon',
-          varietas: 'Melon Tere F1',
-          namaPetani: 'Budi Santoso',
-          kodePetani: 'BTN-001',
-          lahan: 'Lahan A / Blok 01',
-          luasLahan: 1.0,
-          targetProduksi: 1500,
-          perkiraanPanen: '2026-09-30',
-          statusJadwal: 'Disetujui',
-          statusPersetujuan: 'Disetujui',
-        },
-      ];
     }
+
+    // Fallback
+    return [
+      {
+        id: 'jt-ref-1',
+        kodeJadwalTanam: 'JT-2026-009',
+        komoditas: 'Tomat',
+        varietas: 'Melisa',
+        namaPetani: 'Siti Rahayu',
+        kodePetani: 'SRN-002',
+        lahan: 'Lahan B / Blok 02',
+        luasLahan: 1.5,
+        targetProduksi: 2000,
+        perkiraanPanen: '2026-10-01',
+        statusJadwal: 'Disetujui',
+        statusPersetujuan: 'Disetujui',
+      },
+      {
+        id: 'jt-ref-2',
+        kodeJadwalTanam: 'JT-2026-011',
+        komoditas: 'Kangkung',
+        varietas: 'Super Sempit',
+        namaPetani: 'Budi Santoso',
+        kodePetani: 'BTN-001',
+        lahan: 'Lahan A / Blok 01',
+        luasLahan: 1.0,
+        targetProduksi: 1500,
+        perkiraanPanen: '2026-09-30',
+        statusJadwal: 'Disetujui',
+        statusPersetujuan: 'Disetujui',
+      },
+      {
+        id: 'jt-ref-3',
+        kodeJadwalTanam: 'JT-2026-012',
+        komoditas: 'Melon',
+        varietas: 'Melon Tere F1',
+        namaPetani: 'Budi Santoso',
+        kodePetani: 'BTN-001',
+        lahan: 'Lahan A / Blok 01',
+        luasLahan: 1.0,
+        targetProduksi: 1500,
+        perkiraanPanen: '2026-09-30',
+        statusJadwal: 'Disetujui',
+        statusPersetujuan: 'Disetujui',
+      },
+    ];
   },
 
   getNextKodePanen: async () => {

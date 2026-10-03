@@ -1,100 +1,113 @@
 import { Request, Response } from 'express';
+import { perencanaanProduksiRepository } from '../repositories/perencanaanProduksi.repository';
 
-// In-memory mock data for PerencanaanProduksi since Prisma model doesn't exist yet
-const mockPerencanaanProduksi = [
-  {
-    id: "1",
-    noPerencanaan: "PRN-2026-001",
-    commodityId: null,
-    komoditas: "Padi",
-    varietyId: null,
-    varietas: "IR64",
-    targetProduksi: 15000,
-    aktualProduksi: 12000,
-    produksiTerpenuhi: 80,
-    targetLuasLahan: 2,
-    lahanTersedia: 2,
-    realisasiTanam: 1.8,
-    periode: "Okt - Des 2026",
-    periodeMulai: "2026-10-01",
-    periodeSelesai: "2026-12-31",
-    metodeTanam: "Pindah Tanam",
-    kebutuhanBenih: 50,
-    estimasiHasilPerHa: 7500,
-    status: "Proses",
-    catatan: "Berjalan lancar",
-    estimasiPanen: "2026-12-15",
-    dibuatOleh: "Admin",
-    diubahOleh: "Admin",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-export const getPerencanaanProduksis = async (req: Request, res: Response) => {
+export const getPerencanaanProduksiList = async (req: Request, res: Response) => {
   try {
+    const {
+      search,
+      periode,
+      status,
+      komoditas,
+      varietas,
+      namaPetani,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const result = await perencanaanProduksiRepository.findAll({
+      search: search as string,
+      periode: periode as string,
+      status: status as string,
+      komoditas: komoditas as string,
+      varietas: varietas as string,
+      namaPetani: namaPetani as string,
+      page: Number(page),
+      limit: Number(limit),
+    });
+
     return res.status(200).json({
       success: true,
-      data: mockPerencanaanProduksi,
+      data: result.items,
       meta: {
-        total: mockPerencanaanProduksi.length,
-        page: 1,
-        limit: 10,
-        totalPages: 1
-      }
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
     });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error fetching Perencanaan Produksi list:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
+
+export const getPerencanaanProduksis = getPerencanaanProduksiList;
 
 export const getPerencanaanProduksiById = async (req: Request, res: Response) => {
   try {
-    const data = mockPerencanaanProduksi.find(p => p.id === req.params.id);
-    if (!data) return res.status(404).json({ success: false, message: 'Not found' });
+    const { id } = req.params;
+    const data = await perencanaanProduksiRepository.findById(id as string);
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'Data Perencanaan Produksi tidak ditemukan' });
+    }
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error fetching Perencanaan Produksi detail:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
 
-export const getPerencanaanStats = async (req: Request, res: Response) => {
+export const getPerencanaanProduksiStats = async (req: Request, res: Response) => {
   try {
-    const stats = {
-      totalRencana: 5,
-      totalTargetProduksi: 50000,
-      totalAktualProduksi: 35000,
-      totalKebutuhanBenih: 200,
-      totalLuasLahan: 10,
-      jumlahPetani: 8,
-      persenTerpenuhiRataRata: 70
-    };
+    const stats = await perencanaanProduksiRepository.getStats();
     return res.status(200).json({ success: true, data: stats });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error fetching Perencanaan Produksi stats:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
+
+export const getPerencanaanStats = getPerencanaanProduksiStats;
 
 export const createPerencanaanProduksi = async (req: Request, res: Response) => {
   try {
-    return res.status(201).json({ success: true, data: req.body, message: 'Mock created' });
+    const created = await perencanaanProduksiRepository.create(req.body);
+    return res.status(201).json({
+      success: true,
+      data: created,
+      message: 'Perencanaan Produksi berhasil dibuat',
+    });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error creating Perencanaan Produksi:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Gagal membuat Perencanaan Produksi' });
   }
 };
 
 export const updatePerencanaanProduksi = async (req: Request, res: Response) => {
   try {
-    return res.status(200).json({ success: true, data: req.body, message: 'Mock updated' });
+    const { id } = req.params;
+    const updated = await perencanaanProduksiRepository.update(id as string, req.body);
+    return res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Perencanaan Produksi berhasil diperbarui',
+    });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error updating Perencanaan Produksi:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Gagal memperbarui Perencanaan Produksi' });
   }
 };
 
 export const deletePerencanaanProduksi = async (req: Request, res: Response) => {
   try {
-    return res.status(200).json({ success: true, message: 'Mock deleted' });
+    const { id } = req.params;
+    await perencanaanProduksiRepository.delete(id as string);
+    return res.status(200).json({
+      success: true,
+      message: 'Perencanaan Produksi berhasil dihapus',
+    });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Error deleting Perencanaan Produksi:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Gagal menghapus Perencanaan Produksi' });
   }
 };
