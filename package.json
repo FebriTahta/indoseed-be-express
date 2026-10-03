@@ -5,7 +5,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint \"src/**/*.ts\" --fix"
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "seed:master": "tsx prisma/seedMaster.ts",
+    "seed:produksi": "tsx prisma/seedProduksi.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
