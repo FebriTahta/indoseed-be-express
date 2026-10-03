@@ -135,6 +135,8 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
                 status: item.status || 'Aktif',
                 koordinat: item.koordinat || null,
                 detailLokasi: item.detailLokasi || null,
+                image: item.image || item.fotoUrl || item.fotoLahan || null,
+                keterangan: item.keterangan || (item.dokumenUrl ? JSON.stringify({ dokumenUrl: item.dokumenUrl, dokumenNama: item.dokumenNama, size: item.dokumenSize }) : null),
                 petaniMitra: newPartner.namaPetani,
                 partnerId: newPartner.id,
                 dibuatOleh: createdBy,
