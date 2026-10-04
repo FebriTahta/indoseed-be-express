@@ -112,6 +112,3 @@ export const deletePerencanaanProduksi = async (req: Request, res: Response) => 
   }
 };
 
-export const getPerencanaanProduksiList = getPerencanaanProduksis;
-export const getPerencanaanProduksiStats = getPerencanaanStats;
-
