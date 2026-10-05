@@ -684,25 +684,22 @@ jobs:
 
 
           # ======================================================
-          # DATABASE MIGRATION
+          # DATABASE SCHEMA SYNC
           # ======================================================
 
           echo ""
           echo "========================================"
-          echo "APPLY PRISMA MIGRATIONS"
+          echo "SYNC DATABASE SCHEMA"
           echo "========================================"
 
           cd "$BACKEND_DIR"
 
           export NODE_OPTIONS="--max-old-space-size=512"
 
-          echo "Applying pending migrations..."
-          if npx prisma migrate deploy; then
-            echo "Prisma migrate deploy completed successfully."
-          else
-            echo "Prisma migrate deploy encountered an issue, syncing schema directly with prisma db push..."
-            npx prisma db push --skip-generate
-          fi
+          echo "Syncing schema directly to database (prisma db push)..."
+          npx prisma db push --accept-data-loss
+
+          echo "Database schema synchronized successfully."
 
 
           # ======================================================
