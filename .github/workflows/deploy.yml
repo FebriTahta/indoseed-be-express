@@ -464,7 +464,7 @@ jobs:
       - name: Upload Backend .env
         env:
           BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
-        run: |
+        run: |  
           echo "Writing backend .env from GitHub Secrets to VPS..."
           printf '%s\n' "$BACKEND_ENV" | ssh \
             -i ~/.ssh/deploy_key \
@@ -643,6 +643,66 @@ jobs:
           echo "Frontend activated."
 
 
+
+
+          # ======================================================
+          # DATABASE HEALTHCHECK & AUTO-START
+          # ======================================================
+
+          echo ""
+          echo "========================================"
+          echo "DATABASE HEALTHCHECK & AUTO-START"
+          echo "========================================"
+
+          cd "$BACKEND_DIR"
+
+          # 1. Pastikan service MariaDB / MySQL aktif
+          if systemctl is-active --quiet mariadb; then
+            echo "MariaDB service: ACTIVE"
+          elif systemctl is-active --quiet mysql; then
+            echo "MySQL service: ACTIVE"
+          else
+            echo "Database service is INACTIVE! Memulai service MariaDB/MySQL..."
+            systemctl start mariadb 2>/dev/null || systemctl start mysql 2>/dev/null || true
+            sleep 3
+          fi
+
+          # 2. Cek status service
+          if systemctl is-active --quiet mariadb || systemctl is-active --quiet mysql; then
+            echo "Database service is running."
+          else
+            echo "WARNING: Gagal mendeteksi/memulai systemd service mariadb/mysql."
+          fi
+
+          # 3. Cek port 3306 listening
+          echo "Status Port 3306:"
+          ss -tlpn | grep 3306 || netstat -tlpn 2>/dev/null | grep 3306 || echo "WARNING: Tidak ada service yang listening di port 3306!"
+
+          # 4. Tampilkan konfigurasi DATABASE_URL dari .env (disamarkan passwordnya untuk keamanan)
+          echo "Active DATABASE_URL setting:"
+          grep '^DATABASE_URL=' .env | sed -E 's/:([^:@]+)@/:***@/' || echo "WARNING: DATABASE_URL not found in .env"
+
+
+          # ======================================================
+          # DATABASE MIGRATION
+          # ======================================================
+
+          echo ""
+          echo "========================================"
+          echo "APPLY PRISMA MIGRATIONS"
+          echo "========================================"
+
+          cd "$BACKEND_DIR"
+
+          export NODE_OPTIONS="--max-old-space-size=512"
+
+          echo "Applying pending migrations..."
+          if npx prisma migrate deploy; then
+            echo "Prisma migrate deploy completed successfully."
+          else
+            echo "Prisma migrate deploy encountered an issue, syncing schema directly with prisma db push..."
+            npx prisma db push --skip-generate
+          fi
 
 
           # ======================================================
