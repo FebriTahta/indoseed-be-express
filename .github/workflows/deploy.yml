@@ -308,23 +308,34 @@ jobs:
           printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > "$HOME/.ssh/deploy_key"
           chmod 600 "$HOME/.ssh/deploy_key"
 
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> "$HOME/.ssh/known_hosts"
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
           chmod 644 "$HOME/.ssh/known_hosts"
+
+          cat << 'EOF' > "$HOME/.ssh/config"
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+          EOF
+          chmod 600 "$HOME/.ssh/config"
 
           echo "SSH configuration completed."
 
 
       # ----------------------------------------------------------
-      # Test SSH connection
+      # Test SSH connection & Check Disk Space
       # ----------------------------------------------------------
       - name: Test SSH Connection
         run: |
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -o ConnectTimeout=15 \
             root@${{ secrets.VPS_HOST }} \
-            "echo 'SSH connection OK'"
+            "echo 'SSH connection OK' && echo '=== Disk Space ===' && df -h /"
 
 
       # ----------------------------------------------------------
@@ -335,6 +346,8 @@ jobs:
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=10 \
             root@${{ secrets.VPS_HOST }} \
@@ -357,13 +370,26 @@ jobs:
           echo "Uploading backend..."
 
           scp \
+            -O \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -o ConnectTimeout=30 \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=10 \
             ./backend/backend.tar.gz \
-            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/backend/backend.tar.gz
+            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/backend/backend.tar.gz \
+          || {
+            echo "SCP failed or SFTP unavailable, streaming via SSH..."
+            ssh \
+              -i ~/.ssh/deploy_key \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              root@${{ secrets.VPS_HOST }} \
+              "cat > /var/indoseed-deploy/backend/backend.tar.gz" < ./backend/backend.tar.gz
+          }
 
           echo "Backend upload completed."
 
@@ -376,6 +402,8 @@ jobs:
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             root@${{ secrets.VPS_HOST }} \
             "
               ls -lh /var/indoseed-deploy/backend/backend.tar.gz
@@ -390,13 +418,26 @@ jobs:
           echo "Uploading frontend..."
 
           scp \
+            -O \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             -o ConnectTimeout=30 \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=10 \
             ./frontend/frontend.tar.gz \
-            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/frontend/frontend.tar.gz
+            root@${{ secrets.VPS_HOST }}:/var/indoseed-deploy/frontend/frontend.tar.gz \
+          || {
+            echo "SCP failed or SFTP unavailable, streaming via SSH..."
+            ssh \
+              -i ~/.ssh/deploy_key \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              root@${{ secrets.VPS_HOST }} \
+              "cat > /var/indoseed-deploy/frontend/frontend.tar.gz" < ./frontend/frontend.tar.gz
+          }
 
           echo "Frontend upload completed."
 
@@ -409,6 +450,8 @@ jobs:
           ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             root@${{ secrets.VPS_HOST }} \
             "
               ls -lh /var/indoseed-deploy/frontend/frontend.tar.gz
@@ -426,6 +469,8 @@ jobs:
           printf '%s\n' "$BACKEND_ENV" | ssh \
             -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             root@${{ secrets.VPS_HOST }} \
             "cat > /var/indoseed-deploy/backend.env && chmod 600 /var/indoseed-deploy/backend.env"
           echo "Backend .env uploaded successfully."
