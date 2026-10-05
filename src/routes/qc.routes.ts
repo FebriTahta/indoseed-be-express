@@ -24,6 +24,7 @@ router.get('/methods/:id', QCController.getMethodById);
 router.post('/methods', QCController.createMethod);
 router.put('/methods/:id', QCController.updateMethod);
 router.delete('/methods/:id', QCController.deleteMethod);
+router.delete('/methods/documents/:documentId', QCController.deleteMethodDocument);
 
 // Test Parameters
 router.get('/parameters', QCController.getParameters);

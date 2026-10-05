@@ -235,6 +235,8 @@ model TestMethod {
   status    String   @default("Aktif")
   jenisUji  String?
   komoditas      String?
+  varietas       String?
+  tipe           String?
   standarId      String?
   alatDigunakan  String?  @db.Text
   versiMetode    String?
@@ -250,8 +252,24 @@ model TestMethod {
   document           SupportDocument?    @relation(fields: [documentId], references: [id], onDelete: SetNull)
   qcTests            QcTest[]
   pengujiTestMethods PengujiTestMethod[]
+  dokumen            TestMethodDocument[]
 
   @@map("test_methods")
+}
+
+model TestMethodDocument {
+  id           String      @id @default(uuid())
+  testMethodId String
+  namaFile     String
+  fileUrl      String      @db.Text
+  tipeFile     String?
+  ukuran       String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  testMethod   TestMethod  @relation(fields: [testMethodId], references: [id], onDelete: Cascade)
+
+  @@map("test_method_documents")
 }
 
 model TestParameter {
