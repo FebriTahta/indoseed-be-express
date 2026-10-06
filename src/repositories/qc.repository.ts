@@ -21,10 +21,48 @@ export const qcRepository = {
   deleteStandard: (id: string) => prisma.referenceStandard.delete({ where: { id } }),
 
   // Test Methods
-  findAllMethods: () => prisma.testMethod.findMany({
-    include: { standar: true, testParameters: true, document: true, dokumen: true },
-    orderBy: { kode: 'asc' }
-  }),
+  findAllMethods: (filters?: {
+    search?: string;
+    jenisUji?: string;
+    komoditas?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
+    const where: any = {};
+
+    if (filters?.search) {
+      where.OR = [
+        { kode: { contains: filters.search } },
+        { nama: { contains: filters.search } },
+        { jenisUji: { contains: filters.search } },
+        { komoditas: { contains: filters.search } },
+        { varietas: { contains: filters.search } },
+      ];
+    }
+
+    if (filters?.jenisUji) {
+      where.jenisUji = filters.jenisUji;
+    }
+
+    if (filters?.komoditas) {
+      where.komoditas = filters.komoditas;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    const validSortFields = ['kode', 'nama', 'status', 'jenisUji', 'komoditas', 'createdAt', 'updatedAt'];
+    const sortField = filters?.sortBy && validSortFields.includes(filters.sortBy) ? filters.sortBy : 'updatedAt';
+    const sortDirection = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    return prisma.testMethod.findMany({
+      where,
+      include: { standar: true, testParameters: true, document: true, dokumen: true },
+      orderBy: { [sortField]: sortDirection }
+    });
+  },
   findMethodById: (id: string) => prisma.testMethod.findUnique({
     where: { id },
     include: { standar: true, testParameters: true, document: true, dokumen: true }
@@ -54,7 +92,7 @@ export const qcRepository = {
             kode: p.kode || `PRM-${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
             nama: p.parameter || p.nama || 'Untitled',
             satuan: p.satuan || null,
-            batasAcuan: p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasAcuan || null),
+            batasAcuan: p.batasAcuan || (p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasMin || p.batasMax || null)),
             status: p.status || 'Aktif'
           }))
         } : undefined,
@@ -114,7 +152,7 @@ export const qcRepository = {
               kode: p.kode || `PRM-${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
               nama: p.parameter || p.nama || 'Untitled',
               satuan: p.satuan || null,
-              batasAcuan: p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasAcuan || null),
+              batasAcuan: p.batasAcuan || (p.batasMin && p.batasMax ? `${p.batasMin} - ${p.batasMax}` : (p.batasMin || p.batasMax || null)),
               status: p.status || 'Aktif'
             }))
           }

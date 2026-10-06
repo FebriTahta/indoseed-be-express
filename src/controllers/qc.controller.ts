@@ -52,7 +52,15 @@ export const deleteStandard = async (req: Request, res: Response) => {
 // -- Test Methods --
 export const getMethods = async (req: Request, res: Response) => {
   try {
-    const data = await qcRepository.findAllMethods();
+    const { search, jenisUji, komoditas, status, sortBy, sortOrder } = req.query;
+    const data = await qcRepository.findAllMethods({
+      search: search ? String(search) : undefined,
+      jenisUji: jenisUji ? String(jenisUji) : undefined,
+      komoditas: komoditas ? String(komoditas) : undefined,
+      status: status ? String(status) : undefined,
+      sortBy: sortBy ? String(sortBy) : 'updatedAt',
+      sortOrder: sortOrder === 'asc' ? 'asc' : 'desc'
+    });
     res.json({ status: 'success', data });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });

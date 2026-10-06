@@ -253,6 +253,7 @@ model TestMethod {
   qcTests            QcTest[]
   pengujiTestMethods PengujiTestMethod[]
   dokumen            TestMethodDocument[]
+  permintaanParameters PermintaanPengujianParameter[]
 
   @@map("test_methods")
 }
@@ -287,6 +288,7 @@ model TestParameter {
   updatedAt  DateTime @updatedAt
 
   metode TestMethod? @relation(fields: [metodeId], references: [id], onDelete: SetNull)
+  permintaanParameters PermintaanPengujianParameter[]
 
   @@map("test_parameters")
 }
@@ -798,6 +800,7 @@ model BatchProduksi {
   updatedAt      DateTime @default(now()) @updatedAt
 
   batchLot BatchLot?
+  permintaanPengujian PermintaanPengujian[]
 
   @@map("batch_produksi")
 }
@@ -1170,4 +1173,80 @@ model PenanggungJawab {
   updatedAt DateTime @updatedAt
 
   @@map("penanggung_jawab")
+}
+
+model PermintaanPengujian {
+  id               String   @id @default(uuid())
+  noPermintaan     String   @unique
+  tanggal          DateTime @default(now())
+  kodeBatch        String
+  batchProduksiId  String?
+  komoditas        String?
+  varietas         String?
+  tipe             String?  @default("QC / Benih")
+  petani           String?
+  lahan            String?
+  panen            String?
+  jumlahSampel     Float?   @default(0)
+  satuanSampel     String?  @default("gram")
+  metodeSampling   String?  @default("sop")
+  pengambilSampel  String?  @default("Andi Pratama")
+  pemohon          String   @default("produksi")
+  prioritas        String   @default("normal")
+  status           String   @default("Menunggu Persetujuan")
+  catatan          String?  @db.Text
+  fileLampiranUrl  String?  @db.Text
+  fileLampiranNama String?
+  dibuatOleh       String?  @default("Admin")
+  diubahOleh       String?  @default("Admin")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  batchProduksi   BatchProduksi?                 @relation(fields: [batchProduksiId], references: [id], onDelete: SetNull)
+  parameters      PermintaanPengujianParameter[]
+  dokumen         PermintaanPengujianDokumen[]
+
+  @@map("permintaan_pengujian")
+}
+
+model PermintaanPengujianParameter {
+  id           String   @id @default(uuid())
+  permintaanId String
+  parameterId  String?
+  kode         String
+  nama         String
+  kategori     String?
+  metodeId     String?
+  metode       String?
+  metodeKode   String?
+  metodeNama   String?
+  standar      String?
+  satuan       String?
+  checked      Boolean  @default(true)
+  definisi     String?  @db.Text
+  keterangan   String?  @db.Text
+  isCustom     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  permintaan   PermintaanPengujian @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+  parameter    TestParameter?      @relation(fields: [parameterId], references: [id], onDelete: SetNull)
+  metodeRef    TestMethod?         @relation(fields: [metodeId], references: [id], onDelete: SetNull)
+
+  @@map("permintaan_pengujian_parameters")
+}
+
+model PermintaanPengujianDokumen {
+  id           String   @id @default(uuid())
+  permintaanId String
+  namaFile     String
+  fileUrl      String   @db.Text
+  tipeFile     String?
+  ukuran       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  permintaan   PermintaanPengujian @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+
+  @@map("permintaan_pengujian_dokumen")
 }

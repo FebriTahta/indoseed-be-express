@@ -3,10 +3,12 @@ import * as QCController from '../controllers/qc.controller';
 import * as DocumentController from '../controllers/document.controller';
 import { uploadSingle } from '../middlewares/upload.middleware';
 import pengujiRoutes from './penguji.routes';
+import permintaanRoutes from './permintaanPengujian.routes';
 
 const router = express.Router();
 
 router.use('/penguji', pengujiRoutes);
+router.use('/permintaan', permintaanRoutes);
 
 // Laboratoriums
 router.get('/laboratoriums', QCController.getLaboratoriums);
