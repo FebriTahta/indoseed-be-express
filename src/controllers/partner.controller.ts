@@ -121,6 +121,18 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
           for (let i = 0; i < parsedLahan.length; i++) {
             const item = parsedLahan[i];
             const kodeLahan = item.kodeLahan || `${newPartner.kodePetani}-L${String(i + 1).padStart(2, '0')}`;
+            let matchedVarietyId = item.varietyId || null;
+            if (!matchedVarietyId && item.varietas) {
+              const foundV = await prisma.variety.findFirst({
+                where: {
+                  OR: [
+                    { kodeVarietas: item.varietas },
+                    { id: item.varietas },
+                  ],
+                },
+              });
+              if (foundV) matchedVarietyId = foundV.id;
+            }
             await prisma.greenhouse.create({
               data: {
                 kodeLahan,
@@ -129,7 +141,7 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
                 komoditasUtama: item.komoditas || item.komoditasUtama || null,
                 commodityId: item.commodityId || null,
                 varietas: item.varietas || null,
-                varietyId: item.varietyId || null,
+                varietyId: matchedVarietyId,
                 lokasi: item.lokasi || newPartner.alamat || 'Lahan Mitra',
                 luas: parseFloat(item.luas || 0),
                 status: item.status || 'Aktif',

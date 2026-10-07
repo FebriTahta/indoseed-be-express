@@ -127,6 +127,8 @@ router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRol
 import * as pjCont from '../controllers/penanggungJawab.controller';
 
 // Penanggung Jawab routes
+router.get('/penanggung-jawab/stats', pjCont.getStats);
+router.get('/penanggung-jawab/next-kode', pjCont.getNextKode);
 router.get('/penanggung-jawab', pjCont.getPenanggungJawab);
 router.get('/penanggung-jawab/:id', pjCont.getPenanggungJawabById);
 router.post('/penanggung-jawab', pjCont.createPenanggungJawab);

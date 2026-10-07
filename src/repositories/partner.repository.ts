@@ -22,7 +22,8 @@ export const partnerRepository = {
         commodity: true,
         greenhouses: {
           include: {
-            commodity: true
+            commodity: true,
+            variety: true,
           }
         }
       }
@@ -36,7 +37,8 @@ export const partnerRepository = {
         commodity: true,
         greenhouses: {
           include: {
-            commodity: true
+            commodity: true,
+            variety: true,
           }
         }
       }
@@ -57,7 +59,8 @@ export const partnerRepository = {
         commodity: true,
         greenhouses: {
           include: {
-            commodity: true
+            commodity: true,
+            variety: true,
           }
         }
       }
@@ -115,7 +118,8 @@ export const partnerRepository = {
           commodity: true,
           greenhouses: {
             include: {
-              commodity: true
+              commodity: true,
+              variety: true,
             }
           }
         }

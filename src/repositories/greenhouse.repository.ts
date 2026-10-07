@@ -23,6 +23,7 @@ export const greenhouseRepository = {
       include: {
         commodity: true,
         partner: true,
+        variety: true,
       },
     });
   },
@@ -33,6 +34,7 @@ export const greenhouseRepository = {
       include: {
         commodity: true,
         partner: true,
+        variety: true,
       },
     });
   },
@@ -43,6 +45,7 @@ export const greenhouseRepository = {
       include: {
         commodity: true,
         partner: true,
+        variety: true,
       },
     });
   },
@@ -54,6 +57,7 @@ export const greenhouseRepository = {
       include: {
         commodity: true,
         partner: true,
+        variety: true,
       },
     });
   },
@@ -117,6 +121,7 @@ export const greenhouseRepository = {
         include: {
           commodity: true,
           partner: true,
+          variety: true,
         },
       }),
       prisma.greenhouse.count({ where }),

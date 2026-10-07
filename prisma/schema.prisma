@@ -1163,11 +1163,20 @@ model PersetujuanProduksi {
 }
 
 model PenanggungJawab {
-  id        String   @id @default(uuid())
-  nama      String
-  status    String   @default("Aktif")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  kodePersonel   String?
+  nama           String
+  peran          String?   @default("Penanggung Jawab")
+  areaModul      String?   @default("Produksi")
+  lokasi         String?   @default("Semua Lokasi")
+  noHp           String?
+  email          String?
+  status         String    @default("Aktif")
+  tanggalMulai   DateTime?
+  tanggalSelesai DateTime?
+  catatan        String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@map("penanggung_jawab")
 }
