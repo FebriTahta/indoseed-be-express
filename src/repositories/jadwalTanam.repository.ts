@@ -100,6 +100,23 @@ export interface CreateJadwalTanamInput {
 
 const getModel = () => (prisma as any).jadwalTanam;
 
+const jadwalTanamIncludes = {
+  greenhouse: true,
+  commodity: true,
+  variety: true,
+  partner: {
+    include: {
+      kelompok: true,
+      penanggungJawab: true,
+    },
+  },
+  perencanaanProduksi: true,
+  detailLahan: true,
+  personil: true,
+  peralatan: true,
+  dokumen: true,
+};
+
 export const jadwalTanamRepository = {
   getNextKodeJadwalTanam: async () => {
     const now = new Date();
@@ -192,17 +209,7 @@ export const jadwalTanamRepository = {
           create: dokumen,
         } : undefined,
       },
-      include: {
-        greenhouse: true,
-        commodity: true,
-        variety: true,
-        partner: true,
-        perencanaanProduksi: true,
-        detailLahan: true,
-        personil: true,
-        peralatan: true,
-        dokumen: true,
-      },
+      include: jadwalTanamIncludes,
     });
   },
 
@@ -211,34 +218,14 @@ export const jadwalTanamRepository = {
       where: {
         OR: [{ id }, { kodeJadwalTanam: id }],
       },
-      include: {
-        greenhouse: true,
-        commodity: true,
-        variety: true,
-        partner: true,
-        perencanaanProduksi: true,
-        detailLahan: true,
-        personil: true,
-        peralatan: true,
-        dokumen: true,
-      },
+      include: jadwalTanamIncludes,
     });
   },
 
   findByKode: async (kodeJadwalTanam: string) => {
     return getModel().findUnique({
       where: { kodeJadwalTanam },
-      include: {
-        greenhouse: true,
-        commodity: true,
-        variety: true,
-        partner: true,
-        perencanaanProduksi: true,
-        detailLahan: true,
-        personil: true,
-        peralatan: true,
-        dokumen: true,
-      },
+      include: jadwalTanamIncludes,
     });
   },
 
@@ -295,17 +282,7 @@ export const jadwalTanamRepository = {
           create: dokumen,
         } : undefined,
       },
-      include: {
-        greenhouse: true,
-        commodity: true,
-        variety: true,
-        partner: true,
-        perencanaanProduksi: true,
-        detailLahan: true,
-        personil: true,
-        peralatan: true,
-        dokumen: true,
-      },
+      include: jadwalTanamIncludes,
     });
   },
 
@@ -397,17 +374,7 @@ export const jadwalTanamRepository = {
       skip: (Number(page) - 1) * Number(pageSize),
       take: Number(pageSize),
       orderBy: { updatedAt: 'desc' },
-      include: {
-        greenhouse: true,
-        commodity: true,
-        variety: true,
-        partner: true,
-        perencanaanProduksi: true,
-        detailLahan: true,
-        personil: true,
-        peralatan: true,
-        dokumen: true,
-      },
+      include: jadwalTanamIncludes,
     });
 
     return {

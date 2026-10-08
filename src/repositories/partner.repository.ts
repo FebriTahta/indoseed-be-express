@@ -4,6 +4,8 @@ import { prisma } from '../utils/prisma';
 export interface PartnerFilter {
   search?: string;
   kelompokTani?: string;
+  kelompokTaniId?: string;
+  penanggungJawabId?: string;
   status?: string;
   komoditasUtama?: string;
   commodityId?: string;
@@ -14,34 +16,30 @@ export interface PartnerFilter {
 export interface CreatePartnerInput extends Prisma.PartnerUncheckedCreateInput {}
 export interface UpdatePartnerInput extends Prisma.PartnerUncheckedUpdateInput {}
 
+const partnerIncludes = {
+  commodity: true,
+  penanggungJawab: true,
+  kelompok: true,
+  greenhouses: {
+    include: {
+      commodity: true,
+      variety: true,
+    },
+  },
+};
+
 export const partnerRepository = {
   create: async (data: CreatePartnerInput) => {
     return prisma.partner.create({
       data,
-      include: {
-        commodity: true,
-        greenhouses: {
-          include: {
-            commodity: true,
-            variety: true,
-          }
-        }
-      }
+      include: partnerIncludes,
     });
   },
 
   findById: async (id: string) => {
     return prisma.partner.findUnique({
       where: { id },
-      include: {
-        commodity: true,
-        greenhouses: {
-          include: {
-            commodity: true,
-            variety: true,
-          }
-        }
-      }
+      include: partnerIncludes,
     });
   },
 
@@ -55,15 +53,7 @@ export const partnerRepository = {
     return prisma.partner.update({
       where: { id },
       data,
-      include: {
-        commodity: true,
-        greenhouses: {
-          include: {
-            commodity: true,
-            variety: true,
-          }
-        }
-      }
+      include: partnerIncludes,
     });
   },
 
@@ -77,6 +67,8 @@ export const partnerRepository = {
     const {
       search,
       kelompokTani,
+      kelompokTaniId,
+      penanggungJawabId,
       status,
       komoditasUtama,
       commodityId,
@@ -86,9 +78,16 @@ export const partnerRepository = {
 
     const where: any = {};
 
-    if (kelompokTani) {
+    if (kelompokTaniId) {
+      where.kelompokTaniId = kelompokTaniId;
+    } else if (kelompokTani) {
       where.kelompokTani = kelompokTani;
     }
+
+    if (penanggungJawabId) {
+      where.penanggungJawabId = penanggungJawabId;
+    }
+
     if (status) {
       where.status = status;
     }
@@ -114,15 +113,7 @@ export const partnerRepository = {
         skip,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
-        include: {
-          commodity: true,
-          greenhouses: {
-            include: {
-              commodity: true,
-              variety: true,
-            }
-          }
-        }
+        include: partnerIncludes,
       }),
       prisma.partner.count({ where }),
     ]);
