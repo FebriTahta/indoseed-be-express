@@ -5,7 +5,7 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 export const getVarietyParameters = async (req: Request, res: Response) => {
   try {
     const varietyId = req.params.varietyId as string;
-    const { namaModul } = req.query;
+    const { namaModul, assignedOnly } = req.query;
 
     const variety = await prisma.variety.findUnique({
       where: { id: varietyId },
@@ -46,13 +46,17 @@ export const getVarietyParameters = async (req: Request, res: Response) => {
 
     const paramMap = new Map(existingVarietyParams.map((vp) => [vp.parameterId, vp]));
 
-    const combined = masterParams.map((mp) => {
+    let combined = masterParams.map((mp) => {
       const assigned = paramMap.get(mp.id);
       return {
         parameter: mp,
         varietyParameter: assigned || null,
       };
     });
+
+    if (assignedOnly === 'true') {
+      combined = combined.filter((cp) => cp.varietyParameter !== null);
+    }
 
     return res.status(200).json({
       status: 'success',

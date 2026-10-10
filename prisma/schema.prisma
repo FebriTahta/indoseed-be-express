@@ -125,6 +125,7 @@ model Commodity {
   perencanaanProduksis PerencanaanProduksi[]
   partners             Partner[]
   kontrakPanens        KontrakPanen[]
+  kelompokTanis        KelompokTani[]
 
   @@map("commodities")
 }
@@ -182,6 +183,8 @@ model Partner {
   status         String   @default("Aktif")
   image          String?  @db.Text
   commodityId    String?
+  penanggungJawabId String?
+  kelompokTaniId String?
   namaBank       String?
   noRekening     String?
   atasNama       String?
@@ -195,6 +198,8 @@ model Partner {
   updatedAt      DateTime @updatedAt
 
   commodity            Commodity?                  @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  penanggungJawab      PenanggungJawab?            @relation(fields: [penanggungJawabId], references: [id], onDelete: SetNull)
+  kelompok             KelompokTani?               @relation(fields: [kelompokTaniId], references: [id], onDelete: SetNull)
   greenhouses          Greenhouse[]
   perencanaanProduksis PerencanaanProduksi[]
   perencanaanPetanis   PerencanaanProduksiPetani[]
@@ -1176,13 +1181,54 @@ model PersetujuanProduksi {
 }
 
 model PenanggungJawab {
-  id        String   @id @default(uuid())
-  nama      String
-  status    String   @default("Aktif")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  kodePersonel   String?
+  nama           String
+  peran          String?   @default("Penanggung Jawab")
+  areaModul      String?   @default("Produksi")
+  lokasi         String?   @default("Semua Lokasi")
+  noHp           String?
+  email          String?
+  status         String    @default("Aktif")
+  tanggalMulai   DateTime?
+  tanggalSelesai DateTime?
+  catatan        String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  partners       Partner[]
+  kelompokTanis  KelompokTani[]
 
   @@map("penanggung_jawab")
+}
+
+model KelompokTani {
+  id                String    @id @default(uuid())
+  kodeKelompok      String    @unique
+  namaKelompok      String
+  ketua             String
+  noHpKetua         String?
+  tahunBerdiri      String?
+  lokasi            String
+  desa              String?
+  kecamatan         String?
+  kabupaten         String?
+  komoditasUtama    String
+  commodityId       String?
+  jumlahAnggota     Int       @default(0)
+  deskripsi         String?   @db.Text
+  status            String    @default("Aktif")
+  penanggungJawabId String?
+  dibuatOleh        String?   @default("Admin")
+  diubahOleh        String?   @default("Admin")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  commodity         Commodity?       @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  penanggungJawab   PenanggungJawab? @relation(fields: [penanggungJawabId], references: [id], onDelete: SetNull)
+  partners          Partner[]
+
+  @@map("kelompok_tani")
 }
 
 model PermintaanPengujian {

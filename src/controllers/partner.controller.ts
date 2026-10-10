@@ -10,6 +10,8 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       kodePetani,
       namaPetani,
       kelompokTani,
+      kelompokTaniId,
+      penanggungJawabId,
       komoditasUtama,
       commodityId,
       noKtp,
@@ -28,8 +30,31 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
       lahanList,
     } = req.body;
 
+    // Resolve kelompokTani name if kelompokTaniId is provided
+    let resolvedKelompokName = kelompokTani;
+    let resolvedKelompokId = kelompokTaniId || null;
+    let resolvedPjId = penanggungJawabId || null;
+
+    if (resolvedKelompokId && !resolvedKelompokName) {
+      const kt = await prisma.kelompokTani.findUnique({ where: { id: resolvedKelompokId } });
+      if (kt) {
+        resolvedKelompokName = kt.namaKelompok;
+        if (!resolvedPjId && kt.penanggungJawabId) {
+          resolvedPjId = kt.penanggungJawabId;
+        }
+      }
+    } else if (resolvedKelompokName && !resolvedKelompokId) {
+      const kt = await prisma.kelompokTani.findFirst({ where: { namaKelompok: resolvedKelompokName } });
+      if (kt) {
+        resolvedKelompokId = kt.id;
+        if (!resolvedPjId && kt.penanggungJawabId) {
+          resolvedPjId = kt.penanggungJawabId;
+        }
+      }
+    }
+
     // Validate required fields
-    if (!kodePetani || !namaPetani || !kelompokTani || !komoditasUtama) {
+    if (!kodePetani || !namaPetani || !resolvedKelompokName || !komoditasUtama) {
       return res.status(400).json({
         status: 'error',
         message: 'kodePetani, namaPetani, kelompokTani, and komoditasUtama are required fields',
@@ -92,7 +117,9 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
     const newPartner = await partnerRepository.create({
       kodePetani,
       namaPetani,
-      kelompokTani,
+      kelompokTani: resolvedKelompokName,
+      kelompokTaniId: resolvedKelompokId,
+      penanggungJawabId: resolvedPjId,
       komoditasUtama,
       commodityId: commodityId || null,
       noKtp: noKtp || null,
@@ -121,6 +148,18 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
           for (let i = 0; i < parsedLahan.length; i++) {
             const item = parsedLahan[i];
             const kodeLahan = item.kodeLahan || `${newPartner.kodePetani}-L${String(i + 1).padStart(2, '0')}`;
+            let matchedVarietyId = item.varietyId || null;
+            if (!matchedVarietyId && item.varietas) {
+              const foundV = await prisma.variety.findFirst({
+                where: {
+                  OR: [
+                    { kodeVarietas: item.varietas },
+                    { id: item.varietas },
+                  ],
+                },
+              });
+              if (foundV) matchedVarietyId = foundV.id;
+            }
             await prisma.greenhouse.create({
               data: {
                 kodeLahan,
@@ -129,7 +168,7 @@ export const createPartner = async (req: AuthRequest, res: Response) => {
                 komoditasUtama: item.komoditas || item.komoditasUtama || null,
                 commodityId: item.commodityId || null,
                 varietas: item.varietas || null,
-                varietyId: item.varietyId || null,
+                varietyId: matchedVarietyId,
                 lokasi: item.lokasi || newPartner.alamat || 'Lahan Mitra',
                 luas: parseFloat(item.luas || 0),
                 status: item.status || 'Aktif',
@@ -168,6 +207,8 @@ export const getPartners = async (req: Request, res: Response) => {
     const {
       search,
       kelompokTani,
+      kelompokTaniId,
+      penanggungJawabId,
       status,
       komoditasUtama,
       commodityId,
@@ -181,6 +222,8 @@ export const getPartners = async (req: Request, res: Response) => {
     const result = await partnerRepository.findAll({
       search: search as string,
       kelompokTani: kelompokTani as string,
+      kelompokTaniId: kelompokTaniId as string,
+      penanggungJawabId: penanggungJawabId as string,
       status: status as string,
       komoditasUtama: komoditasUtama as string,
       commodityId: commodityId as string,
@@ -196,6 +239,8 @@ export const getPartners = async (req: Request, res: Response) => {
       filters: {
         search: search || null,
         kelompokTani: kelompokTani || null,
+        kelompokTaniId: kelompokTaniId || null,
+        penanggungJawabId: penanggungJawabId || null,
         status: status || null,
         komoditasUtama: komoditasUtama || null,
       },
@@ -251,6 +296,8 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
       kodePetani,
       namaPetani,
       kelompokTani,
+      kelompokTaniId,
+      penanggungJawabId,
       komoditasUtama,
       commodityId,
       noKtp,
@@ -283,7 +330,15 @@ export const updatePartner = async (req: AuthRequest, res: Response) => {
     }
 
     if (namaPetani !== undefined) updateData.namaPetani = namaPetani;
+    if (kelompokTaniId !== undefined) {
+      updateData.kelompokTaniId = kelompokTaniId || null;
+      if (kelompokTaniId) {
+        const kt = await prisma.kelompokTani.findUnique({ where: { id: kelompokTaniId } });
+        if (kt) updateData.kelompokTani = kt.namaKelompok;
+      }
+    }
     if (kelompokTani !== undefined) updateData.kelompokTani = kelompokTani;
+    if (penanggungJawabId !== undefined) updateData.penanggungJawabId = penanggungJawabId || null;
     if (komoditasUtama !== undefined) updateData.komoditasUtama = komoditasUtama;
     if (commodityId !== undefined) updateData.commodityId = commodityId || null;
     if (noKtp !== undefined) updateData.noKtp = noKtp || null;

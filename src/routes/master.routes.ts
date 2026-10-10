@@ -125,12 +125,24 @@ router.get('/variety-parameter/:varietyId', varietyParamCont.getVarietyParameter
 router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRoles('superadmin', 'admin'), varietyParamCont.upsertVarietyParametersBatch);
 
 import * as pjCont from '../controllers/penanggungJawab.controller';
+import * as ktCont from '../controllers/kelompokTani.controller';
 
 // Penanggung Jawab routes
+router.get('/penanggung-jawab/stats', pjCont.getStats);
+router.get('/penanggung-jawab/next-kode', pjCont.getNextKode);
 router.get('/penanggung-jawab', pjCont.getPenanggungJawab);
 router.get('/penanggung-jawab/:id', pjCont.getPenanggungJawabById);
 router.post('/penanggung-jawab', pjCont.createPenanggungJawab);
 router.put('/penanggung-jawab/:id', pjCont.updatePenanggungJawab);
 router.delete('/penanggung-jawab/:id', pjCont.deletePenanggungJawab);
+
+// Kelompok Tani routes
+router.get('/kelompok-tani/stats', ktCont.getStats);
+router.get('/kelompok-tani/next-kode', ktCont.getNextKode);
+router.get('/kelompok-tani', ktCont.getKelompokTani);
+router.get('/kelompok-tani/:id', ktCont.getKelompokTaniById);
+router.post('/kelompok-tani', ktCont.createKelompokTani);
+router.put('/kelompok-tani/:id', ktCont.updateKelompokTani);
+router.delete('/kelompok-tani/:id', ktCont.deleteKelompokTani);
 
 export default router;
