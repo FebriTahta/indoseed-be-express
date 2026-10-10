@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
+import { recordAudit } from '../services/audit/audit.service';
+import { AUDIT_AKSI, AUDIT_MODUL_AUTH } from '../constants/audit.constants';
 import { authService } from '../services/auth.service';
+import { AuthRequest } from '../middlewares/auth.middleware';
+import { HttpError } from '../utils/httpError';
 
 export const register = async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
@@ -74,6 +78,15 @@ export const login = async (req: Request, res: Response) => {
 
   try {
     const { token, user } = await authService.login({ username, password });
+    await recordAudit({
+      modul: AUDIT_MODUL_AUTH,
+      aksi: AUDIT_AKSI.LOGIN,
+      entitas: 'Pengguna',
+      entitasId: user.id,
+      entitasKode: user.username,
+      keterangan: 'Login ke sistem',
+      user: { userId: user.id, username: user.username, role: user.roles[0]?.role?.name ?? null },
+    });
 
     res.status(200).json({
       message: 'Login successful',
@@ -87,6 +100,9 @@ export const login = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ error: error.message });
+    }
     if (error.message === 'Invalid credentials' || error.message === 'Email is not verified') {
       // Return 401 for invalid credentials, 403 for not verified
       const statusCode = error.message === 'Email is not verified' ? 403 : 401;
@@ -99,10 +115,40 @@ export const login = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
   try {
-    
+    await recordAudit({ modul: AUDIT_MODUL_AUTH, aksi: AUDIT_AKSI.LOGOUT, entitas: 'Pengguna', keterangan: 'Logout dari sistem' });
     res.status(200).json({ message: 'Logout successful' });
   } catch (error: any) {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Failed to logout' });
   }
+};
+
+export const me = async (req: AuthRequest, res: Response) => {
+  res.json({ success: true, data: await authService.me(req.user!) });
+};
+
+export const impersonate = async (req: AuthRequest, res: Response) => {
+  const result = await authService.impersonate(req.user!, req.params.userId as string);
+  await recordAudit({
+    modul: AUDIT_MODUL_AUTH,
+    aksi: AUDIT_AKSI.LOGIN,
+    entitas: 'Pengguna',
+    entitasId: result.user.id,
+    entitasKode: result.user.username,
+    keterangan: `Login sebagai ${result.user.username} (oleh ${req.user!.username})`,
+  });
+  res.json({ success: true, data: result });
+};
+
+export const stopImpersonation = async (req: AuthRequest, res: Response) => {
+  if (req.user?.impersonatedBy) {
+    await recordAudit({
+      modul: AUDIT_MODUL_AUTH,
+      aksi: AUDIT_AKSI.LOGOUT,
+      entitas: 'Pengguna',
+      entitasKode: req.user.username,
+      keterangan: `Mengakhiri sesi login sebagai ${req.user.username}`,
+    });
+  }
+  res.json({ success: true });
 };

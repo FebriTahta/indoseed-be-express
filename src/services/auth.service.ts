@@ -4,8 +4,31 @@ import { userRepository } from '../repositories/user.repository';
 import { roleRepository } from '../repositories/role.repository';
 import { emailOtpRepository } from '../repositories/emailOtp.repository';
 import { sendOtpEmail } from './email.service';
+import prisma from '../utils/prisma';
+import { RequestUser } from '../utils/requestContext';
+import { badRequest, forbidden, notFound } from '../utils/httpError';
+import { ROLES } from '../constants/roles.constants';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
+/** Sesi "login sebagai" sengaja dibuat lebih singkat dari sesi normal. */
+const IMPERSONATION_TTL = '2h';
+
+type UserWithRoles = { id: string; username: string; roles: { role: { name: string } }[] };
+
+const roleNames = (user: UserWithRoles) => user.roles.map((ur) => ur.role.name);
+
+const signToken = (user: UserWithRoles, impersonatedBy?: RequestUser['impersonatedBy']) =>
+  jwt.sign(
+    { userId: user.id, username: user.username, roles: roleNames(user), ...(impersonatedBy ? { impersonatedBy } : {}) },
+    JWT_SECRET,
+    { expiresIn: impersonatedBy ? IMPERSONATION_TTL : '1d' }
+  );
+
+/** Akun penguji yang dinonaktifkan tidak boleh masuk, baik langsung maupun lewat "login sebagai". */
+const assertPengujiAktif = async (userId: string) => {
+  const penguji = await prisma.penguji.findUnique({ where: { userId }, select: { status: true } });
+  if (penguji && penguji.status !== 'Aktif') throw forbidden('Akun penguji ini sedang nonaktif');
+};
 
 export interface RegisterInput {
   username: string;
@@ -152,16 +175,41 @@ export const authService = {
       throw new Error('Email is not verified');
     }
 
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        username: user.username, 
-        roles: user.roles.map((ur: any) => ur.role.name) 
-      },
-      JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    await assertPengujiAktif(user.id);
 
-    return { token, user };
-  }
+    return { token: signToken(user), user };
+  },
+
+  /** Profil user yang sedang login (beserta profil penguji bila ada). */
+  me: async (current: RequestUser) => {
+    const user = await prisma.user.findUnique({
+      where: { id: current.userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        roles: { select: { role: { select: { name: true } } } },
+        penguji: {
+          select: { id: true, kodePenguji: true, nama: true, foto: true, status: true, laboratoriumId: true, laboratorium: { select: { namaLaboratorium: true } } },
+        },
+      },
+    });
+    if (!user) throw notFound('User tidak ditemukan');
+    return { ...user, roles: roleNames(user), impersonatedBy: current.impersonatedBy ?? null };
+  },
+
+  /** Superadmin masuk sebagai user lain untuk membantu / menguji alur kerjanya. */
+  impersonate: async (actor: RequestUser, targetUserId: string) => {
+    if (actor.impersonatedBy) throw badRequest('Kembali ke akun superadmin terlebih dahulu sebelum login sebagai user lain');
+    if (actor.userId === targetUserId) throw badRequest('Tidak dapat login sebagai akun sendiri');
+
+    const target = await prisma.user.findUnique({ where: { id: targetUserId }, include: { roles: { include: { role: true } } } });
+    if (!target) throw notFound('User tidak ditemukan');
+    if (roleNames(target).includes(ROLES.SUPERADMIN)) throw forbidden('Tidak dapat login sebagai sesama superadmin');
+    if (!target.isEmailVerified) throw badRequest('Akun user belum terverifikasi');
+    await assertPengujiAktif(target.id);
+
+    const token = signToken(target, { userId: actor.userId, username: actor.username });
+    return { token, user: { id: target.id, username: target.username, roles: roleNames(target) } };
+  },
 };

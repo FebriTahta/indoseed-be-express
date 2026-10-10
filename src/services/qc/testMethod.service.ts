@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../utils/prisma';
+import { recordAudit } from '../audit/audit.service';
+import { diffFields } from '../audit/auditDiff';
+import { AUDIT_AKSI } from '../../constants/audit.constants';
 import { deleteFile } from '../../utils/minio';
 import { badRequest, conflict, notFound } from '../../utils/httpError';
 import { TestMethodInput } from '../../validators/qc.validator';
@@ -30,6 +33,8 @@ const FIELD_LABELS: Partial<Record<keyof TestMethodInput, string>> = {
   catatan: 'Catatan',
   status: 'Status',
 };
+
+const MODUL_METODE = 'Metode Uji';
 
 const normalize = (v: unknown) => (v instanceof Date ? v.toISOString() : v ?? null);
 
@@ -112,6 +117,14 @@ const syncDokumen = async (tx: Tx, methodId: string, input: TestMethodInput) => 
   const existingUrls = new Set(existing.map((d) => d.fileUrl));
 
   await tx.testMethodDocument.deleteMany({ where: { id: { in: removed.map((d) => d.id) } } });
+
+  // Berkas yang sama (URL tetap) tetapi namanya diubah dari form.
+  const namaByUrl = new Map(input.dokumen.map((d) => [d.fileUrl, d.namaFile]));
+  const renamed = existing.filter((d) => namaByUrl.has(d.fileUrl) && namaByUrl.get(d.fileUrl) !== d.namaFile);
+  for (const d of renamed) {
+    await tx.testMethodDocument.update({ where: { id: d.id }, data: { namaFile: namaByUrl.get(d.fileUrl)! } });
+  }
+
   const baru = input.dokumen.filter((d) => !existingUrls.has(d.fileUrl));
   if (baru.length) {
     await tx.testMethodDocument.createMany({
@@ -180,6 +193,17 @@ export const testMethodService = {
       await tx.testMethodRiwayat.create({
         data: { testMethodId: created.id, aksi: 'Tambah Data', keterangan: 'Metode uji baru ditambahkan', oleh: actor },
       });
+      await recordAudit(
+        {
+          modul: MODUL_METODE,
+          aksi: AUDIT_AKSI.CREATE,
+          entitas: 'Metode Uji',
+          entitasId: created.id,
+          entitasKode: created.kode,
+          keterangan: `Menambahkan metode uji ${created.nama}`,
+        },
+        tx
+      );
       return created.id;
     });
     return testMethodService.findById(id);
@@ -214,6 +238,22 @@ export const testMethodService = {
           oleh: actor,
         },
       });
+      await recordAudit(
+        {
+          modul: MODUL_METODE,
+          aksi: AUDIT_AKSI.UPDATE,
+          entitas: 'Metode Uji',
+          entitasId: id,
+          entitasKode: data.kode,
+          keterangan: statusChanged ? `Mengubah status metode uji menjadi ${data.status}` : `Memperbarui metode uji ${data.nama}`,
+          perubahan: diffFields(
+            Object.fromEntries(Object.keys(FIELD_LABELS).map((k) => [k, normalize(before[k as keyof typeof before])])),
+            Object.fromEntries(Object.keys(FIELD_LABELS).map((k) => [k, normalize(data[k as keyof typeof data])])),
+            FIELD_LABELS as Record<string, string>
+          ),
+        },
+        tx
+      );
       return removed;
     });
 
@@ -230,7 +270,20 @@ export const testMethodService = {
     if (method._count.qcTests || method._count.permintaanParameters) {
       throw conflict('Metode uji sudah digunakan pada data pengujian. Nonaktifkan metode ini alih-alih menghapusnya.');
     }
-    await prisma.testMethod.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.testMethod.delete({ where: { id } });
+      await recordAudit(
+        {
+          modul: MODUL_METODE,
+          aksi: AUDIT_AKSI.DELETE,
+          entitas: 'Metode Uji',
+          entitasId: id,
+          entitasKode: method.kode,
+          keterangan: `Menghapus metode uji ${method.nama}`,
+        },
+        tx
+      );
+    });
     await Promise.allSettled(method.dokumen.map((d) => deleteFile(d.fileUrl)));
   },
 };

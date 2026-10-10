@@ -1,36 +1,13 @@
 /// <reference types="node" />
 import { prisma } from '../src/utils/prisma';
-import bcrypt from 'bcryptjs';
+import { seedPenguji, seedRolesAndUsers } from './seedAkses';
+import { seedPengujian } from './seedPengujian';
+import { seedQcLookup } from './seedQcLookup';
 
 async function main() {
   console.log(`Start seeding ...`);
   
-  const superadminRole = await prisma.role.upsert({
-    where: { name: 'superadmin' },
-    update: {},
-    create: {
-      name: 'superadmin',
-    },
-  });
-
-  const hashedPassword = await bcrypt.hash('superadmin', 10);
-
-  const superadminUser = await prisma.user.upsert({
-    where: { username: 'superadmin' },
-    update: {},
-    create: {
-      username: 'superadmin',
-      email: 'superadmin@example.com', // placeholder
-      password: hashedPassword,
-      isEmailVerified: true,
-      defaultRoleId: superadminRole.id,
-      roles: {
-        create: {
-          roleId: superadminRole.id,
-        },
-      },
-    },
-  });
+  await seedRolesAndUsers(prisma);
 
   // Seeding Commodities
   const commodities = [
@@ -428,10 +405,15 @@ async function main() {
     });
   }
 
-  console.log({ superadminUser, superadminRole });
-  await seedPenguji(prisma);
+  // Urutan penting: metode uji → penguji (butuh metode) → data uji QC (butuh penguji).
   await seedQC(prisma);
+  await seedPenguji(prisma);
+  await seedQcCertificates(prisma);
+  await seedQcTests(prisma);
   await seedModulProduksi(prisma);
+  // Skenario alur pengujian butuh batch produksi, penguji, dan lookup QC yang sudah ada.
+  await seedQcLookup();
+  await seedPengujian();
   console.log(`Seeding finished.`);
 }
 
@@ -700,8 +682,6 @@ async function seedQC(prisma: any) {
     await prisma.supportDocument.upsert({ where: { kode: doc.kode }, update: doc, create: doc });
   }
 
-  await seedQcCertificates(prisma);
-  await seedQcTests(prisma);
 }
 
 async function seedQcCertificates(prisma: any) {
@@ -1633,179 +1613,3 @@ async function seedModulProduksi(prisma: any) {
   await seedStokBenih(prisma);
   console.log('--- SEEDING MODUL PRODUKSI COMPLETE ---');
 }
-
-async function seedPenguji(prisma: any) {
-  console.log('Seeding Penguji, Laboratorium, and User...');
-
-  // 1. Create Role Penguji
-  const pengujiRole = await prisma.role.upsert({
-    where: { name: 'penguji' },
-    update: {},
-    create: {
-      name: 'penguji',
-    },
-  });
-
-  // 3. Create Laboratorium
-  const labsData = [
-    {
-      kodeLaboratorium: 'LAB-01',
-      namaLaboratorium: 'Laboratorium Pusat Uji Benih',
-      deskripsi: 'Laboratorium utama untuk pengujian benih inti',
-      alamat: 'Jl. Ahmad Yani No. 100, Surabaya',
-      telepon: '031-1234567',
-      nomorAkreditasi: 'KAN-LP-001-IDN',
-      lembagaAkreditasi: 'Komite Akreditasi Nasional',
-      tanggalAkreditasi: new Date('2024-01-15'),
-      tanggalBerlakuAkreditasi: new Date('2029-01-15'),
-      ruangLingkupPengujian: 'Pengujian Mutu Fisik dan Fisiologis Benih',
-      status: 'Aktif',
-    },
-    {
-      kodeLaboratorium: 'LAB-02',
-      namaLaboratorium: 'Laboratorium Tanah & Air',
-      deskripsi: 'Laboratorium untuk pengujian sampel tanah dan air irigasi',
-      alamat: 'Gedung B Lantai 2, Kompleks Pertanian',
-      telepon: '031-7654321',
-      nomorAkreditasi: 'KAN-LP-002-IDN',
-      lembagaAkreditasi: 'Komite Akreditasi Nasional',
-      tanggalAkreditasi: new Date('2023-05-10'),
-      tanggalBerlakuAkreditasi: new Date('2028-05-10'),
-      ruangLingkupPengujian: 'Pengujian Kesuburan Tanah dan Kualitas Air',
-      status: 'Aktif',
-    }
-  ];
-
-  let lab = null;
-  for (const labData of labsData) {
-    const createdLab = await prisma.laboratorium.upsert({
-      where: { kodeLaboratorium: labData.kodeLaboratorium },
-      update: labData,
-      create: labData,
-    });
-    if (labData.kodeLaboratorium === 'LAB-01') lab = createdLab; // Keep reference to first lab for Penguji relation
-  }
-
-  const pengujis = [
-    {
-      username: 'dewi',
-      email: 'dewi.lestari@example.com',
-      kodePenguji: 'PENG-001',
-      nama: 'Dewi Lestari',
-      methods: ['MT-003', 'MT-001'] // Daya Berkecambah, Kadar Air
-    },
-    {
-      username: 'budi',
-      email: 'budi.santoso@example.com',
-      kodePenguji: 'PENG-002',
-      nama: 'Budi Santoso',
-      methods: ['MT-002'] // Kemurnian Benih
-    },
-    {
-      username: 'ratna',
-      email: 'ratna.sari@example.com',
-      kodePenguji: 'PENG-003',
-      nama: 'Ratna Sari',
-      methods: ['MT-004'] // Vigor
-    },
-    {
-      username: 'andi',
-      email: 'andi.pratama@example.com',
-      kodePenguji: 'PENG-004',
-      nama: 'Andi Pratama',
-      methods: ['MT-009'] // Kesehatan Benih
-    },
-    {
-      username: 'siti',
-      email: 'siti.nurhaliza@example.com',
-      kodePenguji: 'PENG-005',
-      nama: 'Siti Nurhaliza',
-      methods: ['MT-008', 'MT-006'] // Berat 1.000 Butir, Benih Tanaman Lain
-    },
-    {
-      username: 'rina',
-      email: 'rina.wulandari@example.com',
-      kodePenguji: 'PENG-006',
-      nama: 'Rina Wulandari',
-      methods: ['MT-007'] // Kotoran Benih
-    },
-    {
-      username: 'dedi',
-      email: 'dedi.kurniawan@example.com',
-      kodePenguji: 'PENG-007',
-      nama: 'Dedi Kurniawan',
-      methods: ['MT-005'] // Benih Murni
-    },
-    {
-      username: 'maya',
-      email: 'maya.lestari@example.com',
-      kodePenguji: 'PENG-008',
-      nama: 'Maya Lestari',
-      methods: ['MT-010', 'MT-011'] // Kadar Abu, pH
-    },
-    {
-      username: 'fajar',
-      email: 'fajar.nugroho@example.com',
-      kodePenguji: 'PENG-009',
-      nama: 'Fajar Nugroho',
-      methods: ['MT-003', 'MT-002'] // Daya Berkecambah, Kemurnian Benih
-    }
-  ];
-
-  const hashedPassword = await require('bcryptjs').hash('penguji123', 10);
-
-  for (const p of pengujis) {
-    const pUser = await prisma.user.upsert({
-      where: { username: p.username },
-      update: {},
-      create: {
-        username: p.username,
-        email: p.email,
-        password: hashedPassword,
-        isEmailVerified: true,
-        defaultRoleId: pengujiRole.id,
-        roles: {
-          create: {
-            roleId: pengujiRole.id,
-          },
-        },
-      },
-    });
-
-    const pengujiRecord = await prisma.penguji.upsert({
-      where: { kodePenguji: p.kodePenguji },
-      update: { userId: pUser.id, laboratoriumId: lab.id },
-      create: {
-        kodePenguji: p.kodePenguji,
-        nama: p.nama,
-        userId: pUser.id,
-        laboratoriumId: lab.id,
-        status: 'Aktif',
-      },
-    });
-
-    for (const methodCode of p.methods) {
-      const testMethod = await prisma.testMethod.findUnique({
-        where: { kode: methodCode },
-      });
-      if (testMethod) {
-        await prisma.pengujiTestMethod.upsert({
-          where: {
-            pengujiId_testMethodId: {
-              pengujiId: pengujiRecord.id,
-              testMethodId: testMethod.id,
-            },
-          },
-          update: {},
-          create: {
-            pengujiId: pengujiRecord.id,
-            testMethodId: testMethod.id,
-          },
-        });
-      }
-    }
-  }
-
-  console.log('Seeding Penguji complete.');
-}
-

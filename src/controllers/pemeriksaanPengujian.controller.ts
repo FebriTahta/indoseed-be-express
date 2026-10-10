@@ -40,6 +40,11 @@ export const reviewHasil = async (req: Request, res: Response) => {
   res.json({ success: true, data });
 };
 
+export const ujiUlang = async (req: Request, res: Response) => {
+  const data = await service.ujiUlang(req.params.id as string, req.validated!.body, getActor(req));
+  res.json({ success: true, data, message: 'Pengujian dikembalikan untuk diuji ulang' });
+};
+
 export const uploadDokumentasi = async (req: Request, res: Response) => {
   const uploaded = await uploadRequestFile(req, 'qc-pemeriksaan');
   if (!uploaded) throw badRequest('File dokumentasi wajib diunggah');

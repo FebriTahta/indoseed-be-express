@@ -3,12 +3,10 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
 
+import { RequestUser } from '../utils/requestContext';
+
 export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    username: string;
-    roles: string[];
-  };
+  user?: RequestUser;
 }
 
 export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -37,12 +35,13 @@ export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunct
 export const authorizeRoles = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ success: false, message: 'Sesi tidak valid, silakan login kembali.', error: 'Unauthorized' });
     }
 
     const hasRole = req.user.roles.some((role) => roles.includes(role));
     if (!hasRole) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient role' });
+      const message = 'Akses ditolak: role Anda tidak memiliki izin untuk aksi ini.';
+      return res.status(403).json({ success: false, message, error: message });
     }
 
     next();

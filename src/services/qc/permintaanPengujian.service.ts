@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../utils/prisma';
+import { recordAudit } from '../audit/audit.service';
+import { AUDIT_AKSI } from '../../constants/audit.constants';
 import { deleteFile } from '../../utils/minio';
 import { badRequest, conflict, notFound } from '../../utils/httpError';
 import {
@@ -85,15 +87,26 @@ const resolveBatchSnapshot = async (tx: Tx, batchProduksiId: string, excludePerm
   };
 };
 
-/** Snapshot parameter dari master `test_parameters` (bukan dari input client). */
-const buildParameterRows = async (tx: Tx, input: CreatePermintaanInput['parameters']) => {
+/**
+ * Snapshot parameter dari master `test_parameters` (bukan dari input client).
+ * Parameter yang BARU ditambahkan wajib berstatus Aktif dan metode ujinya Aktif; parameter yang sudah
+ * tercatat di permintaan (`existingIds`) tetap boleh dipertahankan walau masternya kini nonaktif.
+ */
+const buildParameterRows = async (tx: Tx, input: CreatePermintaanInput['parameters'], existingIds: Set<string> = new Set()) => {
   const ids = [...new Set(input.map((p) => p.parameterId))];
   const masters = await tx.testParameter.findMany({
     where: { id: { in: ids } },
-    include: { metode: { select: { id: true, kode: true, nama: true } } },
+    include: { metode: { select: { id: true, kode: true, nama: true, status: true } } },
   });
   if (masters.length !== ids.length) {
     throw badRequest('Sebagian parameter uji tidak ditemukan di master parameter');
+  }
+  const tidakAktif = masters
+    .filter((m) => !existingIds.has(m.id))
+    .filter((m) => m.status !== 'Aktif' || (m.metode && m.metode.status !== 'Aktif'))
+    .map((m) => (m.status !== 'Aktif' ? `${m.nama} (parameter nonaktif)` : `${m.nama} (metode ${m.metode!.nama} nonaktif)`));
+  if (tidakAktif.length) {
+    throw badRequest(`Hanya parameter aktif dari metode uji aktif yang dapat ditambahkan: ${tidakAktif.join(', ')}`);
   }
   const masterMap = new Map(masters.map((m) => [m.id, m]));
   const checkedMap = new Map(input.map((p) => [p.parameterId, p.checked ?? true]));
@@ -250,7 +263,8 @@ export const permintaanPengujianService = {
     await prisma.$transaction(async (tx) => {
       const batch = await resolveBatchSnapshot(tx, input.batchProduksiId, existing.id);
       const pengambil = await resolvePengambilSampel(tx, input.pengambilSampelId);
-      const parameters = await buildParameterRows(tx, input.parameters);
+      const existingIds = new Set(existing.parameters.map((p) => p.parameterId).filter((v): v is string => Boolean(v)));
+      const parameters = await buildParameterRows(tx, input.parameters, existingIds);
 
       await tx.permintaanPengujianParameter.deleteMany({ where: { permintaanId: existing.id } });
       await tx.permintaanPengujian.update({
@@ -340,7 +354,20 @@ export const permintaanPengujianService = {
     const existing = await getPermintaanOrThrow(idOrNumber);
     assertStatus(existing.status, EDITABLE_STATUSES, 'menghapus permintaan');
 
-    await prisma.permintaanPengujian.delete({ where: { id: existing.id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.permintaanPengujian.delete({ where: { id: existing.id } });
+      await recordAudit(
+        {
+          modul: 'Permintaan Pengujian',
+          aksi: AUDIT_AKSI.DELETE,
+          entitas: 'Permintaan Pengujian',
+          entitasId: existing.id,
+          entitasKode: existing.noPermintaan,
+          keterangan: `Menghapus permintaan pengujian batch ${existing.kodeBatch}`,
+        },
+        tx
+      );
+    });
     // Bersihkan file di storage setelah data terhapus (best effort).
     await Promise.allSettled(existing.dokumen.map((d) => deleteFile(d.fileUrl)));
   },

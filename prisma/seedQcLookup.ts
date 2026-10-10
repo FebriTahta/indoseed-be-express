@@ -73,7 +73,7 @@ const data: Record<string, [kode: string, nama: string][]> = {
   ],
 };
 
-async function main() {
+export async function seedQcLookup() {
   let total = 0;
   for (const [kategori, rows] of Object.entries(data)) {
     for (const [idx, [kode, nama]] of rows.entries()) {
@@ -88,9 +88,11 @@ async function main() {
   console.log(`✔ ${total} data master lookup QC tersedia`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+if (require.main === module) {
+  seedQcLookup()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(() => prisma.$disconnect());
+}

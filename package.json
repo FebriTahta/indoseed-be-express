@@ -9,10 +9,13 @@
     "seed:master": "tsx prisma/seedMaster.ts",
     "seed:produksi": "tsx prisma/seedProduksi.ts",
     "seed:qc-lookup": "tsx prisma/seedQcLookup.ts",
+    "seed:akses": "tsx prisma/seedAkses.ts",
+    "seed:pengujian": "tsx prisma/seedPengujian.ts",
+    "seed": "tsx prisma/seed.ts",
     "backfill:qc": "tsx prisma/backfillQcPengujian.ts"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",
