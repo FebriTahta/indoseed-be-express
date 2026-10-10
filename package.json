@@ -15,7 +15,7 @@
     "backfill:qc": "tsx prisma/backfillQcPengujian.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",
