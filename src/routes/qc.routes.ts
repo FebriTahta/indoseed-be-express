@@ -5,7 +5,8 @@ import * as QcLookupController from '../controllers/qcLookup.controller';
 import { uploadSingle } from '../middlewares/upload.middleware';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
-import { lookupQuerySchema, lookupBodySchema, testMethodSchema, testMethodListQuerySchema } from '../validators/qc.validator';
+import { lookupQuerySchema, lookupBodySchema, testMethodSchema, testMethodListQuerySchema, summaryQuerySchema } from '../validators/qc.validator';
+import { getDashboardQc } from '../controllers/dashboardQc.controller';
 import pengujiRoutes from './penguji.routes';
 import permintaanRoutes from './permintaanPengujian.routes';
 import { pemeriksaanRouter, hasilRouter } from './pemeriksaanPengujian.routes';
@@ -19,6 +20,9 @@ router.use('/penguji', pengujiRoutes);
 router.use('/permintaan', permintaanRoutes);
 router.use('/pemeriksaan', pemeriksaanRouter);
 router.use('/hasil', hasilRouter);
+
+// Dashboard QC (agregasi per periode)
+router.get('/dashboard', validate(summaryQuerySchema, 'query'), getDashboardQc);
 
 // Master pilihan (dropdown) & metadata alur status
 router.get('/meta', QcLookupController.getMeta);

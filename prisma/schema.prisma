@@ -921,6 +921,9 @@ model Penguji {
   noTelepon      String?
   foto           String?  @db.Text
   keterangan     String?  @db.Text
+  tanggalBergabung DateTime? @db.Date
+  /// Masa berlaku kewenangan penguji (dipakai untuk indikator "akan expired").
+  berlakuHingga  DateTime? @db.Date
   status         String   @default("Aktif")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -941,6 +944,8 @@ model Sertifikasi {
   id              String    @id @default(uuid())
   pengujiId       String
   namaSertifikasi String
+  nomorSertifikat String?
+  tanggalSertifikat DateTime? @db.Date
   berlakuHingga   DateTime?
   lampiranUrl     String?   @db.Text
   status          String    @default("Aktif")
@@ -1269,6 +1274,7 @@ model PermintaanPengujianParameter {
   hasilTeks    String?
   statusHasil  String?  // "Lulus" | "Tidak Lulus"
   catatanHasil String?  @db.Text
+  rincianHasil Json?    // rincian uji perkecambahan: jumlah benih, hari pengamatan, normal/abnormal/mati/keras
   diujiOleh    String?
   tanggalUji   DateTime?
 
@@ -1344,4 +1350,35 @@ model QcLookup {
   @@unique([kategori, kode])
   @@index([kategori, status])
   @@map("qc_lookups")
+}
+
+/// Jejak audit seluruh aktivitas pengguna (create / update / delete / login / logout).
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  username    String
+  role        String?
+  modul       String
+  aksi        String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT
+  entitas     String?  // jenis data, mis. "Uji Kadar Air"
+  entitasId   String?
+  entitasKode String?  // nomor / kode yang mudah dibaca, mis. "TST-QC-2026-00002"
+  keterangan  String   @db.Text
+  /// [{ field, label, sebelum, sesudah }]
+  perubahan   Json?
+  metode      String?  // HTTP method
+  endpoint    String?  @db.VarChar(500)
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  perangkat   String?  // mis. "Chrome (Windows)"
+  /// Username superadmin bila aktivitas dilakukan melalui fitur "login sebagai".
+  impersonatedBy String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([username])
+  @@index([modul])
+  @@index([aksi])
+  @@index([entitas])
+  @@map("audit_logs")
 }

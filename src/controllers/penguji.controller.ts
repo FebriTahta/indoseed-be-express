@@ -1,85 +1,36 @@
 import { Request, Response } from 'express';
-import { PengujiRepository } from '../repositories/penguji.repository';
+import { pengujiService as service } from '../services/qc/penguji.service';
 
 export const PengujiController = {
   getAll: async (req: Request, res: Response) => {
-    try {
-      const { status, laboratoriumId, testMethodId, search, page, limit } = req.query;
-      
-      const parsedPage = page ? parseInt(page as string) : 1;
-      const parsedLimit = limit ? parseInt(limit as string) : 10;
-      const offset = (parsedPage - 1) * parsedLimit;
-
-      const result = await PengujiRepository.findAll({
-        status: status as string,
-        laboratoriumId: laboratoriumId as string,
-        testMethodId: testMethodId as string,
-        search: search as string,
-        limit: parsedLimit,
-        offset,
-      });
-
-      res.status(200).json({
-        success: true,
-        data: result.data,
-        pagination: {
-          total: result.total,
-          page: parsedPage,
-          limit: parsedLimit,
-          totalPages: Math.ceil(result.total / parsedLimit)
-        }
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+    res.json({ success: true, ...(await service.list(req.validated!.query)) });
   },
 
-  getStats: async (req: Request, res: Response) => {
-    try {
-      const stats = await PengujiRepository.getStats();
-      res.status(200).json({ success: true, data: stats });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+  getStats: async (_req: Request, res: Response) => {
+    res.json({ success: true, data: await service.stats() });
   },
 
   getById: async (req: Request, res: Response) => {
-    try {
-      const penguji = await PengujiRepository.findById(req.params.id as string);
-      if (!penguji) {
-        return res.status(404).json({ success: false, message: 'Penguji not found' });
-      }
-      res.status(200).json({ success: true, data: penguji });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+    res.json({ success: true, data: await service.getById(req.params.id as string) });
   },
 
   create: async (req: Request, res: Response) => {
-    try {
-      const penguji = await PengujiRepository.create(req.body);
-      res.status(201).json({ success: true, data: penguji });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+    const data = await service.create(req.validated!.body);
+    res.status(201).json({ success: true, data, message: 'Penguji dan akun user berhasil dibuat' });
   },
 
   update: async (req: Request, res: Response) => {
-    try {
-      const penguji = await PengujiRepository.update(req.params.id as string, req.body);
-      res.status(200).json({ success: true, data: penguji });
-    } catch (error: any) {
-      require('fs').writeFileSync('debug_error.log', error.stack || error.message);
-      res.status(500).json({ success: false, message: error.message });
-    }
+    const data = await service.update(req.params.id as string, req.validated!.body);
+    res.json({ success: true, data, message: 'Data penguji berhasil diperbarui' });
   },
 
   delete: async (req: Request, res: Response) => {
-    try {
-      await PengujiRepository.delete(req.params.id as string);
-      res.status(200).json({ success: true, message: 'Penguji deleted successfully' });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    await service.delete(req.params.id as string);
+    res.json({ success: true, message: 'Penguji berhasil dihapus' });
+  },
+
+  resetPassword: async (req: Request, res: Response) => {
+    const data = await service.resetPassword(req.params.id as string);
+    res.json({ success: true, data, message: 'Password sementara baru berhasil dibuat' });
+  },
 };

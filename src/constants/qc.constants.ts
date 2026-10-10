@@ -53,6 +53,9 @@ export const REKOMENDASI_DEFAULT: Record<string, string> = {
 
 export const rekomendasiDari = (hasilAkhir: string | null) => (hasilAkhir ? REKOMENDASI_DEFAULT[hasilAkhir] ?? null : null);
 
+/** Rentang hari pengamatan uji daya berkecambah (hitungan akhir kecambah normal). */
+export const HARI_PENGAMATAN = { MIN: 7, MAX: 10 } as const;
+
 export const DOKUMEN_KATEGORI = {
   PERMINTAAN: 'Permintaan',
   DOKUMENTASI: 'Dokumentasi',

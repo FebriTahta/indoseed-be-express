@@ -1,3 +1,4 @@
+import { AsyncResource } from 'async_hooks';
 import multer from 'multer';
 import { Request, Response, NextFunction } from 'express';
 
@@ -34,15 +35,17 @@ export const uploadSingle = (fieldName: string) => {
   const multerUpload = upload.single(fieldName);
 
   return (req: Request, res: Response, next: NextFunction) => {
-    multerUpload(req, res, (err) => {
+    // Callback multer dipanggil dari event stream busboy sehingga konteks AsyncLocalStorage
+    // (user login, audit) hilang; bind agar handler berikutnya tetap berada di konteks request.
+    multerUpload(req, res, AsyncResource.bind((err: unknown) => {
       if (err) {
         return res.status(400).json({
           status: 'error',
-          message: err.message || 'File upload error',
+          message: (err as Error).message || 'File upload error',
         });
       }
       next();
-    });
+    }));
   };
 };
 
@@ -50,15 +53,17 @@ export const uploadNone = () => {
   const multerUpload = upload.none();
 
   return (req: Request, res: Response, next: NextFunction) => {
-    multerUpload(req, res, (err) => {
+    // Callback multer dipanggil dari event stream busboy sehingga konteks AsyncLocalStorage
+    // (user login, audit) hilang; bind agar handler berikutnya tetap berada di konteks request.
+    multerUpload(req, res, AsyncResource.bind((err: unknown) => {
       if (err) {
         return res.status(400).json({
           status: 'error',
-          message: err.message || 'Form parse error',
+          message: (err as Error).message || 'Form parse error',
         });
       }
       next();
-    });
+    }));
   };
 };
 

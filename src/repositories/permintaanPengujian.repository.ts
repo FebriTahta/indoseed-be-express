@@ -1,16 +1,30 @@
 import prisma from '../utils/prisma';
 import { Prisma } from '@prisma/client';
 import { PermintaanListQuery } from '../validators/qc.validator';
+import { recordAudit } from '../services/audit/audit.service';
+import { AUDIT_AKSI } from '../constants/audit.constants';
+import { PERMINTAAN_STATUS } from '../constants/qc.constants';
+
+/** Modul audit ditentukan dari tahap alur tempat aksi terjadi (status sebelum aksi). */
+const tahapAudit = (statusDari?: string | null) => {
+  if (statusDari === PERMINTAAN_STATUS.SAMPLING || statusDari === PERMINTAAN_STATUS.DALAM_PENGUJIAN) {
+    return { modul: 'Pemeriksaan Pengujian', entitas: 'Pengujian' };
+  }
+  if (statusDari === PERMINTAAN_STATUS.MENUNGGU_REVIEW || statusDari === PERMINTAAN_STATUS.SELESAI) {
+    return { modul: 'Hasil Pengujian', entitas: 'Hasil Pengujian' };
+  }
+  return { modul: 'Permintaan Pengujian', entitas: 'Permintaan Pengujian' };
+};
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
-const penggunaSelect = { select: { id: true, kodePenguji: true, nama: true } } as const;
+const penggunaSelect = { select: { id: true, kodePenguji: true, nama: true, status: true } } as const;
 
 /** Relasi yang dimuat pada tampilan daftar (ringan). */
 export const permintaanListInclude = {
   parameters: {
     orderBy: { createdAt: 'asc' },
-    select: { id: true, nama: true, kode: true, checked: true, statusHasil: true },
+    select: { id: true, nama: true, kode: true, checked: true, nilaiHasil: true, hasilTeks: true, statusHasil: true },
   },
   pengambilSampelRef: penggunaSelect,
   petugasQc: penggunaSelect,
@@ -57,13 +71,30 @@ const SEARCH_FIELDS = [
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
+/**
+ * Data yang boleh dilihat penguji: tugas miliknya + antrean sampling yang belum diambil dan
+ * seluruh metode ujinya ia kuasai (sampel yang tak bisa ia kerjakan tidak ditampilkan).
+ */
+export const pengujiScopeWhere = (pengujiId: string): Prisma.PermintaanPengujianWhereInput => ({
+  OR: [
+    { petugasQcId: pengujiId },
+    {
+      status: PERMINTAAN_STATUS.SAMPLING,
+      petugasQcId: null,
+      parameters: { none: { checked: true, metodeRef: { is: { pengujiTestMethods: { none: { pengujiId } } } } } },
+    },
+  ],
+});
+
 export const buildPermintaanWhere = (
   filters: Partial<PermintaanListQuery>,
-  scopeStatuses?: string[]
+  scopeStatuses?: string[],
+  pengujiId?: string | null
 ): Prisma.PermintaanPengujianWhereInput => {
   const and: Prisma.PermintaanPengujianWhereInput[] = [];
 
   if (scopeStatuses?.length) and.push({ status: { in: scopeStatuses } });
+  if (pengujiId) and.push(pengujiScopeWhere(pengujiId));
 
   const q = filters.search?.trim();
   if (q) and.push({ OR: SEARCH_FIELDS.map((f) => ({ [f]: { contains: q } })) });
@@ -92,8 +123,8 @@ export const buildPermintaanWhere = (
 };
 
 export const permintaanPengujianRepository = {
-  findAll: async (filters: Partial<PermintaanListQuery>, scopeStatuses?: string[]) => {
-    const where = buildPermintaanWhere(filters, scopeStatuses);
+  findAll: async (filters: Partial<PermintaanListQuery>, scopeStatuses?: string[], pengujiId?: string | null) => {
+    const where = buildPermintaanWhere(filters, scopeStatuses, pengujiId);
     const page = filters.page || 1;
     const pageSize = filters.pageSize || filters.limit || 10;
     const sortBy = filters.sortBy || 'updatedAt';
@@ -187,8 +218,31 @@ export const permintaanPengujianRepository = {
     });
   },
 
-  addRiwayat: (
+  /** Catat riwayat alur sekaligus audit trail-nya dalam transaksi yang sama. */
+  addRiwayat: async (
     db: Db,
     data: { permintaanId: string; aksi: string; statusDari?: string | null; statusKe?: string | null; keterangan?: string | null; oleh: string }
-  ) => db.permintaanPengujianRiwayat.create({ data }),
+  ) => {
+    const riwayat = await db.permintaanPengujianRiwayat.create({ data });
+    const permintaan = await db.permintaanPengujian.findUnique({
+      where: { id: data.permintaanId },
+      select: { noPermintaan: true, noPengujian: true },
+    });
+    const tahap = tahapAudit(data.statusDari);
+    const statusBerubah = data.statusKe != null && data.statusDari !== data.statusKe;
+    await recordAudit(
+      {
+        ...tahap,
+        aksi: data.statusDari == null ? AUDIT_AKSI.CREATE : AUDIT_AKSI.UPDATE,
+        entitasId: data.permintaanId,
+        entitasKode: permintaan?.noPengujian || permintaan?.noPermintaan,
+        keterangan: [data.aksi, data.keterangan].filter(Boolean).join(' — '),
+        perubahan: statusBerubah
+          ? [{ field: 'status', label: 'Status', sebelum: data.statusDari ?? null, sesudah: data.statusKe ?? null }]
+          : undefined,
+      },
+      db
+    );
+    return riwayat;
+  },
 };

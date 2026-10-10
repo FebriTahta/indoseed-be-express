@@ -10,7 +10,11 @@ import uploadRoutes from './routes/upload.routes';
 import settingRoutes from './routes/setting.routes';
 import produksiRoutes from './routes/produksi.routes';
 import gudangRoutes from './routes/gudang.routes';
+import auditTrailRoutes from './routes/auditTrail.routes';
+import fileRoutes from './routes/file.routes';
 import { errorHandler } from './middlewares/errorHandler.middleware';
+import { auditContext } from './middlewares/audit.middleware';
+import { enforceRoleScope } from './middlewares/roleAccess.middleware';
 
 const app = express();
 
@@ -49,6 +53,8 @@ const corsOptions: cors.CorsOptions = {
     'Accept',
     'Origin',
   ],
+  // Agar frontend dapat membaca nama file unduhan (mis. ekspor audit trail).
+  exposedHeaders: ['Content-Disposition'],
   optionsSuccessStatus: 200,
 };
 
@@ -68,6 +74,13 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 4. Konteks request (pelaku, IP, perangkat) + audit trail otomatis untuk request mutasi
+// Hanya percayai X-Forwarded-For dari proxy lokal/privat agar IP di audit tidak bisa dipalsukan klien.
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal');
+app.use(auditContext);
+// 5. Batasi role terbatas (mis. penguji) hanya ke endpoint pengujian
+app.use(enforceRoleScope);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/master', masterRoutes);
@@ -76,6 +89,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/produksi', produksiRoutes);
 app.use('/api/gudang', gudangRoutes);
+app.use('/api/audit-trail', auditTrailRoutes);
+app.use('/api/files', fileRoutes);
 
 app.use('/uploads', express.static('uploads'));
 

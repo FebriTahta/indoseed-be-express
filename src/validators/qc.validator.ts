@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PERMINTAAN_STATUS_LIST, QC_LOOKUP_KATEGORI_LIST, HASIL_AKHIR } from '../constants/qc.constants';
+import { PERMINTAAN_STATUS_LIST, QC_LOOKUP_KATEGORI_LIST, HASIL_AKHIR, HARI_PENGAMATAN } from '../constants/qc.constants';
 
 // ---------- Helpers ----------
 
@@ -115,12 +115,44 @@ export const statusEnum = z.enum(PERMINTAAN_STATUS_LIST as [string, ...string[]]
 // ---------- Pemeriksaan & Hasil ----------
 
 export const terimaSampelSchema = z.object({
-  petugasQcId: requiredString('Petugas QC'),
+  /** Diabaikan: petugas selalu penguji yang sedang login (dipertahankan untuk kompatibilitas klien). */
+  petugasQcId: optionalString,
   laboratoriumId: optionalString,
   tanggalSampling: z.coerce.date({ error: 'Tanggal sampling tidak valid' }),
   kondisiSampel: requiredString('Kondisi sampel'),
   catatan: optionalString,
 });
+
+const optionalCount = (label: string) =>
+  z.preprocess(
+    (v) => (v === '' || v === null || v === undefined || v === 'null' ? null : Number(v)),
+    z.number().int(`${label} harus bilangan bulat`).min(0, `${label} tidak boleh negatif`).nullable().optional()
+  );
+
+/** Rincian uji perkecambahan (daya berkecambah): jumlah benih per kategori kecambah. */
+export const rincianHasilSchema = z
+  .object({
+    jumlahBenih: optionalCount('Jumlah benih diuji'),
+    hariPengamatan: z.preprocess(
+      (v) => (v === '' || v === null || v === undefined || v === 'null' ? null : Number(v)),
+      z.number().int().min(HARI_PENGAMATAN.MIN).max(HARI_PENGAMATAN.MAX, `Hari pengamatan harus hari ke-${HARI_PENGAMATAN.MIN} s.d. ${HARI_PENGAMATAN.MAX}`).nullable().optional()
+    ),
+    benihNormal: optionalCount('Benih normal'),
+    benihAbnormal: optionalCount('Benih abnormal'),
+    benihMati: optionalCount('Benih mati'),
+    benihKeras: optionalCount('Benih keras'),
+  })
+  .superRefine((r, ctx) => {
+    const counts = [r.benihNormal, r.benihAbnormal, r.benihMati, r.benihKeras];
+    const total = counts.reduce<number>((a, b) => a + (b ?? 0), 0);
+    if (r.jumlahBenih === 0) {
+      ctx.addIssue({ code: 'custom', path: ['jumlahBenih'], message: 'Jumlah benih diuji harus lebih dari 0' });
+    } else if (r.jumlahBenih != null && total > r.jumlahBenih) {
+      ctx.addIssue({ code: 'custom', path: ['jumlahBenih'], message: `Total benih (${total}) melebihi jumlah benih diuji (${r.jumlahBenih})` });
+    } else if (r.jumlahBenih != null && counts.every((c) => c != null) && total !== r.jumlahBenih) {
+      ctx.addIssue({ code: 'custom', path: ['jumlahBenih'], message: `Total benih normal, abnormal, mati, dan keras (${total}) harus sama dengan jumlah benih diuji (${r.jumlahBenih})` });
+    }
+  });
 
 export const simpanHasilSchema = z.object({
   parameters: z
@@ -131,6 +163,7 @@ export const simpanHasilSchema = z.object({
         hasilTeks: optionalString,
         statusHasil: z.enum([HASIL_AKHIR.LULUS, HASIL_AKHIR.TIDAK_LULUS]).nullable().optional(),
         catatanHasil: optionalString,
+        rincianHasil: rincianHasilSchema.nullable().optional(),
       })
     )
     .default([]),
@@ -146,6 +179,10 @@ export const reviewHasilSchema = z
     message: 'Catatan revisi wajib diisi (minimal 3 karakter)',
     path: ['catatan'],
   });
+
+export const ujiUlangSchema = z.object({
+  alasan: requiredString('Alasan pengujian ulang').refine((v) => v.length >= 3, 'Alasan minimal 3 karakter'),
+});
 
 export const dokumentasiBodySchema = z.object({
   keterangan: optionalString,
@@ -204,6 +241,8 @@ export type CreatePermintaanInput = z.infer<typeof createPermintaanSchema>;
 export type PermintaanListQuery = z.infer<typeof permintaanListQuerySchema>;
 export type TerimaSampelInput = z.infer<typeof terimaSampelSchema>;
 export type SimpanHasilInput = z.infer<typeof simpanHasilSchema>;
+export type RincianHasilInput = z.infer<typeof rincianHasilSchema>;
 export type ReviewHasilInput = z.infer<typeof reviewHasilSchema>;
+export type UjiUlangInput = z.infer<typeof ujiUlangSchema>;
 export type TestMethodInput = z.infer<typeof testMethodSchema>;
 export type LookupInput = z.infer<typeof lookupBodySchema>;
