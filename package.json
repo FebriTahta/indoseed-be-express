@@ -15,7 +15,7 @@
     "backfill:qc": "tsx prisma/backfillQcPengujian.ts"
   },
   "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",
@@ -43,6 +43,7 @@
     "nodemailer": "^9.0.1",
     "prisma": "^7.9.0",
     "sharp": "^0.35.3",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },
@@ -50,7 +51,6 @@
     "@types/node": "^26.6.4",
     "eslint": "^10.5.0",
     "nodemon": "^3.1.14",
-    "prettier": "^3.8.4",
-    "tsx": "^4.22.4"
+    "prettier": "^3.8.4"
   }
 }
