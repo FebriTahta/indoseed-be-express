@@ -91,9 +91,12 @@ export const uploadFile = async (
   } catch (error) {
     console.error('MinIO upload failed (server might be down):', error);
     console.warn('Fallback: Returning a mock placeholder URL to prevent application crash.');
-    return 'https://via.placeholder.com/300x300.png?text=Mock+Upload+(MinIO+Down)';
+    return `https://via.placeholder.com/300x300.png?text=${MOCK_UPLOAD_URL_MARKER}`;
   }
 };
+
+/** Penanda URL palsu yang dikembalikan `uploadFile` saat MinIO tidak dapat dihubungi. */
+export const MOCK_UPLOAD_URL_MARKER = 'Mock+Upload+(MinIO+Down)';
 
 /**
  * Deletes a file from Minio by its public URL or object name.

@@ -1,422 +1,194 @@
 import prisma from '../utils/prisma';
 import { Prisma } from '@prisma/client';
+import { PermintaanListQuery } from '../validators/qc.validator';
 
-export interface PermintaanFilterOptions {
-  search?: string;
-  status?: string;
-  periode?: string;
-  startDate?: string;
-  endDate?: string;
-  komoditas?: string;
-  prioritas?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  pageSize?: number;
-}
+type Db = Prisma.TransactionClient | typeof prisma;
+
+const penggunaSelect = { select: { id: true, kodePenguji: true, nama: true } } as const;
+
+/** Relasi yang dimuat pada tampilan daftar (ringan). */
+export const permintaanListInclude = {
+  parameters: {
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, nama: true, kode: true, checked: true, statusHasil: true },
+  },
+  pengambilSampelRef: penggunaSelect,
+  petugasQc: penggunaSelect,
+  laboratorium: { select: { id: true, kodeLaboratorium: true, namaLaboratorium: true } },
+  _count: { select: { dokumen: true } },
+} satisfies Prisma.PermintaanPengujianInclude;
+
+/** Relasi lengkap untuk halaman detail / pemeriksaan / hasil. */
+export const permintaanDetailInclude = {
+  parameters: {
+    orderBy: { createdAt: 'asc' },
+    include: {
+      metodeRef: {
+        select: {
+          id: true,
+          kode: true,
+          nama: true,
+          standar: { select: { id: true, kode: true, nama: true } },
+          dokumen: { select: { id: true, namaFile: true, fileUrl: true, tipeFile: true, ukuran: true } },
+        },
+      },
+    },
+  },
+  dokumen: { orderBy: { createdAt: 'desc' } },
+  riwayat: { orderBy: { createdAt: 'asc' } },
+  batchProduksi: true,
+  pengambilSampelRef: penggunaSelect,
+  petugasQc: penggunaSelect,
+  laboratorium: { select: { id: true, kodeLaboratorium: true, namaLaboratorium: true } },
+} satisfies Prisma.PermintaanPengujianInclude;
+
+const SEARCH_FIELDS = [
+  'noPermintaan',
+  'noPengujian',
+  'noSampel',
+  'kodeBatch',
+  'komoditas',
+  'varietas',
+  'petani',
+  'pemohon',
+  'pengambilSampel',
+] as const;
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+export const buildPermintaanWhere = (
+  filters: Partial<PermintaanListQuery>,
+  scopeStatuses?: string[]
+): Prisma.PermintaanPengujianWhereInput => {
+  const and: Prisma.PermintaanPengujianWhereInput[] = [];
+
+  if (scopeStatuses?.length) and.push({ status: { in: scopeStatuses } });
+
+  const q = filters.search?.trim();
+  if (q) and.push({ OR: SEARCH_FIELDS.map((f) => ({ [f]: { contains: q } })) });
+
+  const statuses = filters.status?.split(',').map((s) => s.trim()).filter(Boolean);
+  if (statuses?.length) and.push({ status: { in: statuses } });
+
+  if (filters.komoditas?.trim()) and.push({ komoditas: filters.komoditas.trim() });
+  if (filters.prioritas?.trim()) and.push({ prioritas: filters.prioritas.trim() });
+  if (filters.petugasQcId?.trim()) and.push({ petugasQcId: filters.petugasQcId.trim() });
+  if (filters.hasilAkhir) and.push({ hasilAkhir: filters.hasilAkhir });
+
+  const now = new Date();
+  if (filters.periode === 'today') {
+    and.push({ tanggal: { gte: startOfDay(now), lte: endOfDay(now) } });
+  } else if (filters.periode === 'week') {
+    and.push({ tanggal: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } });
+  } else if (filters.periode === 'month') {
+    and.push({ tanggal: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } });
+  }
+
+  if (filters.startDate) and.push({ tanggal: { gte: startOfDay(filters.startDate) } });
+  if (filters.endDate) and.push({ tanggal: { lte: endOfDay(filters.endDate) } });
+
+  return and.length ? { AND: and } : {};
+};
 
 export const permintaanPengujianRepository = {
-  findAll: async (filters: PermintaanFilterOptions = {}) => {
-    const where: Prisma.PermintaanPengujianWhereInput = {};
+  findAll: async (filters: Partial<PermintaanListQuery>, scopeStatuses?: string[]) => {
+    const where = buildPermintaanWhere(filters, scopeStatuses);
+    const page = filters.page || 1;
+    const pageSize = filters.pageSize || filters.limit || 10;
+    const sortBy = filters.sortBy || 'updatedAt';
+    const sortOrder = filters.sortOrder || 'desc';
 
-    // Search query across number, batch, commodity, variety, and farmer
-    if (filters.search && filters.search.trim() !== '') {
-      const q = filters.search.trim();
-      where.OR = [
-        { noPermintaan: { contains: q } },
-        { kodeBatch: { contains: q } },
-        { komoditas: { contains: q } },
-        { varietas: { contains: q } },
-        { petani: { contains: q } },
-        { pemohon: { contains: q } },
-        { pengambilSampel: { contains: q } },
-      ];
-    }
-
-    // Status filter
-    if (filters.status && filters.status.trim() !== '') {
-      const st = filters.status.trim();
-      // Allow matching frontend simple keys or full status names
-      if (st.toLowerCase() === 'menunggu' || st.toLowerCase() === 'menunggu_persetujuan') {
-        where.status = 'Menunggu Persetujuan';
-      } else if (st.toLowerCase() === 'sampling') {
-        where.status = 'Sampling';
-      } else if (st.toLowerCase() === 'dalam_pengujian' || st.toLowerCase() === 'pengujian') {
-        where.status = 'Dalam Pengujian';
-      } else if (st.toLowerCase() === 'menunggu_review' || st.toLowerCase() === 'review') {
-        where.status = 'Menunggu Review';
-      } else if (st.toLowerCase() === 'selesai') {
-        where.status = 'Selesai';
-      } else if (st.toLowerCase() === 'ditolak') {
-        where.status = 'Ditolak';
-      } else {
-        where.status = { contains: st };
-      }
-    }
-
-    // Commodity filter
-    if (filters.komoditas && filters.komoditas.trim() !== '') {
-      where.komoditas = { contains: filters.komoditas.trim() };
-    }
-
-    // Priority filter
-    if (filters.prioritas && filters.prioritas.trim() !== '') {
-      where.prioritas = { equals: filters.prioritas.trim().toLowerCase() };
-    }
-
-    // Period filter
-    const now = new Date();
-    if (filters.periode) {
-      if (filters.periode === 'today') {
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-        where.tanggal = { gte: startOfDay, lte: endOfDay };
-      } else if (filters.periode === 'week') {
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        where.tanggal = { gte: sevenDaysAgo };
-      } else if (filters.periode === 'month') {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-        where.tanggal = { gte: startOfMonth };
-      }
-    }
-
-    // Custom date range filter
-    if (filters.startDate || filters.endDate) {
-      where.tanggal = where.tanggal || {};
-      if (filters.startDate) {
-        where.tanggal = { ...(where.tanggal as any), gte: new Date(filters.startDate) };
-      }
-      if (filters.endDate) {
-        where.tanggal = { ...(where.tanggal as any), lte: new Date(filters.endDate) };
-      }
-    }
-
-    const page = Number(filters.page) || 1;
-    const pageSize = Number(filters.pageSize) || 10;
-    const skip = (page - 1) * pageSize;
-
-    const total = await prisma.permintaanPengujian.count({ where });
-
-    const validSortFields = ['updatedAt', 'createdAt', 'tanggal', 'noPermintaan', 'status'];
-    const sortBy = filters.sortBy && validSortFields.includes(filters.sortBy) ? filters.sortBy : 'updatedAt';
-    const sortOrder = filters.sortOrder === 'asc' ? 'asc' : 'desc';
-
-    const items = await prisma.permintaanPengujian.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy: { [sortBy]: sortOrder },
-      include: {
-        parameters: {
-          orderBy: { createdAt: 'asc' },
-        },
-        dokumen: true,
-        batchProduksi: true,
-      },
-    });
-
-    return {
-      data: items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize) || 1,
-    };
-  },
-
-  findById: async (id: string) => {
-    return prisma.permintaanPengujian.findFirst({
-      where: {
-        OR: [{ id }, { noPermintaan: id }],
-      },
-      include: {
-        parameters: {
-          orderBy: { createdAt: 'asc' },
-        },
-        dokumen: true,
-        batchProduksi: true,
-      },
-    });
-  },
-
-  getSummary: async (filters: { startDate?: string; endDate?: string } = {}) => {
-    const where: Prisma.PermintaanPengujianWhereInput = {};
-    if (filters.startDate || filters.endDate) {
-      where.tanggal = {};
-      if (filters.startDate) where.tanggal.gte = new Date(filters.startDate);
-      if (filters.endDate) where.tanggal.lte = new Date(filters.endDate);
-    }
-
-    const [
-      total,
-      menungguPersetujuan,
-      sampling,
-      dalamPengujian,
-      menungguReview,
-      selesai,
-      ditolak,
-    ] = await Promise.all([
+    const [total, data] = await prisma.$transaction([
       prisma.permintaanPengujian.count({ where }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Menunggu Persetujuan' },
-      }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Sampling' },
-      }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Dalam Pengujian' },
-      }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Menunggu Review' },
-      }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Selesai' },
-      }),
-      prisma.permintaanPengujian.count({
-        where: { ...where, status: 'Ditolak' },
+      prisma.permintaanPengujian.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: [{ [sortBy]: sortOrder }, { id: 'asc' }],
+        include: permintaanListInclude,
       }),
     ]);
 
-    return {
-      total,
-      menungguPersetujuan,
-      sampling,
-      dalamPengujian,
-      menungguReview,
-      selesai,
-      ditolak,
-    };
+    return { data, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
   },
 
-  generateNextNumber: async (): Promise<string> => {
-    const currentYear = new Date().getFullYear();
-    const prefix = `RQ-QC-${currentYear}-`;
+  /** Menerima UUID maupun nomor dokumen (noPermintaan / noPengujian). */
+  findByIdOrNumber: (idOrNumber: string, db: Db = prisma) =>
+    db.permintaanPengujian.findFirst({
+      where: { OR: [{ id: idOrNumber }, { noPermintaan: idOrNumber }, { noPengujian: idOrNumber }] },
+      include: permintaanDetailInclude,
+    }),
 
-    const latest = await prisma.permintaanPengujian.findFirst({
+  findDetailById: (id: string, db: Db = prisma) =>
+    db.permintaanPengujian.findUnique({ where: { id }, include: permintaanDetailInclude }),
+
+  countByStatus: async (where: Prisma.PermintaanPengujianWhereInput) => {
+    const rows = await prisma.permintaanPengujian.groupBy({ by: ['status'], where, _count: { _all: true } });
+    return rows.reduce<Record<string, number>>((acc, r) => {
+      acc[r.status] = r._count._all;
+      return acc;
+    }, {});
+  },
+
+  countByHasil: async (where: Prisma.PermintaanPengujianWhereInput) => {
+    const rows = await prisma.permintaanPengujian.groupBy({
+      by: ['status', 'hasilAkhir'],
+      where,
+      _count: { _all: true },
+    });
+    return rows.map((r) => ({ status: r.status, hasilAkhir: r.hasilAkhir, total: r._count._all }));
+  },
+
+  /** Nomor dokumen berurutan per tahun, contoh `RQ-QC-2026-00001`. */
+  generateNumber: async (
+    field: 'noPermintaan' | 'noPengujian' | 'noSampel',
+    prefixBase: string,
+    db: Db = prisma
+  ): Promise<string> => {
+    const prefix = `${prefixBase}-${new Date().getFullYear()}-`;
+    const latest = await db.permintaanPengujian.findFirst({
+      where: { [field]: { startsWith: prefix } },
+      orderBy: { [field]: 'desc' },
+      select: { [field]: true },
+    });
+    const lastValue = (latest as Record<string, string | null> | null)?.[field];
+    const lastSeq = lastValue ? parseInt(lastValue.slice(prefix.length), 10) : 0;
+    return `${prefix}${String((Number.isFinite(lastSeq) ? lastSeq : 0) + 1).padStart(5, '0')}`;
+  },
+
+  /** Cari permintaan lain yang sudah memakai batch yang sama (1 batch = 1 permintaan). */
+  findOtherByBatch: (batch: { id: string; kodeBatch: string }, excludeId?: string, db: Db = prisma) =>
+    db.permintaanPengujian.findFirst({
       where: {
-        noPermintaan: { startsWith: prefix },
+        OR: [{ batchProduksiId: batch.id }, { kodeBatch: batch.kodeBatch }],
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
       },
-      orderBy: { noPermintaan: 'desc' },
-      select: { noPermintaan: true },
+      select: { id: true, noPermintaan: true },
+    }),
+
+  /** Batch produksi yang belum pernah diajukan pengujian (opsional: kecuali milik permintaan tertentu). */
+  findAvailableBatches: async (excludePermintaanId?: string) => {
+    const used = await prisma.permintaanPengujian.findMany({
+      where: excludePermintaanId ? { NOT: { id: excludePermintaanId } } : {},
+      select: { kodeBatch: true, batchProduksiId: true },
     });
+    const usedCodes = used.map((u) => u.kodeBatch).filter(Boolean);
+    const usedIds = used.map((u) => u.batchProduksiId).filter((v): v is string => Boolean(v));
 
-    let nextSeq = 1;
-    if (latest && latest.noPermintaan) {
-      const parts = latest.noPermintaan.split('-');
-      const lastNumStr = parts[parts.length - 1];
-      if (lastNumStr) {
-        const parsed = parseInt(lastNumStr, 10);
-        if (!isNaN(parsed)) {
-          nextSeq = parsed + 1;
-        }
-      }
-    }
-
-    return `${prefix}${String(nextSeq).padStart(5, '0')}`;
-  },
-
-  create: async (data: any) => {
-    const { parameters, dokumen, ...headerData } = data;
-
-    // Auto-generate number if not provided
-    if (!headerData.noPermintaan || headerData.noPermintaan.trim() === '') {
-      headerData.noPermintaan = await permintaanPengujianRepository.generateNextNumber();
-    }
-
-    // Try linking to BatchProduksi if batchProduksiId not set but kodeBatch is provided
-    if (!headerData.batchProduksiId && headerData.kodeBatch) {
-      const match = await prisma.batchProduksi.findUnique({
-        where: { kodeBatch: headerData.kodeBatch },
-      });
-      if (match) {
-        headerData.batchProduksiId = match.id;
-      }
-    }
-
-    // Convert date string if string
-    if (headerData.tanggal && typeof headerData.tanggal === 'string') {
-      headerData.tanggal = new Date(headerData.tanggal);
-    }
-    if (headerData.jumlahSampel !== undefined) {
-      headerData.jumlahSampel = Number(headerData.jumlahSampel) || 0;
-    }
-
-    return prisma.$transaction(async (tx) => {
-      const created = await tx.permintaanPengujian.create({
-        data: headerData,
-      });
-
-      if (Array.isArray(parameters) && parameters.length > 0) {
-        for (const p of parameters) {
-          await tx.permintaanPengujianParameter.create({
-            data: {
-              permintaanId: created.id,
-              parameterId: p.parameterId || null,
-              kode: p.kode || 'P-UNKNOWN',
-              nama: p.nama || p.parameter || 'Parameter',
-              kategori: p.kategori || null,
-              metodeId: p.metodeId || null,
-              metode: p.metode || null,
-              metodeKode: p.metodeKode || null,
-              metodeNama: p.metodeNama || null,
-              standar: p.standar || null,
-              satuan: p.satuan || null,
-              checked: p.checked !== undefined ? Boolean(p.checked) : true,
-              definisi: p.definisi || null,
-              keterangan: p.keterangan || null,
-              isCustom: Boolean(p.isCustom),
-            },
-          });
-        }
-      }
-
-      if (Array.isArray(dokumen) && dokumen.length > 0) {
-        for (const d of dokumen) {
-          await tx.permintaanPengujianDokumen.create({
-            data: {
-              permintaanId: created.id,
-              namaFile: d.namaFile || d.fileName || 'Dokumen',
-              fileUrl: d.fileUrl || d.url || '',
-              tipeFile: d.tipeFile || d.type || null,
-              ukuran: d.ukuran || d.size || null,
-            },
-          });
-        }
-      }
-
-      return tx.permintaanPengujian.findUnique({
-        where: { id: created.id },
-        include: {
-          parameters: true,
-          dokumen: true,
-          batchProduksi: true,
-        },
-      });
-    });
-  },
-
-  update: async (id: string, data: any) => {
-    const { parameters, dokumen, ...headerData } = data;
-
-    // Convert date if present
-    if (headerData.tanggal && typeof headerData.tanggal === 'string') {
-      headerData.tanggal = new Date(headerData.tanggal);
-    }
-    if (headerData.jumlahSampel !== undefined) {
-      headerData.jumlahSampel = Number(headerData.jumlahSampel) || 0;
-    }
-
-    // Try linking to BatchProduksi if kodeBatch changed
-    if (!headerData.batchProduksiId && headerData.kodeBatch) {
-      const match = await prisma.batchProduksi.findUnique({
-        where: { kodeBatch: headerData.kodeBatch },
-      });
-      if (match) {
-        headerData.batchProduksiId = match.id;
-      }
-    }
-
-    return prisma.$transaction(async (tx) => {
-      // Find existing
-      const existing = await tx.permintaanPengujian.findFirst({
-        where: { OR: [{ id }, { noPermintaan: id }] },
-      });
-
-      if (!existing) {
-        throw new Error('Permintaan pengujian tidak ditemukan');
-      }
-
-      const updated = await tx.permintaanPengujian.update({
-        where: { id: existing.id },
-        data: headerData,
-      });
-
-      // Update parameters if array is provided
-      if (Array.isArray(parameters)) {
-        await tx.permintaanPengujianParameter.deleteMany({
-          where: { permintaanId: existing.id },
-        });
-
-        for (const p of parameters) {
-          await tx.permintaanPengujianParameter.create({
-            data: {
-              permintaanId: existing.id,
-              parameterId: p.parameterId || null,
-              kode: p.kode || 'P-UNKNOWN',
-              nama: p.nama || p.parameter || 'Parameter',
-              kategori: p.kategori || null,
-              metodeId: p.metodeId || null,
-              metode: p.metode || null,
-              metodeKode: p.metodeKode || null,
-              metodeNama: p.metodeNama || null,
-              standar: p.standar || null,
-              satuan: p.satuan || null,
-              checked: p.checked !== undefined ? Boolean(p.checked) : true,
-              definisi: p.definisi || null,
-              keterangan: p.keterangan || null,
-              isCustom: Boolean(p.isCustom),
-            },
-          });
-        }
-      }
-
-      // Add new documents if provided
-      if (Array.isArray(dokumen) && dokumen.length > 0) {
-        for (const d of dokumen) {
-          await tx.permintaanPengujianDokumen.create({
-            data: {
-              permintaanId: existing.id,
-              namaFile: d.namaFile || d.fileName || 'Dokumen',
-              fileUrl: d.fileUrl || d.url || '',
-              tipeFile: d.tipeFile || d.type || null,
-              ukuran: d.ukuran || d.size || null,
-            },
-          });
-        }
-      }
-
-      return tx.permintaanPengujian.findUnique({
-        where: { id: existing.id },
-        include: {
-          parameters: true,
-          dokumen: true,
-          batchProduksi: true,
-        },
-      });
-    });
-  },
-
-  updateStatus: async (id: string, status: string, diubahOleh: string = 'Admin') => {
-    const existing = await prisma.permintaanPengujian.findFirst({
-      where: { OR: [{ id }, { noPermintaan: id }] },
-    });
-    if (!existing) {
-      throw new Error('Permintaan pengujian tidak ditemukan');
-    }
-
-    return prisma.permintaanPengujian.update({
-      where: { id: existing.id },
-      data: {
-        status,
-        diubahOleh,
+    return prisma.batchProduksi.findMany({
+      where: {
+        AND: [
+          usedCodes.length ? { kodeBatch: { notIn: usedCodes } } : {},
+          usedIds.length ? { id: { notIn: usedIds } } : {},
+        ],
       },
-      include: {
-        parameters: true,
-        dokumen: true,
-      },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
-  delete: async (id: string) => {
-    const existing = await prisma.permintaanPengujian.findFirst({
-      where: { OR: [{ id }, { noPermintaan: id }] },
-    });
-    if (!existing) {
-      throw new Error('Permintaan pengujian tidak ditemukan');
-    }
-
-    return prisma.permintaanPengujian.delete({
-      where: { id: existing.id },
-    });
-  },
+  addRiwayat: (
+    db: Db,
+    data: { permintaanId: string; aksi: string; statusDari?: string | null; statusKe?: string | null; keterangan?: string | null; oleh: string }
+  ) => db.permintaanPengujianRiwayat.create({ data }),
 };

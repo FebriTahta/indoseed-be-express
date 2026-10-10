@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import prisma from './src/utils/prisma';
 
 async function main() {
@@ -17,217 +18,74 @@ async function main() {
   const pKemurnian = getParam('kemurnian');
   const pVigor = getParam('vigor');
 
-  const seedRequests = [
-    {
-      noPermintaan: 'RQ-QC-2026-00125',
-      tanggal: new Date('2026-06-16T08:15:00Z'),
-      kodeBatch: 'BTH-2026-00125',
-      komoditas: 'Melon',
-      varietas: 'Tere F1',
+  const dbPartners = await prisma.partner.findMany();
+  const dbPenguji = await prisma.penguji.findMany();
+
+  if (dbBatches.length === 0) {
+    console.log('No BatchProduksi found! Please seed BatchProduksi first.');
+    return;
+  }
+
+  const seedRequests = dbBatches.slice(0, 5).map((batch, index) => {
+    // Pilih partner secara acak (atau berdasarkan index)
+    const partner = dbPartners.length > 0 ? dbPartners[index % dbPartners.length] : null;
+    const penguji = dbPenguji.length > 0 ? dbPenguji[index % dbPenguji.length] : null;
+
+    const parameters = [];
+    
+    // Add Daya Tumbuh
+    parameters.push({
+      parameterId: pDayaTumbuh?.id,
+      kode: pDayaTumbuh?.kode || 'PRM-001',
+      nama: pDayaTumbuh?.nama || 'Daya Tumbuh',
+      kategori: 'Fisiologis',
+      metodeId: pDayaTumbuh?.metodeId,
+      metode: pDayaTumbuh?.metode ? `${pDayaTumbuh.metode.kode} - ${pDayaTumbuh.metode.nama}` : 'ISTA 5.2.1 - Germination Test',
+      metodeKode: pDayaTumbuh?.metode?.kode || 'ISTA 5.2.1',
+      metodeNama: pDayaTumbuh?.metode?.nama || 'Germination Test',
+      standar: '≥ 80 %',
+      satuan: '%',
+      checked: true,
+    });
+
+    // Add Kadar Air if index is even
+    if (index % 2 === 0) {
+      parameters.push({
+        parameterId: pKadarAir?.id,
+        kode: pKadarAir?.kode || 'PRM-002',
+        nama: pKadarAir?.nama || 'Kadar Air',
+        kategori: 'Fisik',
+        metodeId: pKadarAir?.metodeId,
+        metode: pKadarAir?.metode ? `${pKadarAir.metode.kode} - ${pKadarAir.metode.nama}` : 'ISTA 2.2 - Moisture Content',
+        metodeKode: pKadarAir?.metode?.kode || 'ISTA 2.2',
+        metodeNama: pKadarAir?.metode?.nama || 'Moisture Content',
+        standar: '≤ 12 %',
+        satuan: '%',
+        checked: true,
+      });
+    }
+
+    return {
+      noPermintaan: `RQ-QC-2026-${(100 + index).toString().padStart(5, '0')}`,
+      tanggal: new Date(),
+      kodeBatch: batch.kodeBatch,
+      komoditas: batch.komoditas,
+      varietas: batch.varietas,
       tipe: 'QC / Benih',
-      petani: 'Suryadi',
-      lahan: 'Lahan 01 / Blok A',
-      panen: '16 Jun 2026',
+      petani: partner ? partner.namaPetani : 'Petani Internal',
+      lahan: batch.lokasi || 'Lahan Utama',
+      panen: batch.tanggalSelesai || new Date().toISOString().split('T')[0],
       jumlahSampel: 500,
       satuanSampel: 'gram',
-      metodeSampling: 'sop',
-      pengambilSampel: 'Andi Pratama (QC Officer)',
-      pemohon: 'produksi',
-      prioritas: 'normal',
-      status: 'Menunggu Persetujuan',
-      catatan: 'Prioritas uji daya tumbuh & kadar air segera setelah panen.',
-      parameters: [
-        {
-          parameterId: pKadarAir?.id,
-          kode: pKadarAir?.kode || 'PRM-002',
-          nama: pKadarAir?.nama || 'Kadar Air',
-          kategori: 'Fisik',
-          metodeId: pKadarAir?.metodeId,
-          metode: pKadarAir?.metode ? `${pKadarAir.metode.kode} - ${pKadarAir.metode.nama}` : 'ISTA 2.2 - Moisture Content',
-          metodeKode: pKadarAir?.metode?.kode || 'ISTA 2.2',
-          metodeNama: pKadarAir?.metode?.nama || 'Moisture Content',
-          standar: '≤ 12 %',
-          satuan: '%',
-          checked: true,
-        },
-        {
-          parameterId: pDayaTumbuh?.id,
-          kode: pDayaTumbuh?.kode || 'PRM-001',
-          nama: pDayaTumbuh?.nama || 'Daya Tumbuh',
-          kategori: 'Fisiologis',
-          metodeId: pDayaTumbuh?.metodeId,
-          metode: pDayaTumbuh?.metode ? `${pDayaTumbuh.metode.kode} - ${pDayaTumbuh.metode.nama}` : 'ISTA 5.2.1 - Germination Test',
-          metodeKode: pDayaTumbuh?.metode?.kode || 'ISTA 5.2.1',
-          metodeNama: pDayaTumbuh?.metode?.nama || 'Germination Test',
-          standar: '≥ 80 %',
-          satuan: '%',
-          checked: true,
-        },
-      ],
-    },
-    {
-      noPermintaan: 'RQ-QC-2026-00124',
-      tanggal: new Date('2026-06-15T14:20:00Z'),
-      kodeBatch: 'BTH-2026-00124',
-      komoditas: 'Cabai',
-      varietas: 'Keriting',
-      tipe: 'QC / Benih',
-      petani: 'Budi',
-      lahan: 'Lahan 02 / Blok B',
-      panen: '15 Jun 2026',
-      jumlahSampel: 500,
-      satuanSampel: 'gram',
-      metodeSampling: 'sop',
-      pengambilSampel: 'Budi Santoso (Lab Tech)',
-      pemohon: 'produksi',
-      prioritas: 'normal',
-      status: 'Sampling',
-      catatan: 'Pengambilan sampel komposit di area pengeringan.',
-      parameters: [
-        {
-          parameterId: pKemurnian?.id,
-          kode: pKemurnian?.kode || 'PRM-003',
-          nama: pKemurnian?.nama || 'Kemurnian',
-          kategori: 'Fisik',
-          metodeId: pKemurnian?.metodeId,
-          metode: pKemurnian?.metode ? `${pKemurnian.metode.kode} - ${pKemurnian.metode.nama}` : 'ISTA 2.10 - Pure Seed',
-          metodeKode: pKemurnian?.metode?.kode || 'ISTA 2.10',
-          metodeNama: pKemurnian?.metode?.nama || 'Pure Seed',
-          standar: '≥ 98 %',
-          satuan: '%',
-          checked: true,
-        },
-      ],
-    },
-    {
-      noPermintaan: 'RQ-QC-2026-00123',
-      tanggal: new Date('2026-06-14T09:10:00Z'),
-      kodeBatch: 'BTH-2026-00122',
-      komoditas: 'Padi',
-      varietas: 'Inpari 32',
-      tipe: 'QC / Benih',
-      petani: 'Mulyono',
-      lahan: 'Lahan 03 / Blok C',
-      panen: '14 Jun 2026',
-      jumlahSampel: 1,
-      satuanSampel: 'kg',
-      metodeSampling: 'random',
-      pengambilSampel: 'Citra Dewi (QC Inspector)',
-      pemohon: 'produksi',
-      prioritas: 'urgent',
-      status: 'Dalam Pengujian',
-      catatan: 'Segera butuh hasil vigor untuk sertifikasi benih.',
-      parameters: [
-        {
-          parameterId: pDayaTumbuh?.id,
-          kode: pDayaTumbuh?.kode || 'PRM-001',
-          nama: pDayaTumbuh?.nama || 'Daya Tumbuh',
-          kategori: 'Fisiologis',
-          metodeId: pDayaTumbuh?.metodeId,
-          metode: pDayaTumbuh?.metode ? `${pDayaTumbuh.metode.kode} - ${pDayaTumbuh.metode.nama}` : 'ISTA 5.2.1 - Germination Test',
-          metodeKode: pDayaTumbuh?.metode?.kode || 'ISTA 5.2.1',
-          metodeNama: pDayaTumbuh?.metode?.nama || 'Germination Test',
-          standar: '≥ 80 %',
-          satuan: '%',
-          checked: true,
-        },
-        {
-          parameterId: pVigor?.id,
-          kode: pVigor?.kode || 'PRM-004',
-          nama: pVigor?.nama || 'Vigor',
-          kategori: 'Fisiologis',
-          metodeId: pVigor?.metodeId,
-          metode: pVigor?.metode ? `${pVigor.metode.kode} - ${pVigor.metode.nama}` : 'ISTA 7.3 - Vigor Test',
-          metodeKode: pVigor?.metode?.kode || 'ISTA 7.3',
-          metodeNama: pVigor?.metode?.nama || 'Vigor Test',
-          standar: '≥ 70 %',
-          satuan: '%',
-          checked: true,
-        },
-      ],
-    },
-    {
-      noPermintaan: 'RQ-QC-2026-00122',
-      tanggal: new Date('2026-06-13T11:45:00Z'),
-      kodeBatch: 'BTH-2026-00121',
-      komoditas: 'Melon',
-      varietas: 'Tere F1',
-      tipe: 'QC / Benih',
-      petani: 'Suryadi',
-      lahan: 'Lahan 01 / Blok B',
-      panen: '13 Jun 2026',
-      jumlahSampel: 500,
-      satuanSampel: 'gram',
-      metodeSampling: 'sop',
-      pengambilSampel: 'Andi Pratama (QC Officer)',
-      pemohon: 'produksi',
-      prioritas: 'normal',
-      status: 'Menunggu Review',
-      catatan: 'Hasil uji lab telah masuk, menunggu persetujuan QC manager.',
-      parameters: [
-        {
-          parameterId: pKadarAir?.id,
-          kode: pKadarAir?.kode || 'PRM-002',
-          nama: pKadarAir?.nama || 'Kadar Air',
-          kategori: 'Fisik',
-          metodeId: pKadarAir?.metodeId,
-          metode: pKadarAir?.metode ? `${pKadarAir.metode.kode} - ${pKadarAir.metode.nama}` : 'ISTA 2.2 - Moisture Content',
-          metodeKode: pKadarAir?.metode?.kode || 'ISTA 2.2',
-          metodeNama: pKadarAir?.metode?.nama || 'Moisture Content',
-          standar: '≤ 12 %',
-          satuan: '%',
-          checked: true,
-        },
-      ],
-    },
-    {
-      noPermintaan: 'RQ-QC-2026-00121',
-      tanggal: new Date('2026-06-12T10:30:00Z'),
-      kodeBatch: 'BTH-2026-00119',
-      komoditas: 'Cabai',
-      varietas: 'Rawit',
-      tipe: 'QC / Benih',
-      petani: 'Santoso',
-      lahan: 'Lahan 04 / Blok A',
-      panen: '12 Jun 2026',
-      jumlahSampel: 500,
-      satuanSampel: 'gram',
-      metodeSampling: 'sop',
-      pengambilSampel: 'Budi Santoso (Lab Tech)',
-      pemohon: 'produksi',
-      prioritas: 'normal',
-      status: 'Selesai',
-      catatan: 'Pemeriksaan lengkap selesai dan lolos standar mutu.',
-      parameters: [
-        {
-          parameterId: pDayaTumbuh?.id,
-          kode: pDayaTumbuh?.kode || 'PRM-001',
-          nama: pDayaTumbuh?.nama || 'Daya Tumbuh',
-          kategori: 'Fisiologis',
-          metodeId: pDayaTumbuh?.metodeId,
-          metode: pDayaTumbuh?.metode ? `${pDayaTumbuh.metode.kode} - ${pDayaTumbuh.metode.nama}` : 'ISTA 5.2.1 - Germination Test',
-          metodeKode: pDayaTumbuh?.metode?.kode || 'ISTA 5.2.1',
-          metodeNama: pDayaTumbuh?.metode?.nama || 'Germination Test',
-          standar: '≥ 80 %',
-          satuan: '%',
-          checked: true,
-        },
-        {
-          parameterId: pKadarAir?.id,
-          kode: pKadarAir?.kode || 'PRM-002',
-          nama: pKadarAir?.nama || 'Kadar Air',
-          kategori: 'Fisik',
-          metodeId: pKadarAir?.metodeId,
-          metode: pKadarAir?.metode ? `${pKadarAir.metode.kode} - ${pKadarAir.metode.nama}` : 'ISTA 2.2 - Moisture Content',
-          metodeKode: pKadarAir?.metode?.kode || 'ISTA 2.2',
-          metodeNama: pKadarAir?.metode?.nama || 'Moisture Content',
-          standar: '≤ 12 %',
-          satuan: '%',
-          checked: true,
-        },
-      ],
-    },
-  ];
+      metodeSampling: 'SOP',
+      pengambilSampel: penguji ? penguji.nama : 'Petugas QC',
+      pemohon: batch.dibuatOleh || 'Produksi',
+      prioritas: index === 0 ? 'urgent' : 'normal',
+      status: index === 0 ? 'Dalam Pengujian' : 'Menunggu Persetujuan',
+      catatan: `Pengujian untuk batch ${batch.kodeBatch} komoditas ${batch.komoditas} ${batch.varietas}`,
+      parameters,
+    };
+  });
 
   for (const item of seedRequests) {
     const { parameters, ...headerData } = item;

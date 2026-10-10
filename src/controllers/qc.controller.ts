@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { qcRepository } from '../repositories/qc.repository';
+import { testMethodService } from '../services/qc/testMethod.service';
+import { getActor } from '../utils/requestHelpers';
 
 // -- Reference Standards --
 export const getStandards = async (req: Request, res: Response) => {
@@ -51,83 +53,40 @@ export const deleteStandard = async (req: Request, res: Response) => {
 
 // -- Test Methods --
 export const getMethods = async (req: Request, res: Response) => {
-  try {
-    const { search, jenisUji, komoditas, status, sortBy, sortOrder } = req.query;
-    const data = await qcRepository.findAllMethods({
-      search: search ? String(search) : undefined,
-      jenisUji: jenisUji ? String(jenisUji) : undefined,
-      komoditas: komoditas ? String(komoditas) : undefined,
-      status: status ? String(status) : undefined,
-      sortBy: sortBy ? String(sortBy) : 'updatedAt',
-      sortOrder: sortOrder === 'asc' ? 'asc' : 'desc'
-    });
-    res.json({ status: 'success', data });
-  } catch (error: any) {
-    res.status(500).json({ status: 'error', message: error.message });
-  }
+  const data = await testMethodService.findAll(req.validated!.query);
+  res.json({ status: 'success', data });
+};
+
+export const getMethodRiwayat = async (req: Request, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const data = await testMethodService.recentRiwayat(limit);
+  res.json({ status: 'success', data });
 };
 
 export const getMethodById = async (req: Request, res: Response) => {
-  try {
-    const data = await qcRepository.findMethodById(req.params.id as string);
-    if (!data) return res.status(404).json({ status: 'error', message: 'Not found' });
-    res.json({ status: 'success', data });
-  } catch (error: any) {
-    res.status(500).json({ status: 'error', message: error.message });
-  }
+  const data = await testMethodService.findById(req.params.id as string);
+  res.json({ status: 'success', data });
 };
 
 export const createMethod = async (req: Request, res: Response) => {
-  try {
-    const data = await qcRepository.createMethod(req.body);
-    res.status(201).json({ status: 'success', data });
-  } catch (error: any) {
-    console.error('Error in createMethod:', error);
-    if (error.code === 'P2002') {
-      const field = error.meta?.target || 'Kode';
-      return res.status(400).json({ status: 'error', message: `Data dengan ${field} ini sudah terdaftar.` });
-    }
-    if (error.code === 'P2003') {
-      return res.status(400).json({ status: 'error', message: 'Referensi standar acuan atau dokumen tidak valid.' });
-    }
-    res.status(400).json({ status: 'error', message: error.message || 'Gagal menambahkan metode uji' });
-  }
+  const data = await testMethodService.create(req.validated!.body, getActor(req));
+  res.status(201).json({ status: 'success', data });
 };
 
 export const updateMethod = async (req: Request, res: Response) => {
-  try {
-    const data = await qcRepository.updateMethod(req.params.id as string, req.body);
-    res.json({ status: 'success', data });
-  } catch (error: any) {
-    console.error('Error in updateMethod:', error);
-    if (error.code === 'P2002') {
-      const field = error.meta?.target || 'Kode';
-      return res.status(400).json({ status: 'error', message: `Data dengan ${field} ini sudah terdaftar.` });
-    }
-    if (error.code === 'P2003') {
-      return res.status(400).json({ status: 'error', message: 'Referensi standar acuan atau dokumen tidak valid.' });
-    }
-    res.status(400).json({ status: 'error', message: error.message || 'Gagal memperbarui metode uji' });
-  }
+  const data = await testMethodService.update(req.params.id as string, req.validated!.body, getActor(req));
+  res.json({ status: 'success', data });
 };
 
 export const deleteMethod = async (req: Request, res: Response) => {
-  try {
-    await qcRepository.deleteMethod(req.params.id as string);
-    res.json({ status: 'success', message: 'Deleted successfully' });
-  } catch (error: any) {
-    res.status(400).json({ status: 'error', message: error.message });
-  }
+  await testMethodService.delete(req.params.id as string);
+  res.json({ status: 'success', message: 'Deleted successfully' });
 };
 
 export const deleteMethodDocument = async (req: Request, res: Response) => {
-  try {
-    const result = await qcRepository.deleteMethodDocument(req.params.documentId as string);
-    if (!result) return res.status(404).json({ status: 'error', message: 'Document not found' });
-    res.json({ status: 'success', message: 'Document deleted successfully' });
-  } catch (error: any) {
-    res.status(400).json({ status: 'error', message: error.message });
-  }
+  const result = await qcRepository.deleteMethodDocument(req.params.documentId as string);
+  if (!result) return res.status(404).json({ status: 'error', message: 'Document not found' });
+  res.json({ status: 'success', message: 'Document deleted successfully' });
 };
 
 // -- Laboratorium --
