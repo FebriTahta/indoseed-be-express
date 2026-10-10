@@ -1,12 +1,35 @@
 import express from 'express';
 import * as QCController from '../controllers/qc.controller';
 import * as DocumentController from '../controllers/document.controller';
+import * as QcLookupController from '../controllers/qcLookup.controller';
 import { uploadSingle } from '../middlewares/upload.middleware';
+import { authenticateJWT } from '../middlewares/auth.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { lookupQuerySchema, lookupBodySchema, testMethodSchema, testMethodListQuerySchema, summaryQuerySchema } from '../validators/qc.validator';
+import { getDashboardQc } from '../controllers/dashboardQc.controller';
 import pengujiRoutes from './penguji.routes';
+import permintaanRoutes from './permintaanPengujian.routes';
+import { pemeriksaanRouter, hasilRouter } from './pemeriksaanPengujian.routes';
 
 const router = express.Router();
 
+// Seluruh endpoint QC membutuhkan login (dipakai juga untuk mencatat pelaku di riwayat).
+router.use(authenticateJWT);
+
 router.use('/penguji', pengujiRoutes);
+router.use('/permintaan', permintaanRoutes);
+router.use('/pemeriksaan', pemeriksaanRouter);
+router.use('/hasil', hasilRouter);
+
+// Dashboard QC (agregasi per periode)
+router.get('/dashboard', validate(summaryQuerySchema, 'query'), getDashboardQc);
+
+// Master pilihan (dropdown) & metadata alur status
+router.get('/meta', QcLookupController.getMeta);
+router.get('/lookups', validate(lookupQuerySchema, 'query'), QcLookupController.getLookups);
+router.post('/lookups', validate(lookupBodySchema), QcLookupController.createLookup);
+router.put('/lookups/:id', validate(lookupBodySchema), QcLookupController.updateLookup);
+router.delete('/lookups/:id', QcLookupController.deleteLookup);
 
 // Laboratoriums
 router.get('/laboratoriums', QCController.getLaboratoriums);
@@ -19,10 +42,11 @@ router.put('/standards/:id', QCController.updateStandard);
 router.delete('/standards/:id', QCController.deleteStandard);
 
 // Test Methods
-router.get('/methods', QCController.getMethods);
+router.get('/methods', validate(testMethodListQuerySchema, 'query'), QCController.getMethods);
+router.get('/methods/riwayat', QCController.getMethodRiwayat);
 router.get('/methods/:id', QCController.getMethodById);
-router.post('/methods', QCController.createMethod);
-router.put('/methods/:id', QCController.updateMethod);
+router.post('/methods', validate(testMethodSchema), QCController.createMethod);
+router.put('/methods/:id', validate(testMethodSchema), QCController.updateMethod);
 router.delete('/methods/:id', QCController.deleteMethod);
 router.delete('/methods/documents/:documentId', QCController.deleteMethodDocument);
 

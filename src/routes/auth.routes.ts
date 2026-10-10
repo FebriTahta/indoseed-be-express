@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { register, verifyOtp, login, resendOtp, logout } from '../controllers/auth.controller';
+import { register, verifyOtp, login, resendOtp, logout, me, impersonate, stopImpersonation } from '../controllers/auth.controller';
+import { ROLES } from '../constants/roles.constants';
 import { authenticateJWT, authorizeRoles } from '../middlewares/auth.middleware';
 import { loginRateLimiter, registerRateLimiter } from '../middlewares/rateLimit.middleware';
 import { verifyTurnstile } from '../middlewares/turnstile.middleware';
@@ -11,6 +12,11 @@ router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', resendOtp);
 router.post('/login', loginRateLimiter, login);
 router.post('/logout', authenticateJWT, logout);
+router.get('/me', authenticateJWT, me);
+
+// "Login sebagai" user lain — khusus superadmin. Rute stop sengaja dicek sebelum :userId.
+router.post('/impersonate/stop', authenticateJWT, stopImpersonation);
+router.post('/impersonate/:userId', authenticateJWT, authorizeRoles(ROLES.SUPERADMIN), impersonate);
 
 // Example protected route for superadmin
 router.get('/superadmin-only', authenticateJWT, authorizeRoles('superadmin'), (req: any, res) => {

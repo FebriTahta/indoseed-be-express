@@ -7,10 +7,15 @@
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "seed:master": "tsx prisma/seedMaster.ts",
-    "seed:produksi": "tsx prisma/seedProduksi.ts"
+    "seed:produksi": "tsx prisma/seedProduksi.ts",
+    "seed:qc-lookup": "tsx prisma/seedQcLookup.ts",
+    "seed:akses": "tsx prisma/seedAkses.ts",
+    "seed:pengujian": "tsx prisma/seedPengujian.ts",
+    "seed": "tsx prisma/seed.ts",
+    "backfill:qc": "tsx prisma/backfillQcPengujian.ts"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",
@@ -21,7 +26,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.1.0",
-    "@types/node": "^25.9.5",
     "@types/nodemailer": "^8.0.1",
     "@types/sharp": "^0.31.1",
     "bcryptjs": "^3.0.3",
@@ -43,6 +47,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^26.6.4",
     "eslint": "^10.5.0",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.4",

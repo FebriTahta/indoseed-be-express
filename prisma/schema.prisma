@@ -258,6 +258,8 @@ model TestMethod {
   qcTests            QcTest[]
   pengujiTestMethods PengujiTestMethod[]
   dokumen            TestMethodDocument[]
+  permintaanParameters PermintaanPengujianParameter[]
+  riwayat            TestMethodRiwayat[]
 
   @@map("test_methods")
 }
@@ -292,6 +294,7 @@ model TestParameter {
   updatedAt  DateTime @updatedAt
 
   metode TestMethod? @relation(fields: [metodeId], references: [id], onDelete: SetNull)
+  permintaanParameters PermintaanPengujianParameter[]
 
   @@map("test_parameters")
 }
@@ -803,6 +806,7 @@ model BatchProduksi {
   updatedAt      DateTime @default(now()) @updatedAt
 
   batchLot BatchLot?
+  permintaanPengujian PermintaanPengujian[]
 
   @@map("batch_produksi")
 }
@@ -907,7 +911,8 @@ model Laboratorium {
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
-  penguji Penguji[]
+  penguji             Penguji[]
+  permintaanPengujian PermintaanPengujian[]
 
   @@map("laboratorium")
 }
@@ -921,6 +926,9 @@ model Penguji {
   noTelepon      String?
   foto           String?  @db.Text
   keterangan     String?  @db.Text
+  tanggalBergabung DateTime? @db.Date
+  /// Masa berlaku kewenangan penguji (dipakai untuk indikator "akan expired").
+  berlakuHingga  DateTime? @db.Date
   status         String   @default("Aktif")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -931,6 +939,9 @@ model Penguji {
   metodeUji    PengujiTestMethod[]
   qcTests      QcTest[]
 
+  permintaanSebagaiPengambil PermintaanPengujian[] @relation("PengambilSampel")
+  permintaanSebagaiPetugas   PermintaanPengujian[] @relation("PetugasQc")
+
   @@map("penguji")
 }
 
@@ -938,6 +949,8 @@ model Sertifikasi {
   id              String    @id @default(uuid())
   pengujiId       String
   namaSertifikasi String
+  nomorSertifikat String?
+  tanggalSertifikat DateTime? @db.Date
   berlakuHingga   DateTime?
   lampiranUrl     String?   @db.Text
   status          String    @default("Aktif")
@@ -1218,3 +1231,200 @@ model KelompokTani {
   @@map("kelompok_tani")
 }
 
+model PermintaanPengujian {
+  id               String   @id @default(uuid())
+  noPermintaan     String   @unique
+  tanggal          DateTime @default(now())
+  kodeBatch        String
+  batchProduksiId  String?
+  komoditas        String?
+  varietas         String?
+  tipe             String?  @default("QC / Benih")
+  petani           String?
+  lahan            String?
+  panen            String?
+  jumlahSampel     Float?   @default(0)
+  satuanSampel     String?  @default("gram")
+  metodeSampling   String?  @default("sop")
+  pengambilSampel  String?
+  pengambilSampelId String?
+  pemohon          String   @default("produksi")
+  prioritas        String   @default("normal")
+  status           String   @default("Menunggu Persetujuan")
+  catatan          String?  @db.Text
+  fileLampiranUrl  String?  @db.Text
+  fileLampiranNama String?
+
+  // -- Persetujuan permintaan --
+  disetujuiOleh    String?
+  tanggalDisetujui DateTime?
+  alasanPenolakan  String?  @db.Text
+
+  // -- Pemeriksaan / pengujian --
+  noPengujian       String?   @unique
+  noSampel          String?   @unique
+  petugasQcId       String?
+  laboratoriumId    String?
+  tanggalSampling   DateTime?
+  kondisiSampel     String?
+  tanggalMulaiUji   DateTime?
+  tanggalSelesaiUji DateTime?
+  catatanPengujian  String?   @db.Text
+
+  // -- Hasil & review --
+  hasilAkhir    String?   // "Lulus" | "Tidak Lulus"
+  rekomendasi   String?
+  direviewOleh  String?
+  tanggalReview DateTime?
+  catatanReview String?   @db.Text
+
+  dibuatOleh       String?  @default("Admin")
+  diubahOleh       String?  @default("Admin")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  batchProduksi   BatchProduksi?                 @relation(fields: [batchProduksiId], references: [id], onDelete: SetNull)
+  pengambilSampelRef Penguji?                    @relation("PengambilSampel", fields: [pengambilSampelId], references: [id], onDelete: SetNull)
+  petugasQc       Penguji?                       @relation("PetugasQc", fields: [petugasQcId], references: [id], onDelete: SetNull)
+  laboratorium    Laboratorium?                  @relation(fields: [laboratoriumId], references: [id], onDelete: SetNull)
+  parameters      PermintaanPengujianParameter[]
+  dokumen         PermintaanPengujianDokumen[]
+  riwayat         PermintaanPengujianRiwayat[]
+
+  @@index([status])
+  @@index([kodeBatch])
+  @@map("permintaan_pengujian")
+}
+
+model PermintaanPengujianParameter {
+  id           String   @id @default(uuid())
+  permintaanId String
+  parameterId  String?
+  kode         String
+  nama         String
+  kategori     String?
+  metodeId     String?
+  metode       String?
+  metodeKode   String?
+  metodeNama   String?
+  standar      String?
+  satuan       String?
+  checked      Boolean  @default(true)
+  definisi     String?  @db.Text
+  keterangan   String?  @db.Text
+  isCustom     Boolean  @default(false)
+  batasAcuan   String?  // snapshot batas acuan master, dipakai untuk evaluasi otomatis
+
+  // -- Hasil pengujian per parameter --
+  nilaiHasil   Float?
+  hasilTeks    String?
+  statusHasil  String?  // "Lulus" | "Tidak Lulus"
+  catatanHasil String?  @db.Text
+  rincianHasil Json?    // rincian uji perkecambahan: jumlah benih, hari pengamatan, normal/abnormal/mati/keras
+  diujiOleh    String?
+  tanggalUji   DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  permintaan   PermintaanPengujian @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+  parameter    TestParameter?      @relation(fields: [parameterId], references: [id], onDelete: SetNull)
+  metodeRef    TestMethod?         @relation(fields: [metodeId], references: [id], onDelete: SetNull)
+
+  @@map("permintaan_pengujian_parameters")
+}
+
+model PermintaanPengujianDokumen {
+  id           String   @id @default(uuid())
+  permintaanId String
+  namaFile     String
+  fileUrl      String   @db.Text
+  tipeFile     String?
+  ukuran       String?
+  kategori     String   @default("Permintaan") // "Permintaan" | "Dokumentasi"
+  keterangan   String?
+  diunggahOleh String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  permintaan   PermintaanPengujian @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+
+  @@map("permintaan_pengujian_dokumen")
+}
+
+model PermintaanPengujianRiwayat {
+  id           String   @id @default(uuid())
+  permintaanId String
+  aksi         String
+  statusDari   String?
+  statusKe     String?
+  keterangan   String?  @db.Text
+  oleh         String?
+  createdAt    DateTime @default(now())
+
+  permintaan   PermintaanPengujian @relation(fields: [permintaanId], references: [id], onDelete: Cascade)
+
+  @@index([permintaanId])
+  @@map("permintaan_pengujian_riwayat")
+}
+
+model TestMethodRiwayat {
+  id           String   @id @default(uuid())
+  testMethodId String
+  aksi         String
+  keterangan   String?  @db.Text
+  oleh         String?
+  createdAt    DateTime @default(now())
+
+  testMethod   TestMethod @relation(fields: [testMethodId], references: [id], onDelete: Cascade)
+
+  @@index([testMethodId])
+  @@map("test_method_riwayat")
+}
+
+/// Master data pilihan (dropdown) modul QC, dikelompokkan per kategori.
+model QcLookup {
+  id        String   @id @default(uuid())
+  kategori  String
+  kode      String
+  nama      String
+  urutan    Int      @default(0)
+  status    String   @default("Aktif")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kategori, kode])
+  @@index([kategori, status])
+  @@map("qc_lookups")
+}
+
+/// Jejak audit seluruh aktivitas pengguna (create / update / delete / login / logout).
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  username    String
+  role        String?
+  modul       String
+  aksi        String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT
+  entitas     String?  // jenis data, mis. "Uji Kadar Air"
+  entitasId   String?
+  entitasKode String?  // nomor / kode yang mudah dibaca, mis. "TST-QC-2026-00002"
+  keterangan  String   @db.Text
+  /// [{ field, label, sebelum, sesudah }]
+  perubahan   Json?
+  metode      String?  // HTTP method
+  endpoint    String?  @db.VarChar(500)
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  perangkat   String?  // mis. "Chrome (Windows)"
+  /// Username superadmin bila aktivitas dilakukan melalui fitur "login sebagai".
+  impersonatedBy String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([username])
+  @@index([modul])
+  @@index([aksi])
+  @@index([entitas])
+  @@map("audit_logs")
+}

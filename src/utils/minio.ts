@@ -91,8 +91,31 @@ export const uploadFile = async (
   } catch (error) {
     console.error('MinIO upload failed (server might be down):', error);
     console.warn('Fallback: Returning a mock placeholder URL to prevent application crash.');
-    return 'https://via.placeholder.com/300x300.png?text=Mock+Upload+(MinIO+Down)';
+    return `https://via.placeholder.com/300x300.png?text=${MOCK_UPLOAD_URL_MARKER}`;
   }
+};
+
+/** Penanda URL palsu yang dikembalikan `uploadFile` saat MinIO tidak dapat dihubungi. */
+export const MOCK_UPLOAD_URL_MARKER = 'Mock+Upload+(MinIO+Down)';
+
+/**
+ * Nama objek di bucket dari URL publik, atau null bila URL bukan milik bucket aplikasi
+ * (mis. URL placeholder saat unggahan gagal, atau URL eksternal).
+ * e.g. http://145.79.12.74:9000/dev/greenhouses/123-abc.jpg -> greenhouses/123-abc.jpg
+ */
+export const objectNameFromUrl = (fileUrl?: string | null): string | null => {
+  if (!fileUrl) return null;
+  const prefix = `${minioUrl.replace(/\/+$/, '')}/${bucketName}/`;
+  if (!fileUrl.startsWith(prefix)) return null;
+  const objectName = decodeURIComponent(fileUrl.slice(prefix.length).split('?')[0] ?? '');
+  // Tolak traversal path agar hanya objek di dalam bucket yang bisa diakses.
+  return objectName && !objectName.split('/').includes('..') ? objectName : null;
+};
+
+/** Error MinIO yang berarti objek tidak ada. */
+export const isObjectNotFound = (err: unknown) => {
+  const code = (err as { code?: string })?.code;
+  return code === 'NotFound' || code === 'NoSuchKey';
 };
 
 /**
@@ -102,13 +125,8 @@ export const deleteFile = async (fileUrl: string): Promise<void> => {
   try {
     if (!fileUrl) return;
 
-    // Extract object name from public URL
-    // e.g. http://145.79.12.74:9000/dev/greenhouses/123-abc.jpg -> greenhouses/123-abc.jpg
-    const searchString = `/${bucketName}/`;
-    const index = fileUrl.indexOf(searchString);
-    if (index === -1) return;
-
-    const objectName = fileUrl.substring(index + searchString.length);
+    const objectName = objectNameFromUrl(fileUrl);
+    if (!objectName) return;
     await minioClient.removeObject(bucketName, objectName);
     console.log(`Deleted object '${objectName}' from bucket '${bucketName}'.`);
   } catch (error) {
