@@ -10,6 +10,7 @@ import uploadRoutes from './routes/upload.routes';
 import settingRoutes from './routes/setting.routes';
 import produksiRoutes from './routes/produksi.routes';
 import gudangRoutes from './routes/gudang.routes';
+import { errorHandler } from './middlewares/errorHandler.middleware';
 
 const app = express();
 
@@ -88,12 +89,6 @@ app.get('/', (req, res) => {
 });
 
 // Global Error Handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled server error:', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {}),
-  });
-});
+app.use(errorHandler);
 
 export default app;

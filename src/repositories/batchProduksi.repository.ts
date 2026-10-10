@@ -26,6 +26,8 @@ export const batchProduksiRepository = {
     sumberBahan?: string;
     status?: string;
     lokasi?: string;
+    withoutPermintaan?: boolean;
+    excludePermintaanId?: string;
     skip?: number;
     take?: number;
   }) => {
@@ -58,6 +60,44 @@ export const batchProduksiRepository = {
 
     if (filters.lokasi) {
       where.lokasi = { contains: filters.lokasi };
+    }
+
+    if (filters.withoutPermintaan) {
+      const existingPermintaans = await prisma.permintaanPengujian.findMany({
+        where: filters.excludePermintaanId
+          ? {
+              NOT: {
+                OR: [
+                  { id: filters.excludePermintaanId },
+                  { noPermintaan: filters.excludePermintaanId },
+                ],
+              },
+            }
+          : undefined,
+        select: {
+          kodeBatch: true,
+          batchProduksiId: true,
+        },
+      });
+
+      const usedBatchCodes = existingPermintaans
+        .map((p) => p.kodeBatch)
+        .filter(Boolean);
+      const usedBatchIds = existingPermintaans
+        .map((p) => p.batchProduksiId)
+        .filter(Boolean) as string[];
+
+      const notConditions: any[] = [];
+      if (usedBatchCodes.length > 0) {
+        notConditions.push({ kodeBatch: { notIn: usedBatchCodes } });
+      }
+      if (usedBatchIds.length > 0) {
+        notConditions.push({ id: { notIn: usedBatchIds } });
+      }
+
+      if (notConditions.length > 0) {
+        where.AND = [...(where.AND || []), ...notConditions];
+      }
     }
 
     const [data, total] = await Promise.all([

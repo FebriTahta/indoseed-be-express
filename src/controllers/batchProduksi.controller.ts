@@ -12,6 +12,8 @@ export const getBatchProduksis = async (req: Request, res: Response) => {
       sumberBahan,
       status,
       lokasi,
+      withoutPermintaan,
+      excludePermintaanId,
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -24,6 +26,8 @@ export const getBatchProduksis = async (req: Request, res: Response) => {
       sumberBahan: sumberBahan ? String(sumberBahan) : undefined,
       status: status ? String(status) : undefined,
       lokasi: lokasi ? String(lokasi) : undefined,
+      withoutPermintaan: withoutPermintaan === 'true' || withoutPermintaan === '1',
+      excludePermintaanId: excludePermintaanId ? String(excludePermintaanId) : undefined,
       skip,
       take,
     };
