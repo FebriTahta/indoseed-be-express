@@ -18,11 +18,24 @@ export const getPengujiScope = async (): Promise<string | null> => {
   return penguji.id;
 };
 
-/** Pastikan penguji hanya mengakses pengujian miliknya atau antrean sampling yang belum diambil. */
-export const assertPengujiAccess = (pengujiId: string | null, item: { status: string; petugasQcId: string | null }) => {
+/**
+ * Pastikan penguji hanya mengakses pengujian miliknya, atau sampel tahap sampling yang
+ * ditugaskan kepadanya sebagai pengambil sampel (data lama tanpa pengambil sampel tetap
+ * menjadi antrean bersama).
+ */
+export const assertPengujiAccess = (
+  pengujiId: string | null,
+  item: { status: string; petugasQcId: string | null; pengambilSampelId: string | null }
+) => {
   if (!pengujiId) return;
   if (item.petugasQcId === pengujiId) return;
-  if (item.status === PERMINTAAN_STATUS.SAMPLING && !item.petugasQcId) return;
+  if (
+    item.status === PERMINTAAN_STATUS.SAMPLING &&
+    !item.petugasQcId &&
+    (!item.pengambilSampelId || item.pengambilSampelId === pengujiId)
+  ) {
+    return;
+  }
   throw forbidden('Pengujian ini ditugaskan kepada penguji lain.');
 };
 
@@ -33,21 +46,25 @@ export const requirePengujiScope = async () => {
   return pengujiId;
 };
 
-/** Penguji hanya boleh menerima sampel yang seluruh metode ujinya ia kuasai. */
-export const assertMenguasaiMetode = async (
-  pengujiId: string,
-  parameters: { checked: boolean; metodeId: string | null; metodeNama?: string | null; nama: string }[]
-) => {
+type ParamMetode = { checked: boolean; metodeId: string | null; metodeNama?: string | null; nama: string };
+
+/** Nama metode uji (dari parameter aktif) yang belum dikuasai penguji. */
+export const metodeBelumDikuasai = async (pengujiId: string, parameters: ParamMetode[]) => {
   const dibutuhkan = new Map<string, string>();
   parameters.filter((p) => p.checked && p.metodeId).forEach((p) => dibutuhkan.set(p.metodeId!, p.metodeNama || p.nama));
-  if (!dibutuhkan.size) return;
+  if (!dibutuhkan.size) return [];
 
   const dikuasai = await prisma.pengujiTestMethod.findMany({
     where: { pengujiId, testMethodId: { in: [...dibutuhkan.keys()] } },
     select: { testMethodId: true },
   });
   const punya = new Set(dikuasai.map((d) => d.testMethodId));
-  const kurang = [...dibutuhkan].filter(([id]) => !punya.has(id)).map(([, nama]) => nama);
+  return [...dibutuhkan].filter(([id]) => !punya.has(id)).map(([, nama]) => nama);
+};
+
+/** Penguji hanya boleh menerima sampel yang seluruh metode ujinya ia kuasai. */
+export const assertMenguasaiMetode = async (pengujiId: string, parameters: ParamMetode[]) => {
+  const kurang = await metodeBelumDikuasai(pengujiId, parameters);
   if (kurang.length) {
     throw forbidden(`Penguji belum terdaftar menguasai metode uji: ${kurang.join(', ')}. Hubungi admin untuk memperbarui kompetensi penguji.`);
   }

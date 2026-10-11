@@ -9,6 +9,7 @@ import {
   buildPermintaanWhere,
 } from '../../repositories/permintaanPengujian.repository';
 import { qcLookupService } from './qcLookup.service';
+import { metodeBelumDikuasai } from './pengujiScope.service';
 import {
   PERMINTAAN_STATUS,
   EDITABLE_STATUSES,
@@ -148,6 +149,20 @@ const resolvePengambilSampel = async (tx: Tx, pengujiId: string) => {
   return penguji;
 };
 
+/** Pengambil sampel adalah penguji yang akan mengerjakan pengujian, jadi wajib menguasai metode ujinya. */
+const assertPengambilMenguasaiMetode = async (
+  pengambil: { id: string; nama: string },
+  parameters: Awaited<ReturnType<typeof buildParameterRows>>
+) => {
+  const kurang = await metodeBelumDikuasai(pengambil.id, parameters);
+  if (kurang.length) {
+    throw badRequest(
+      `Penguji ${pengambil.nama} belum menguasai metode uji: ${kurang.join(', ')}. ` +
+        'Pilih penguji lain atau perbarui kompetensi penguji tersebut.'
+    );
+  }
+};
+
 const isUniqueViolation = (err: unknown) =>
   err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
 
@@ -214,6 +229,7 @@ export const permintaanPengujianService = {
         const batch = await resolveBatchSnapshot(tx, input.batchProduksiId);
         const pengambil = await resolvePengambilSampel(tx, input.pengambilSampelId);
         const parameters = await buildParameterRows(tx, input.parameters);
+        await assertPengambilMenguasaiMetode(pengambil, parameters);
         const noPermintaan = await repo.generateNumber('noPermintaan', QC_NUMBER_PREFIX.PERMINTAAN, tx);
 
         const created = await tx.permintaanPengujian.create({
@@ -265,6 +281,7 @@ export const permintaanPengujianService = {
       const pengambil = await resolvePengambilSampel(tx, input.pengambilSampelId);
       const existingIds = new Set(existing.parameters.map((p) => p.parameterId).filter((v): v is string => Boolean(v)));
       const parameters = await buildParameterRows(tx, input.parameters, existingIds);
+      await assertPengambilMenguasaiMetode(pengambil, parameters);
 
       await tx.permintaanPengujianParameter.deleteMany({ where: { permintaanId: existing.id } });
       await tx.permintaanPengujian.update({
