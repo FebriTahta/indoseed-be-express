@@ -39,6 +39,8 @@ import { assertMenguasaiMetode, assertPengujiAccess, getPengujiScope, requirePen
 import { recordAudit, skipAutoAudit } from '../audit/audit.service';
 import { describeChange, diffFields } from '../audit/auditDiff';
 import { AUDIT_AKSI } from '../../constants/audit.constants';
+import { ROLES } from '../../constants/roles.constants';
+import { getRequestContext } from '../../utils/requestContext';
 
 const MODUL_PEMERIKSAAN = 'Pemeriksaan Pengujian';
 
@@ -393,11 +395,14 @@ export const pemeriksaanPengujianService = {
    * Hasil yang terlanjur dikirim / disetujui padahal masih ada parameter yang belum diuji
    * dinyatakan tidak valid dan dikembalikan ke tahap pengujian. Nilai yang sudah terisi
    * dipertahankan agar analis cukup melengkapi / memperbaiki parameter yang kurang.
+   * Superadmin juga boleh membuka kembali hasil yang tampak lengkap (mis. nilai terisi
+   * padahal pengujian sebenarnya belum tuntas) agar penguji dapat mengujinya ulang.
    */
   ujiUlang: async (idOrNumber: string, input: UjiUlangInput, actor: string) => {
     const { existing } = await getAccessible(idOrNumber);
     assertStatus(existing.status, HASIL_STATUSES, 'melakukan pengujian ulang');
-    if (hasilLengkap(existing.parameters)) {
+    const lengkap = hasilLengkap(existing.parameters);
+    if (lengkap && !getRequestContext()?.user?.roles.includes(ROLES.SUPERADMIN)) {
       throw badRequest('Hasil pengujian sudah lengkap dan valid, pengujian ulang tidak diperlukan');
     }
     assertPetugasAktif(existing);
@@ -418,10 +423,10 @@ export const pemeriksaanPengujianService = {
       });
       await repo.addRiwayat(tx, {
         permintaanId: existing.id,
-        aksi: 'Hasil dinyatakan tidak valid — pengujian ulang',
+        aksi: lengkap ? 'Pengujian dibuka kembali untuk diuji ulang' : 'Hasil dinyatakan tidak valid — pengujian ulang',
         statusDari: existing.status,
         statusKe: PERMINTAAN_STATUS.DALAM_PENGUJIAN,
-        keterangan: `${pesanBelumLengkap(existing.parameters)}. Alasan: ${input.alasan}`,
+        keterangan: lengkap ? `Alasan: ${input.alasan}` : `${pesanBelumLengkap(existing.parameters)}. Alasan: ${input.alasan}`,
         oleh: actor,
       });
     });

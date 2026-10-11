@@ -72,15 +72,18 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
 /**
- * Data yang boleh dilihat penguji: tugas miliknya + antrean sampling yang belum diambil dan
- * seluruh metode ujinya ia kuasai (sampel yang tak bisa ia kerjakan tidak ditampilkan).
+ * Data yang boleh dilihat penguji: tugas miliknya + sampel tahap sampling yang ditugaskan
+ * kepadanya sebagai pengambil sampel. Data lama tanpa pengambil sampel tetap menjadi antrean
+ * bersama bagi penguji yang menguasai seluruh metode ujinya.
  */
 export const pengujiScopeWhere = (pengujiId: string): Prisma.PermintaanPengujianWhereInput => ({
   OR: [
     { petugasQcId: pengujiId },
+    { status: PERMINTAAN_STATUS.SAMPLING, petugasQcId: null, pengambilSampelId: pengujiId },
     {
       status: PERMINTAAN_STATUS.SAMPLING,
       petugasQcId: null,
+      pengambilSampelId: null,
       parameters: { none: { checked: true, metodeRef: { is: { pengujiTestMethods: { none: { pengujiId } } } } } },
     },
   ],
