@@ -86,6 +86,7 @@ import {
 import {
   getBatchProduksis,
   getBatchProduksiById,
+  getReferensiGudangBahanBatchProduksi,
   createBatchProduksi,
   updateBatchProduksi,
   deleteBatchProduksi,
@@ -93,6 +94,7 @@ import {
 import {
   getSortasis,
   getSortasiById,
+  getReferensiGudangBahan,
   createSortasi,
   updateSortasi,
   deleteSortasi,
@@ -100,11 +102,23 @@ import {
 import {
   getTreatments,
   getTreatmentById,
+  getReferensiGudangBahanTreatment,
   createTreatment,
   updateTreatment,
   deleteTreatment,
 } from '../controllers/treatment.controller';
 import { getDashboardProduksiData } from '../controllers/dashboardProduksi.controller';
+import {
+  getGudangBahanList,
+  getGudangBahanById,
+  getGudangBahanStats,
+  getNextLotCode,
+  getReferensiPanen,
+  createGudangBahan,
+  updateGudangBahan,
+  deleteGudangBahan,
+  updateStatusGudangBahan,
+} from '../controllers/gudangBahanBelumDiproses.controller';
 
 const router = Router();
 
@@ -151,6 +165,17 @@ router.post('/panen', createPanen);
 router.put('/panen/:id', updatePanen);
 router.delete('/panen/:id', deletePanen);
 
+// Gudang Bahan Belum Diproses Sub-routes (/api/produksi/gudang-bahan-belum-diproses)
+router.get('/gudang-bahan-belum-diproses/stats', getGudangBahanStats);
+router.get('/gudang-bahan-belum-diproses/next-lot-code', getNextLotCode);
+router.get('/gudang-bahan-belum-diproses/referensi-panen', getReferensiPanen);
+router.get('/gudang-bahan-belum-diproses', getGudangBahanList);
+router.get('/gudang-bahan-belum-diproses/:id', getGudangBahanById);
+router.post('/gudang-bahan-belum-diproses', createGudangBahan);
+router.put('/gudang-bahan-belum-diproses/:id', updateGudangBahan);
+router.patch('/gudang-bahan-belum-diproses/:id/status', updateStatusGudangBahan);
+router.delete('/gudang-bahan-belum-diproses/:id', deleteGudangBahan);
+
 // Pemeriksaan Lahan Sub-routes (/api/produksi/pemeriksaan-lahan)
 router.get('/pemeriksaan-lahan/stats', getPemeriksaanLahanStats);
 router.get('/pemeriksaan-lahan/referensi-jadwal-tanam', getReferensiJadwalTanam);
@@ -190,6 +215,7 @@ router.delete('/pengeringan/:id', deletePengeringan);
 
 // Batch Produksi Sub-routes (/api/produksi/batch-produksi)
 router.get('/batch-produksi', getBatchProduksis);
+router.get('/batch-produksi/referensi-gudang-bahan', getReferensiGudangBahanBatchProduksi);
 router.get('/batch-produksi/:id', getBatchProduksiById);
 router.post('/batch-produksi', createBatchProduksi);
 router.put('/batch-produksi/:id', updateBatchProduksi);
@@ -197,6 +223,7 @@ router.delete('/batch-produksi/:id', deleteBatchProduksi);
 
 // Sortasi Sub-routes (/api/produksi/sortasi)
 router.get('/sortasi', getSortasis);
+router.get('/sortasi/referensi-gudang-bahan', getReferensiGudangBahan);
 router.get('/sortasi/:id', getSortasiById);
 router.post('/sortasi', createSortasi);
 router.put('/sortasi/:id', updateSortasi);
@@ -204,6 +231,7 @@ router.delete('/sortasi/:id', deleteSortasi);
 
 // Treatment Sub-routes (/api/produksi/treatment)
 router.get('/treatment', getTreatments);
+router.get('/treatment/referensi-gudang-bahan', getReferensiGudangBahanTreatment);
 router.get('/treatment/:id', getTreatmentById);
 router.post('/treatment', createTreatment);
 router.put('/treatment/:id', updateTreatment);
