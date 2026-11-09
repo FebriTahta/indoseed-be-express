@@ -172,7 +172,7 @@ export const treatmentRepository = {
     });
 
     // Metode Treatment breakdown (Fungisida, Insektisida, ZPT, Biofungisida)
-    const metodeCounts: Record<string, number> = {
+    const metodeCounts = {
       Fungisida: 0,
       Insektisida: 0,
       ZPT: 0,
