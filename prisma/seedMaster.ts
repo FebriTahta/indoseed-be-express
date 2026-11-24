@@ -83,6 +83,159 @@ export const dataGudang = [
   },
 ];
 
+export const dataRak = [
+  {
+    kodeRak: 'RAK-BNH-01',
+    namaRak: 'Rak Benih Padi A1',
+    kodeGudang: 'GDN-001',
+    namaGudang: 'Gudang Benih Utama & Cold Storage',
+    kategori: 'benih',
+    kapasitas: 2000,
+    baris: 'A',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Penyimpanan benih pokok (BS) dan dasar (BD)',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-BNH-02',
+    namaRak: 'Rak Benih Padi A2',
+    kodeGudang: 'GDN-001',
+    namaGudang: 'Gudang Benih Utama & Cold Storage',
+    kategori: 'benih',
+    kapasitas: 2000,
+    baris: 'A',
+    kolom: '2',
+    level: '2',
+    status: 'Aktif',
+    keterangan: 'Khusus lot padi lolos sertifikasi BPSB',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-BNH-03',
+    namaRak: 'Rak Cold Storage B1',
+    kodeGudang: 'GDN-001',
+    namaGudang: 'Gudang Benih Utama & Cold Storage',
+    kategori: 'benih',
+    kapasitas: 1500,
+    baris: 'B',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Rak berpendingin suhu konstan 16°C & RH 50%',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-HRT-01',
+    namaRak: 'Rak Benih Cabai & Sayur C1',
+    kodeGudang: 'GDN-002',
+    namaGudang: 'Gudang Stok Benih Hortikultura Siap Salur',
+    kategori: 'benih',
+    kapasitas: 800,
+    baris: 'C',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Pouch dan kaleng benih sayuran siap salur',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-HRT-02',
+    namaRak: 'Rak Benih Melon & Semangka C2',
+    kodeGudang: 'GDN-002',
+    namaGudang: 'Gudang Stok Benih Hortikultura Siap Salur',
+    kategori: 'benih',
+    kapasitas: 800,
+    baris: 'C',
+    kolom: '2',
+    level: '2',
+    status: 'Aktif',
+    keterangan: 'Buffer stock pesanan e-commerce & distributor',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-PCK-01',
+    namaRak: 'Rak Pouch Alumunium Foil D1',
+    kodeGudang: 'GDN-004',
+    namaGudang: 'Gudang Kemasan Sachet & Alumunium Foil',
+    kategori: 'packing',
+    kapasitas: 3000,
+    baris: 'D',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Gulungan foil zipper dan sachet cetak',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-PCK-02',
+    namaRak: 'Rak Karung & Karton Box D2',
+    kodeGudang: 'GDN-005',
+    namaGudang: 'Gudang Kardus & Sekunder Packaging',
+    kategori: 'packing',
+    kapasitas: 2500,
+    baris: 'D',
+    kolom: '2',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Kemasan sekunder benih 5kg - 25kg',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-TRT-01',
+    namaRak: 'Rak Fungisida & Desinfektan E1',
+    kodeGudang: 'GDN-006',
+    namaGudang: 'Gudang Fungisida & Desinfektan Benih',
+    kategori: 'treatment',
+    kapasitas: 1000,
+    baris: 'E',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Bahan perlakuan benih fungisida botol & serbuk',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-UMM-01',
+    namaRak: 'Rak Sparepart Mesin F1',
+    kodeGudang: 'GDN-008',
+    namaGudang: 'Gudang Logistik & Sparepart Mesin Pengolah',
+    kategori: 'umum',
+    kapasitas: 500,
+    baris: 'F',
+    kolom: '1',
+    level: '1',
+    status: 'Aktif',
+    keterangan: 'Suku cadang mesin sealer, pembersih benih & timbangan',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+  {
+    kodeRak: 'RAK-MTN-01',
+    namaRak: 'Rak Karantina & Maintenance M1',
+    kodeGudang: 'GDN-001',
+    namaGudang: 'Gudang Benih Utama & Cold Storage',
+    kategori: 'benih',
+    kapasitas: 1000,
+    baris: 'M',
+    kolom: '1',
+    level: '1',
+    status: 'Maintenance',
+    keterangan: 'Perbaikan sensor suhu dan penyangga rak',
+    dibuatOleh: 'superadmin',
+    diubahOleh: 'superadmin',
+  },
+];
+
 export const dataCustomer = [
   {
     kodeCust: 'CUS-001',
@@ -427,9 +580,39 @@ export async function seedSupplier() {
   }
 }
 
+export async function seedRak() {
+  console.log('🗄️ Seeding Master Rak...');
+  for (const item of dataRak) {
+    const gudang = await prisma.gudang.findUnique({ where: { kodeGudang: item.kodeGudang } });
+    const res = await prisma.rak.upsert({
+      where: { kodeRak: item.kodeRak },
+      update: {
+        namaRak: item.namaRak,
+        kodeGudang: item.kodeGudang,
+        namaGudang: item.namaGudang,
+        gudangId: gudang?.id || null,
+        kategori: item.kategori,
+        kapasitas: item.kapasitas,
+        baris: item.baris,
+        kolom: item.kolom,
+        level: item.level,
+        status: item.status,
+        keterangan: item.keterangan,
+        diubahOleh: item.diubahOleh,
+      },
+      create: {
+        ...item,
+        gudangId: gudang?.id || null,
+      },
+    });
+    console.log(`  ✅ Rak: [${res.kodeRak}] ${res.namaRak} (${res.namaGudang})`);
+  }
+}
+
 export async function main() {
-  console.log('🌱 Start seeding Master Data (Gudang, Customer, Supplier)...');
+  console.log('🌱 Start seeding Master Data (Gudang, Rak, Customer, Supplier)...');
   await seedGudang();
+  await seedRak();
   await seedCustomer();
   await seedSupplier();
   console.log('🎉 Seeding Master Data finished successfully!');

@@ -33,6 +33,7 @@ import { uploadSingle, uploadNone } from '../middlewares/upload.middleware';
 
 import * as custCont from '../controllers/customer.controller';
 import * as gudangCont from '../controllers/gudang.controller';
+import * as rakCont from '../controllers/rak.controller';
 import * as suppCont from '../controllers/supplier.controller';
 import * as harvestTypeCont from '../controllers/masterHarvestType.controller';
 
@@ -84,6 +85,24 @@ router.get('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin')
 router.put('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), gudangCont.updateGudang);
 router.delete('/gudang/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), gudangCont.deleteGudang);
 
+// Rak / Rack routes
+router.post('/rak', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), rakCont.createRak);
+router.get('/rak/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRak);
+router.get('/rak/stats', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRakStats);
+router.get('/rak', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRak);
+router.get('/rak/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRakById);
+router.put('/rak/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), rakCont.updateRak);
+router.delete('/rak/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.deleteRak);
+
+// Rack alias routes (support English URL /master/rack)
+router.post('/rack', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), rakCont.createRak);
+router.get('/rack/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRak);
+router.get('/rack/stats', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRakStats);
+router.get('/rack', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRak);
+router.get('/rack/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.getRakById);
+router.put('/rack/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), rakCont.updateRak);
+router.delete('/rack/:id', authenticateJWT, authorizeRoles('superadmin', 'admin'), rakCont.deleteRak);
+
 // Supplier routes
 router.post('/supplier', authenticateJWT, authorizeRoles('superadmin', 'admin'), uploadNone(), suppCont.createSupplier);
 router.get('/supplier/list', authenticateJWT, authorizeRoles('superadmin', 'admin'), suppCont.getSuppliers);
@@ -124,8 +143,28 @@ router.post('/harvest-type/:id/price', authenticateJWT, authorizeRoles('superadm
 router.get('/variety-parameter/:varietyId', varietyParamCont.getVarietyParameters);
 router.post('/variety-parameter/:varietyId/batch', authenticateJWT, authorizeRoles('superadmin', 'admin'), varietyParamCont.upsertVarietyParametersBatch);
 
+import * as peranCont from '../controllers/peran.controller';
+import * as lokasiCont from '../controllers/lokasi.controller';
 import * as pjCont from '../controllers/penanggungJawab.controller';
 import * as ktCont from '../controllers/kelompokTani.controller';
+
+// Master Peran routes
+router.get('/peran/stats', peranCont.getPeranStats);
+router.get('/peran/next-kode', peranCont.getNextKode);
+router.get('/peran', peranCont.getPerans);
+router.get('/peran/:id', peranCont.getPeranById);
+router.post('/peran', peranCont.createPeran);
+router.put('/peran/:id', peranCont.updatePeran);
+router.delete('/peran/:id', peranCont.deletePeran);
+
+// Master Lokasi routes
+router.get('/lokasi/stats', lokasiCont.getLokasiStats);
+router.get('/lokasi/next-kode', lokasiCont.getNextKode);
+router.get('/lokasi', lokasiCont.getLokasis);
+router.get('/lokasi/:id', lokasiCont.getLokasiById);
+router.post('/lokasi', lokasiCont.createLokasi);
+router.put('/lokasi/:id', lokasiCont.updateLokasi);
+router.delete('/lokasi/:id', lokasiCont.deleteLokasi);
 
 // Penanggung Jawab routes
 router.get('/penanggung-jawab/stats', pjCont.getStats);

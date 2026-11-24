@@ -428,7 +428,63 @@ model Gudang {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
+  raks       Rak[]
+  monitoringKondisi MonitoringKondisiGudang[]
+
   @@map("gudang")
+}
+
+model MonitoringKondisiGudang {
+  id              String   @id @default(uuid())
+  gudangId        String?
+  kodeGudang      String?
+  namaGudang      String
+  zona            String   @default("Zona A")
+  sensor          String?
+  suhu            Float?
+  rh              Float?
+  suhuMin         Float    @default(22.0)
+  suhuMax         Float    @default(26.0)
+  rhMin           Float    @default(45.0)
+  rhMax           Float    @default(55.0)
+  waktuPengukuran DateTime @default(now())
+  sumberData      String   @default("Manual")
+  status          String   @default("Normal")
+  catatan         String?  @db.Text
+  petugas         String?  @default("Admin Gudang")
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  gudang          Gudang?  @relation(fields: [gudangId], references: [id], onDelete: SetNull)
+
+  @@map("monitoring_kondisi_gudang")
+}
+
+model Rak {
+  id         String   @id @default(uuid())
+  kodeRak    String   @unique
+  namaRak    String
+  gudangId   String?
+  kodeGudang String?
+  namaGudang String?
+  kategori   String   @default("benih")
+  kapasitas  Int?     @default(1000)
+  baris      String?  @default("A")
+  kolom      String?  @default("1")
+  level      String?  @default("1")
+  status     String   @default("Aktif")
+  keterangan String?
+  dibuatOleh String?  @default("Admin")
+  diubahOleh String?  @default("Admin")
+  tglDibuat  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  gudang     Gudang?  @relation(fields: [gudangId], references: [id], onDelete: SetNull)
+
+  @@map("rak")
 }
 
 model Supplier {
@@ -1232,13 +1288,55 @@ model PersetujuanProduksi {
   @@map("persetujuan_produksi")
 }
 
+model Peran {
+  id               String            @id @default(uuid())
+  kodePeran        String            @unique
+  namaPeran        String            @unique
+  kategori         String            @default("Operasional")
+  deskripsi        String?           @db.Text
+  status           String            @default("Aktif")
+  dibuatOleh       String?           @default("Admin")
+  diubahOleh       String?           @default("Admin")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  penanggungJawabs PenanggungJawab[]
+
+  @@map("peran")
+}
+
+model Lokasi {
+  id                  String            @id @default(uuid())
+  kodeLokasi          String            @unique
+  namaLokasi          String            @unique
+  tipeLokasi          String            @default("Kebun / Lahan")
+  alamat              String?           @db.Text
+  kota                String?
+  provinsi            String?
+  koordinat           String?
+  luasArea            Float?            @default(0)
+  penanggungJawabUtama String?
+  status              String            @default("Aktif")
+  keterangan          String?           @db.Text
+  dibuatOleh          String?           @default("Admin")
+  diubahOleh          String?           @default("Admin")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  penanggungJawabs    PenanggungJawab[]
+
+  @@map("lokasi")
+}
+
 model PenanggungJawab {
   id             String    @id @default(uuid())
   kodePersonel   String?
   nama           String
+  peranId        String?
   peran          String?   @default("Penanggung Jawab")
-  areaModul      String?   @default("Produksi")
+  lokasiId       String?
   lokasi         String?   @default("Semua Lokasi")
+  areaModul      String?   @default("Produksi")
   noHp           String?
   email          String?
   status         String    @default("Aktif")
@@ -1248,6 +1346,8 @@ model PenanggungJawab {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  peranRef       Peran?    @relation(fields: [peranId], references: [id], onDelete: SetNull)
+  lokasiRef      Lokasi?   @relation(fields: [lokasiId], references: [id], onDelete: SetNull)
   partners       Partner[]
   kelompokTanis  KelompokTani[]
 
