@@ -428,7 +428,63 @@ model Gudang {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
+  raks       Rak[]
+  monitoringKondisi MonitoringKondisiGudang[]
+
   @@map("gudang")
+}
+
+model MonitoringKondisiGudang {
+  id              String   @id @default(uuid())
+  gudangId        String?
+  kodeGudang      String?
+  namaGudang      String
+  zona            String   @default("Zona A")
+  sensor          String?
+  suhu            Float?
+  rh              Float?
+  suhuMin         Float    @default(22.0)
+  suhuMax         Float    @default(26.0)
+  rhMin           Float    @default(45.0)
+  rhMax           Float    @default(55.0)
+  waktuPengukuran DateTime @default(now())
+  sumberData      String   @default("Manual")
+  status          String   @default("Normal")
+  catatan         String?  @db.Text
+  petugas         String?  @default("Admin Gudang")
+  dibuatOleh      String?  @default("Admin")
+  diubahOleh      String?  @default("Admin")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  gudang          Gudang?  @relation(fields: [gudangId], references: [id], onDelete: SetNull)
+
+  @@map("monitoring_kondisi_gudang")
+}
+
+model Rak {
+  id         String   @id @default(uuid())
+  kodeRak    String   @unique
+  namaRak    String
+  gudangId   String?
+  kodeGudang String?
+  namaGudang String?
+  kategori   String   @default("benih")
+  kapasitas  Int?     @default(1000)
+  baris      String?  @default("A")
+  kolom      String?  @default("1")
+  level      String?  @default("1")
+  status     String   @default("Aktif")
+  keterangan String?
+  dibuatOleh String?  @default("Admin")
+  diubahOleh String?  @default("Admin")
+  tglDibuat  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  gudang     Gudang?  @relation(fields: [gudangId], references: [id], onDelete: SetNull)
+
+  @@map("rak")
 }
 
 model Supplier {
@@ -638,8 +694,42 @@ model Panen {
   commodity     Commodity?     @relation(fields: [commodityId], references: [id], onDelete: SetNull)
   variety       Variety?       @relation(fields: [varietyId], references: [id], onDelete: SetNull)
   kesiapanPanen KesiapanPanen? @relation(fields: [kesiapanPanenId], references: [id], onDelete: SetNull)
+  gudangBahanBelumDiproses GudangBahanBelumDiproses[]
 
   @@map("panen")
+}
+
+model GudangBahanBelumDiproses {
+  id              String    @id @default(uuid())
+  no              Int?
+  noLot           String    @unique
+  panenId         String?
+  sumberPanen     String
+  komoditas       String
+  varietas        String
+  petani          String?
+  petaniKode      String?
+  lahan           String?
+  tanggalPanen    DateTime?
+  tanggalMasuk    DateTime
+  beratMasuk      Float     @default(0)
+  kadarAir        Float     @default(0)
+  lokasi          String    @default("Zona A")
+  lokasiDetail    String?   @default("Gudang Produksi / Zona A")
+  status          String    @default("Bahan Belum Diproses")
+  kondisiFisik    String?   @default("Baik")
+  petugasPenerima String?   @default("Admin Gudang")
+  catatan         String?   @db.Text
+  foto            String?   @db.Text
+  riwayatFlow     Json?
+  dibuatOleh      String?   @default("Admin")
+  diubahOleh      String?   @default("Admin")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  panen           Panen?    @relation(fields: [panenId], references: [id], onDelete: SetNull)
+
+  @@map("gudang_bahan_belum_diproses")
 }
 
 model MonitoringLahan {
@@ -830,6 +920,10 @@ model Sortasi {
   kodeBatch      String   @unique
   komoditas      String
   varietas       String
+  petani         String?
+  petaniKode     String?
+  noLot          String?
+  gudangBahanId  String?
   alatSortasi    String   @default("Air Screen Cleaner 01")
   beratMasuk     Float    @default(0)
   hasilLulus     Float    @default(0)
@@ -837,9 +931,11 @@ model Sortasi {
   recovery       Float    @default(0)
   tanggalSortasi String
   status         String   @default("Selesai")
-  lokasi         String?  @default("Gudang Sortasi 1")
+  lokasi         String?  @default("Ruang Sortasi Unit 1")
   operator       String?  @default("Admin")
   catatan        String?  @db.Text
+  rincianReject  Json?
+  dokumentasi    Json?
   dibuatOleh     String?  @default("Admin")
   diubahOleh     String?  @default("Admin")
   createdAt      DateTime @default(now())
@@ -849,25 +945,37 @@ model Sortasi {
 }
 
 model Treatment {
-  id             String   @id @default(uuid())
-  no             Int?
-  kodeBatch      String   @unique
-  komoditas      String
-  varietas       String
-  treatment      String   @default("Fungisida + Insektisida")
-  dosis          String   @default("2.5 ml/kg")
-  operator       String   @default("Slamet Riyadi")
-  beratAwal      Float    @default(0)
-  beratAkhir     Float    @default(0)
-  loss           Float    @default(0)
-  tanggalSelesai String
-  status         String   @default("Selesai")
-  lokasi         String?  @default("Ruang Treatment 1")
-  catatan        String?  @db.Text
-  dibuatOleh     String?  @default("Admin")
-  diubahOleh     String?  @default("Admin")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  id               String   @id @default(uuid())
+  no               Int?
+  kodeBatch        String   @unique
+  komoditas        String
+  varietas         String
+  petani           String?
+  petaniKode       String?
+  lahan            String?
+  metodeTreatment  String?  @default("Fungisida")
+  bahan            String?  @default("Carbendazim")
+  jumlahBenih      Float?   @default(0)
+  noLot            String?
+  gudangBahanId    String?
+  treatment        String   @default("Fungisida + Insektisida")
+  dosis            String   @default("2.5 ml/kg")
+  operator         String   @default("Admin Produksi")
+  beratAwal        Float    @default(0)
+  beratAkhir       Float    @default(0)
+  loss             Float    @default(0)
+  tanggalProses    String?
+  tanggalSelesai   String
+  status           String   @default("Selesai")
+  lokasi           String?  @default("Ruang Treatment 1")
+  catatan          String?  @db.Text
+  fotoDokumentasi  Json?
+  tahapanProses    Json?
+  riwayatTreatment Json?
+  dibuatOleh       String?  @default("Admin")
+  diubahOleh       String?  @default("Admin")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 
   @@map("treatment")
 }
@@ -1180,13 +1288,55 @@ model PersetujuanProduksi {
   @@map("persetujuan_produksi")
 }
 
+model Peran {
+  id               String            @id @default(uuid())
+  kodePeran        String            @unique
+  namaPeran        String            @unique
+  kategori         String            @default("Operasional")
+  deskripsi        String?           @db.Text
+  status           String            @default("Aktif")
+  dibuatOleh       String?           @default("Admin")
+  diubahOleh       String?           @default("Admin")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  penanggungJawabs PenanggungJawab[]
+
+  @@map("peran")
+}
+
+model Lokasi {
+  id                  String            @id @default(uuid())
+  kodeLokasi          String            @unique
+  namaLokasi          String            @unique
+  tipeLokasi          String            @default("Kebun / Lahan")
+  alamat              String?           @db.Text
+  kota                String?
+  provinsi            String?
+  koordinat           String?
+  luasArea            Float?            @default(0)
+  penanggungJawabUtama String?
+  status              String            @default("Aktif")
+  keterangan          String?           @db.Text
+  dibuatOleh          String?           @default("Admin")
+  diubahOleh          String?           @default("Admin")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  penanggungJawabs    PenanggungJawab[]
+
+  @@map("lokasi")
+}
+
 model PenanggungJawab {
   id             String    @id @default(uuid())
   kodePersonel   String?
   nama           String
+  peranId        String?
   peran          String?   @default("Penanggung Jawab")
-  areaModul      String?   @default("Produksi")
+  lokasiId       String?
   lokasi         String?   @default("Semua Lokasi")
+  areaModul      String?   @default("Produksi")
   noHp           String?
   email          String?
   status         String    @default("Aktif")
@@ -1196,6 +1346,8 @@ model PenanggungJawab {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  peranRef       Peran?    @relation(fields: [peranId], references: [id], onDelete: SetNull)
+  lokasiRef      Lokasi?   @relation(fields: [lokasiId], references: [id], onDelete: SetNull)
   partners       Partner[]
   kelompokTanis  KelompokTani[]
 

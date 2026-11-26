@@ -13,9 +13,11 @@ export interface PenanggungJawabFilter {
 export interface CreatePenanggungJawabData {
   kodePersonel?: string;
   nama: string;
+  peranId?: string | null;
   peran?: string;
-  areaModul?: string;
+  lokasiId?: string | null;
   lokasi?: string;
+  areaModul?: string;
   noHp?: string;
   email?: string;
   status?: string;
@@ -27,9 +29,11 @@ export interface CreatePenanggungJawabData {
 export interface UpdatePenanggungJawabData {
   kodePersonel?: string;
   nama?: string;
+  peranId?: string | null;
   peran?: string;
-  areaModul?: string;
+  lokasiId?: string | null;
   lokasi?: string;
+  areaModul?: string;
   noHp?: string;
   email?: string;
   status?: string;
@@ -68,13 +72,45 @@ export const penanggungJawabRepository = {
       kode = await penanggungJawabRepository.getNextKode();
     }
 
+    let peranId = data.peranId || null;
+    let peranName = data.peran || 'Penanggung Jawab';
+
+    if (!peranId && peranName) {
+      const p = await prisma.peran.findFirst({ where: { namaPeran: peranName } });
+      if (p) {
+        peranId = p.id;
+      }
+    } else if (peranId && !data.peran) {
+      const p = await prisma.peran.findUnique({ where: { id: peranId } });
+      if (p) {
+        peranName = p.namaPeran;
+      }
+    }
+
+    let lokasiId = data.lokasiId || null;
+    let lokasiName = data.lokasi || 'Semua Lokasi';
+
+    if (!lokasiId && lokasiName) {
+      const l = await prisma.lokasi.findFirst({ where: { namaLokasi: lokasiName } });
+      if (l) {
+        lokasiId = l.id;
+      }
+    } else if (lokasiId && !data.lokasi) {
+      const l = await prisma.lokasi.findUnique({ where: { id: lokasiId } });
+      if (l) {
+        lokasiName = l.namaLokasi;
+      }
+    }
+
     return prisma.penanggungJawab.create({
       data: {
         kodePersonel: kode,
         nama: data.nama.trim(),
-        peran: data.peran || 'Penanggung Jawab',
+        peranId,
+        peran: peranName,
+        lokasiId,
+        lokasi: lokasiName,
         areaModul: data.areaModul || 'Produksi',
-        lokasi: data.lokasi || 'Semua Lokasi',
         noHp: data.noHp?.trim() || null,
         email: data.email?.trim() || null,
         status: data.status || 'Aktif',
@@ -82,12 +118,20 @@ export const penanggungJawabRepository = {
         tanggalSelesai: data.tanggalSelesai ? new Date(data.tanggalSelesai) : null,
         catatan: data.catatan?.trim() || null,
       },
+      include: {
+        peranRef: true,
+        lokasiRef: true,
+      },
     });
   },
 
   findById: async (id: string) => {
     return prisma.penanggungJawab.findUnique({
       where: { id },
+      include: {
+        peranRef: true,
+        lokasiRef: true,
+      },
     });
   },
 
@@ -96,9 +140,32 @@ export const penanggungJawabRepository = {
 
     if (data.kodePersonel !== undefined) updatePayload.kodePersonel = data.kodePersonel?.trim() || null;
     if (data.nama !== undefined) updatePayload.nama = data.nama.trim();
-    if (data.peran !== undefined) updatePayload.peran = data.peran;
+    
+    if (data.peranId !== undefined) {
+      updatePayload.peranId = data.peranId;
+      if (data.peranId) {
+        const p = await prisma.peran.findUnique({ where: { id: data.peranId } });
+        if (p) updatePayload.peran = p.namaPeran;
+      }
+    } else if (data.peran !== undefined) {
+      updatePayload.peran = data.peran;
+      const p = await prisma.peran.findFirst({ where: { namaPeran: data.peran } });
+      if (p) updatePayload.peranId = p.id;
+    }
+
+    if (data.lokasiId !== undefined) {
+      updatePayload.lokasiId = data.lokasiId;
+      if (data.lokasiId) {
+        const l = await prisma.lokasi.findUnique({ where: { id: data.lokasiId } });
+        if (l) updatePayload.lokasi = l.namaLokasi;
+      }
+    } else if (data.lokasi !== undefined) {
+      updatePayload.lokasi = data.lokasi;
+      const l = await prisma.lokasi.findFirst({ where: { namaLokasi: data.lokasi } });
+      if (l) updatePayload.lokasiId = l.id;
+    }
+
     if (data.areaModul !== undefined) updatePayload.areaModul = data.areaModul;
-    if (data.lokasi !== undefined) updatePayload.lokasi = data.lokasi;
     if (data.noHp !== undefined) updatePayload.noHp = data.noHp?.trim() || null;
     if (data.email !== undefined) updatePayload.email = data.email?.trim() || null;
     if (data.status !== undefined) updatePayload.status = data.status;
@@ -109,6 +176,10 @@ export const penanggungJawabRepository = {
     return prisma.penanggungJawab.update({
       where: { id },
       data: updatePayload,
+      include: {
+        peranRef: true,
+        lokasiRef: true,
+      },
     });
   },
 
@@ -169,6 +240,10 @@ export const penanggungJawabRepository = {
         where,
         skip,
         take,
+        include: {
+          peranRef: true,
+          lokasiRef: true,
+        },
         orderBy: [
           { kodePersonel: 'asc' },
           { createdAt: 'desc' },
